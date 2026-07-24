@@ -1,0 +1,76 @@
+name: iOS Release (TestFlight)
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_notes:
+        description: "TestFlight changelog"
+        required: false
+        default: "Automated build from GitHub Actions"
+
+concurrency:
+  group: ios-release
+  cancel-in-progress: false
+
+jobs:
+  build-and-upload:
+    name: Build & upload
+    runs-on: macos-26
+    timeout-minutes: 90
+    defaults:
+      run:
+        working-directory: ios
+
+    env:
+      APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+      APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+      APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
+      MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+      MATCH_SSH_KEY: ${{ secrets.MATCH_SSH_PRIVATE_KEY }}
+      RELEASE_NOTES: ${{ github.event.inputs.release_notes }}
+      BUILD_NUMBER: ${{ github.run_number }}
+      # Avoid interactive CocoaPods prompts on CI
+      COCOAPODS_DISABLE_STATS: "true"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: "26.5"
+
+      - name: Setup SSH for Match certificates repo
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.MATCH_SSH_PRIVATE_KEY }}
+
+      - name: Trust GitHub host key
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+        working-directory: .
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+          working-directory: ios
+
+      - name: Install Flutter / iOS deps
+        working-directory: .
+        run: |
+          flutter pub get
+          cd ios
+          bundle exec pod install --repo-update
+
+      - name: Build IPA and upload to TestFlight
+        run: bundle exec fastlane release
