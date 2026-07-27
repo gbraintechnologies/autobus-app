@@ -6,6 +6,12 @@
 	<string>This app requires access to speech recognition to convert spoken words into text.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>This app requires access to the microphone to capture audio for speech recognition.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Autobus needs camera access so you can take profile and product photos.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Autobus needs photo library access so you can choose profile and product photos.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Autobus needs permission to save photos to your library when exporting media.</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
