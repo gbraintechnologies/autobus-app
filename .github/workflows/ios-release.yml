@@ -29,6 +29,9 @@ jobs:
       MATCH_SSH_KEY: ${{ secrets.MATCH_SSH_PRIVATE_KEY }}
       RELEASE_NOTES: ${{ github.event.inputs.release_notes }}
       BUILD_NUMBER: ${{ github.run_number }}
+      BACKEND_URL: ${{ secrets.BACKEND_URL }}
+      PAYSTACK_PUBLIC_KEY: ${{ secrets.PAYSTACK_PUBLIC_KEY }}
+      PAYSTACK_CALLBACK_URL: ${{ secrets.PAYSTACK_CALLBACK_URL }}
       # Avoid interactive CocoaPods prompts on CI
       COCOAPODS_DISABLE_STATS: "true"
 
