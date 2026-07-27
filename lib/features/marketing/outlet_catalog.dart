@@ -5,7 +5,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 /// Marketing outlet shown on Link Social Media; matched to Postiz `identifier` values.
 class OutletOption {
   final String label;
-  final IconData icon;
+  final FaIconData icon;
   final Color iconColor;
   final Set<String> postizIdentifiers;
 

@@ -6,7 +6,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 class ChannelOption {
   final String label;
   final String apiSlug;
-  final IconData icon;
+  final FaIconData icon;
   final Color iconColor;
   final Set<String> chatwootKinds;
 
