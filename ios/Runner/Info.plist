@@ -2,26 +2,16 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>This app requires access to speech recognition to convert spoken words into text.</string>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>This app requires access to the microphone to capture audio for speech recognition.</string>
-	<key>NSCameraUsageDescription</key>
-	<string>Autobus needs camera access so you can take profile and product photos.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Autobus needs photo library access so you can choose profile and product photos.</string>
-	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>Autobus needs permission to save photos to your library when exporting media.</string>
+	<key>CADisableMinimumFrameDurationOnPhone</key>
+	<true/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
 	<string>Autobus</string>
-	<key>CFBundleIconName</key>
-	<string>AppIcon</string>
-	<key>ITSAppUsesNonExemptEncryption</key>
-	<false/>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIconName</key>
+	<string>AppIcon</string>
 	<key>CFBundleIdentifier</key>
 	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 	<key>CFBundleInfoDictionaryVersion</key>
@@ -36,7 +26,47 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>Autobus needs camera access so you can take profile and product photos.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>This app requires access to the microphone to capture audio for speech recognition.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Autobus needs permission to save photos to your library when exporting media.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Autobus needs photo library access so you can choose profile and product photos.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>This app requires access to speech recognition to convert spoken words into text.</string>
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+		<key>UISceneConfigurations</key>
+		<dict>
+			<key>UIWindowSceneSessionRoleApplication</key>
+			<array>
+				<dict>
+					<key>UISceneClassName</key>
+					<string>UIWindowScene</string>
+					<key>UISceneConfigurationName</key>
+					<string>flutter</string>
+					<key>UISceneDelegateClassName</key>
+					<string>FlutterSceneDelegate</string>
+					<key>UISceneStoryboardFile</key>
+					<string>Main</string>
+				</dict>
+			</array>
+		</dict>
+	</dict>
+	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
@@ -55,14 +85,5 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
-	<key>CADisableMinimumFrameDurationOnPhone</key>
-	<true/>
-	<key>UIApplicationSupportsIndirectInputEvents</key>
-	<true/>
-	<key>NSAppTransportSecurity</key>
-	<dict>
-		<key>NSAllowsLocalNetworking</key>
-		<true/>
-	</dict>
 </dict>
 </plist>
