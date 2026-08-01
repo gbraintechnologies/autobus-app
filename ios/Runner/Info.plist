@@ -37,6 +37,8 @@
 	</dict>
 	<key>NSCameraUsageDescription</key>
 	<string>Autobus needs camera access so you can take profile and product photos.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Autobus does not use your location. This permission is unused.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>This app requires access to the microphone to capture audio for speech recognition.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
