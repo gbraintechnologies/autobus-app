@@ -2802,7 +2802,7 @@ class _SelectOutletPageState extends State<_SelectOutletPage> {
                   final String label;
                   final String? subtitle;
                   final Color color;
-                  final IconData icon;
+                  final FaIconData icon;
                   final Widget? avatar;
 
                   if (_usePostiz) {
@@ -2836,7 +2836,7 @@ class _SelectOutletPageState extends State<_SelectOutletPage> {
                     label = (acct['platform'] ?? 'Account').toString();
                     subtitle =
                         (acct['account_name'] ?? '').toString().trim();
-                    icon = Icons.link;
+                    icon = FontAwesomeIcons.link;
                     color = _kPurple;
                     avatar = null;
                   }
@@ -2878,7 +2878,7 @@ class _SelectOutletPageState extends State<_SelectOutletPage> {
                                   width: 36,
                                   height: 36,
                                   child: Center(
-                                    child: Icon(
+                                    child: FaIcon(
                                       icon,
                                       size: 20,
                                       color: color,
@@ -3248,7 +3248,7 @@ class _PostDetailsPageState extends State<_PostDetailsPage> {
     required String id,
     required String label,
     required String? subtitle,
-    required IconData icon,
+    required FaIconData icon,
     required Color color,
     required PlatformDetailsKind kind,
     required bool autobusIg,
@@ -3270,7 +3270,7 @@ class _PostDetailsPageState extends State<_PostDetailsPage> {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
               child: Row(
                 children: [
-                  Icon(icon, size: 18, color: color),
+                  FaIcon(icon, size: 18, color: color),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Column(
@@ -3356,7 +3356,7 @@ class _PostDetailsPageState extends State<_PostDetailsPage> {
             id: id,
             label: (acct['platform'] ?? 'Account').toString(),
             subtitle: (acct['account_name'] ?? '').toString().trim(),
-            icon: Icons.link,
+            icon: FontAwesomeIcons.link,
             color: _kPurple,
             kind: PlatformDetailsKind.generic,
             autobusIg: false,
