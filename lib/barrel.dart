@@ -129,4 +129,5 @@ export 'package:autobus/icons/fluent.dart';
 // Design Imports
 export 'package:autobus/common_design/colors.dart';
 export 'package:autobus/common_design/widgets/appbutton.dart';
+export 'package:autobus/common_design/widgets/app_snackbar.dart';
 export 'package:page_transition/page_transition.dart';

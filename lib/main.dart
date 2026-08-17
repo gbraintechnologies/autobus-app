@@ -80,6 +80,7 @@ class MyApp extends StatelessWidget {
       builder: (context, state) {
         return MaterialApp(
           navigatorKey: NavigationService.navigatorKey,
+          scaffoldMessengerKey: NavigationService.scaffoldMessengerKey,
           debugShowCheckedModeBanner: false,
           title: 'Autobus',
           theme: state.themeData,

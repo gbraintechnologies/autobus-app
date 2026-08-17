@@ -50,6 +50,10 @@ class _SigninState extends State<Signin> {
               FilteringTextInputFormatter.digitsOnly,
               LengthLimitingTextInputFormatter(1),
             ],
+            style: GoogleFonts.montserrat(
+              fontSize: 18,
+              fontWeight: FontWeight.w500,
+            ),
             decoration: const InputDecoration(
               border: UnderlineInputBorder(),
               counterText: '',
@@ -116,15 +120,7 @@ class _SigninState extends State<Signin> {
               (route) => false,
             );
           } else if (state is AuthError && state.source == 'login') {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  state.message,
-                  style: GoogleFonts.montserrat(color: Colors.white),
-                ),
-                backgroundColor: Colors.red,
-              ),
-            );
+            showAppSnackBar(context, state.message);
           }
         },
         builder: (context, state) {
@@ -174,7 +170,7 @@ class _SigninState extends State<Signin> {
                             style: GoogleFonts.montserrat(
                               color: Colors.black,
                               fontSize: 26,
-                              fontWeight: FontWeight.w300,
+                              fontWeight: FontWeight.w400,
                             ),
                           ),
                         ),
@@ -204,12 +200,16 @@ class _SigninState extends State<Signin> {
                               style: GoogleFonts.montserrat(
                                 color: Colors.black87,
                                 fontSize: 13,
-                                fontWeight: FontWeight.w300,
+                                fontWeight: FontWeight.w400,
                               ),
                             ),
                             const SizedBox(height: 8),
                             TextField(
                               controller: emailController,
+                              style: GoogleFonts.montserrat(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
                               decoration: InputDecoration(
                                 border: const UnderlineInputBorder(),
                                 contentPadding: const EdgeInsets.symmetric(
@@ -229,7 +229,7 @@ class _SigninState extends State<Signin> {
                               style: GoogleFonts.montserrat(
                                 color: Colors.black87,
                                 fontSize: 13,
-                                fontWeight: FontWeight.w300,
+                                fontWeight: FontWeight.w400,
                               ),
                             ),
                             const SizedBox(height: 8),
@@ -252,7 +252,7 @@ class _SigninState extends State<Signin> {
                                   style: GoogleFonts.montserrat(
                                     color: Colors.black87,
                                     fontSize: 13,
-                                    fontWeight: FontWeight.w400,
+                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
                               ),
@@ -279,7 +279,7 @@ class _SigninState extends State<Signin> {
                             style: GoogleFonts.montserrat(
                               color: Colors.black54,
                               fontSize: 13,
-                              fontWeight: FontWeight.w300,
+                              fontWeight: FontWeight.w400,
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -297,7 +297,7 @@ class _SigninState extends State<Signin> {
                               style: GoogleFonts.montserrat(
                                 color: CustColors.mainCol,
                                 fontSize: 16,
-                                fontWeight: FontWeight.w500,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                           ),

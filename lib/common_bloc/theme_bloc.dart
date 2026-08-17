@@ -7,6 +7,9 @@ class ThemeBloc extends Cubit<ThemeState> {
     return ThemeData(
       colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       textTheme: GoogleFonts.montserratTextTheme(),
+      snackBarTheme: const SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+      ),
     );
   }
 
@@ -16,6 +19,9 @@ class ThemeBloc extends Cubit<ThemeState> {
         ThemeData(
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
           textTheme: GoogleFonts.montserratTextTheme(),
+          snackBarTheme: const SnackBarThemeData(
+            behavior: SnackBarBehavior.floating,
+          ),
         ),
       ),
     );

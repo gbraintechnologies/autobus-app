@@ -35,16 +35,16 @@ class _SignupOtpState extends State<SignupOtp> {
               );
             }
             if (state is SignupOtpResent) {
-              ScaffoldMessenger.of(
+              showAppSnackBar(
                 context,
-              ).showSnackBar(SnackBar(content: Text(state.message)));
+                state.message,
+                backgroundColor: CustColors.mainCol,
+              );
             }
             if (state is AuthError &&
                 (state.source == 'signup_otp' ||
                     state.source == 'signup_otp_resend')) {
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(SnackBar(content: Text(state.message)));
+              showAppSnackBar(context, state.message);
             }
           },
         ),
@@ -163,13 +163,9 @@ class _SignupOtpState extends State<SignupOtp> {
                         if (isLoading) return;
 
                         if (codeController.text.trim().isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Please enter the verification code',
-                              ),
-                              backgroundColor: Colors.red,
-                            ),
+                          showAppSnackBar(
+                            context,
+                            'Please enter the verification code',
                           );
                           return;
                         }

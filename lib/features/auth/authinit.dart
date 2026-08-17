@@ -10,21 +10,14 @@ class AuthWrapper extends StatelessWidget {
       listener: (context, state) {
         // Handle session expiration
         if (state is SessionExpired) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.message), backgroundColor: Colors.red),
-          );
+          showAppSnackBar(context, state.message);
           Navigator.of(
             context,
           ).pushNamedAndRemoveUntil('/signin', (route) => false);
         }
         // Handle token refresh failure
         else if (state is TokenRefreshFailed) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Session error: ${state.message}'),
-              backgroundColor: Colors.red,
-            ),
-          );
+          showAppSnackBar(context, 'Session error: ${state.message}');
         }
       },
       child: BlocBuilder<AuthBloc, AuthState>(
@@ -48,25 +41,17 @@ class AuthWrapper extends StatelessWidget {
                       ? Map<String, dynamic>.from(u)
                       : <String, dynamic>{});
             return SubscriptionGuard(user: userMap);
-          } else if (state is Unauthenticated) {
-            print('✗ User is Unauthenticated - showing Signin');
+          } else if (state is Unauthenticated ||
+              state is AuthLoading ||
+              state is AuthError) {
+            // Keep Signin mounted through login/signup load and error so the
+            // form (and its snackbar listener) is not torn down. Replacing the
+            // Scaffold here is what hid error snackbars on iOS.
+            print('✗ Auth gate: ${state.runtimeType} - showing Signin');
             return const Signin();
           } else if (state is SessionExpired) {
             print('✗ Session Expired - showing LogorSign');
             return const LogorSign();
-          } else if (state is AuthError) {
-            print('✗ Auth Error: ${state.message}');
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(SnackBar(content: Text(state.message)));
-            });
-            // Render relevant page based on error source
-            if (state.source == 'signup') {
-              return const Signup();
-            } else {
-              return const Signin();
-            }
           } else if (state is TokenRefreshing) {
             print('⏳ Token Refreshing...');
             return const Scaffold(

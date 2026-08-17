@@ -37,7 +37,7 @@ class _SignupState extends State<Signup> {
   }
 
   static TextStyle _ghanaTenStyle() {
-    return GoogleFonts.montserrat(fontSize: 14, fontWeight: FontWeight.w400);
+    return GoogleFonts.montserrat(fontSize: 14, fontWeight: FontWeight.w500);
   }
 
   static TextStyle _fieldHintStyle() {
@@ -46,6 +46,18 @@ class _SignupState extends State<Signup> {
       fontSize: 14,
       fontWeight: FontWeight.w400,
     );
+  }
+
+  static TextStyle _fieldLabelStyle() {
+    return GoogleFonts.montserrat(
+      color: Colors.black,
+      fontSize: 13,
+      fontWeight: FontWeight.w500,
+    );
+  }
+
+  static TextStyle _fieldTextStyle() {
+    return GoogleFonts.montserrat(fontSize: 14, fontWeight: FontWeight.w500);
   }
 
   /// Width for the middle Ghana Card segment: grows with typed digits, capped at 10-wide sample.
@@ -116,6 +128,10 @@ class _SignupState extends State<Signup> {
               FilteringTextInputFormatter.digitsOnly,
               LengthLimitingTextInputFormatter(1),
             ],
+            style: GoogleFonts.montserrat(
+              fontSize: 18,
+              fontWeight: FontWeight.w500,
+            ),
             decoration: const InputDecoration(
               border: UnderlineInputBorder(),
               counterText: '',
@@ -171,6 +187,8 @@ class _SignupState extends State<Signup> {
                     child: SignupOtp(phone: phoneController.text.trim()),
                   ),
                 );
+              } else if (state is AuthError && state.source == 'signup') {
+                showAppSnackBar(context, state.message);
               }
             },
           ),
@@ -194,7 +212,7 @@ class _SignupState extends State<Signup> {
                               style: GoogleFonts.montserrat(
                                 color: Colors.black,
                                 fontSize: 26,
-                                fontWeight: FontWeight.w300,
+                                fontWeight: FontWeight.w400,
                               ),
                             ),
                           ),
@@ -244,14 +262,11 @@ class _SignupState extends State<Signup> {
                             children: [
                               Text(
                                 'Username',
-                                style: GoogleFonts.montserrat(
-                                  color: Colors.black,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w400,
-                                ),
+                                style: _fieldLabelStyle(),
                               ),
                               TextField(
                                 controller: usernameController,
+                                style: _fieldTextStyle(),
                                 decoration: InputDecoration(
                                   border: const UnderlineInputBorder(),
                                   hintText: 'Enter your full name',
@@ -261,15 +276,12 @@ class _SignupState extends State<Signup> {
                               const SizedBox(height: 20),
                               Text(
                                 'Phone',
-                                style: GoogleFonts.montserrat(
-                                  color: Colors.black,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w400,
-                                ),
+                                style: _fieldLabelStyle(),
                               ),
                               TextField(
                                 controller: phoneController,
                                 keyboardType: TextInputType.phone,
+                                style: _fieldTextStyle(),
                                 decoration: InputDecoration(
                                   border: const UnderlineInputBorder(),
                                   hintText: '0241234567',
@@ -279,14 +291,11 @@ class _SignupState extends State<Signup> {
                               const SizedBox(height: 20),
                               Text(
                                 'Company',
-                                style: GoogleFonts.montserrat(
-                                  color: Colors.black,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w400,
-                                ),
+                                style: _fieldLabelStyle(),
                               ),
                               TextField(
                                 controller: companyController,
+                                style: _fieldTextStyle(),
                                 decoration: InputDecoration(
                                   border: const UnderlineInputBorder(),
                                   hintText: 'Enter your company name',
@@ -296,11 +305,7 @@ class _SignupState extends State<Signup> {
                               const SizedBox(height: 20),
                               Text(
                                 'Ghana Card',
-                                style: GoogleFonts.montserrat(
-                                  color: Colors.black,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w400,
-                                ),
+                                style: _fieldLabelStyle(),
                               ),
                               Align(
                                 alignment: Alignment.centerLeft,
@@ -318,7 +323,7 @@ class _SignupState extends State<Signup> {
                                         style: GoogleFonts.montserrat(
                                           color: Colors.black,
                                           fontSize: 14,
-                                          fontWeight: FontWeight.w400,
+                                          fontWeight: FontWeight.w500,
                                         ),
                                         decoration: const InputDecoration(
                                           border: UnderlineInputBorder(),
@@ -358,7 +363,7 @@ class _SignupState extends State<Signup> {
                                         style: GoogleFonts.montserrat(
                                           color: Colors.black,
                                           fontSize: 14,
-                                          fontWeight: FontWeight.w400,
+                                          fontWeight: FontWeight.w500,
                                         ),
                                         decoration: InputDecoration(
                                           border: const UnderlineInputBorder(),
@@ -410,7 +415,7 @@ class _SignupState extends State<Signup> {
                                         style: GoogleFonts.montserrat(
                                           color: Colors.black,
                                           fontSize: 14,
-                                          fontWeight: FontWeight.w400,
+                                          fontWeight: FontWeight.w500,
                                         ),
                                         decoration: InputDecoration(
                                           border: const UnderlineInputBorder(),
@@ -431,15 +436,12 @@ class _SignupState extends State<Signup> {
                               const SizedBox(height: 20),
                               Text(
                                 'Email',
-                                style: GoogleFonts.montserrat(
-                                  color: Colors.black,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w400,
-                                ),
+                                style: _fieldLabelStyle(),
                               ),
                               TextField(
                                 controller: emailController,
                                 keyboardType: TextInputType.emailAddress,
+                                style: _fieldTextStyle(),
                                 decoration: InputDecoration(
                                   border: const UnderlineInputBorder(),
                                   hintText: 'name@example.com',
@@ -449,11 +451,7 @@ class _SignupState extends State<Signup> {
                               const SizedBox(height: 20),
                               Text(
                                 'PIN',
-                                style: GoogleFonts.montserrat(
-                                  color: Colors.black,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w400,
-                                ),
+                                style: _fieldLabelStyle(),
                               ),
                               _buildPinInput(enabled: !isLoading),
                             ],
@@ -467,13 +465,9 @@ class _SignupState extends State<Signup> {
                               ? null
                               : () async {
                                   if (_pin.length != 4) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                          'Please enter a 4-digit PIN',
-                                        ),
-                                        backgroundColor: Colors.red,
-                                      ),
+                                    showAppSnackBar(
+                                      context,
+                                      'Please enter a 4-digit PIN',
                                     );
                                     return;
                                   }
@@ -498,7 +492,7 @@ class _SignupState extends State<Signup> {
                           style: GoogleFonts.montserrat(
                             color: Colors.black,
                             fontSize: 13,
-                            fontWeight: FontWeight.w400,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ),
@@ -523,7 +517,7 @@ class _SignupState extends State<Signup> {
                             style: GoogleFonts.montserrat(
                               color: CustColors.mainCol,
                               fontSize: 16,
-                              fontWeight: FontWeight.w500,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),
