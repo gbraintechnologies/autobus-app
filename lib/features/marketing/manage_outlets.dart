@@ -83,7 +83,55 @@ class _ManageOutletsState extends State<ManageOutlets> {
     }
   }
 
+  Future<void> _showDeviceShareInfo(OutletOption outlet) async {
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF1A1333),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: const BorderSide(color: Color(0xFF3F1163)),
+          ),
+          title: Text(
+            outlet.label,
+            style: GoogleFonts.montserrat(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+              fontSize: 18,
+            ),
+          ),
+          content: Text(
+            outlet.helperText ??
+                'This is shared from the WhatsApp app on this phone. You do not need to link an account.',
+            style: GoogleFonts.montserrat(
+              color: Colors.white.withValues(alpha: 0.75),
+              fontSize: 14,
+              height: 1.45,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: Text(
+                'Got it',
+                style: GoogleFonts.montserrat(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Future<void> _linkOutlet(OutletOption outlet) async {
+    if (outlet.shareOnDevice) {
+      await _showDeviceShareInfo(outlet);
+      return;
+    }
     final api = context.read<ApiService>();
     final connectSlug = outlet.connectSlug?.trim();
     // Meta / TikTok / Google block in-app WebViews; use the device browser
@@ -389,7 +437,7 @@ class _ManageOutletsState extends State<ManageOutlets> {
                                   ),
                                   const SizedBox(height: 12),
                                   Text(
-                                    'Instagram uses Business Login for inbox and posting. Facebook, TikTok, YouTube, and WhatsApp open in your device browser. Finish there, then return here and pull to refresh.',
+                                    'Instagram uses Business Login for inbox and posting. Facebook, TikTok, and YouTube open in your device browser. Finish there, then return here and pull to refresh. WhatsApp Status is shared from the WhatsApp app on this phone — no account link is needed.',
                                     textAlign: TextAlign.center,
                                     style: GoogleFonts.montserrat(
                                       color: Colors.white.withValues(alpha: 0.65),
@@ -399,36 +447,32 @@ class _ManageOutletsState extends State<ManageOutlets> {
                                     ),
                                   ),
                                   const SizedBox(height: 20),
-                                  if (_unlinked.isEmpty)
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 12,
-                                      ),
-                                      child: Text(
-                                        'All available outlets are linked.',
-                                        textAlign: TextAlign.center,
-                                        style: GoogleFonts.montserrat(
-                                          color: Colors.white.withValues(
-                                            alpha: 0.55,
-                                          ),
-                                          fontSize: 13,
+                                  _OutletGrid(
+                                    children: [
+                                      for (final outlet
+                                          in OutletCatalog.deviceShareOutlets)
+                                        _OutletCard(
+                                          label: outlet.label,
+                                          subtitle: 'On this phone',
+                                          icon: FaIcon(outlet.icon),
+                                          iconColor: outlet.iconColor,
+                                          isDeviceShare: true,
+                                          onTap: _busy
+                                              ? () {}
+                                              : () =>
+                                                    _showDeviceShareInfo(outlet),
                                         ),
-                                      ),
-                                    )
-                                  else
-                                    _OutletGrid(
-                                      children: [
-                                        for (final outlet in _unlinked)
-                                          _OutletCard(
-                                            label: outlet.label,
-                                            icon: FaIcon(outlet.icon),
-                                            iconColor: outlet.iconColor,
-                                            onTap: _busy
-                                                ? () {}
-                                                : () => _linkOutlet(outlet),
-                                          ),
-                                      ],
-                                    ),
+                                      for (final outlet in _unlinked)
+                                        _OutletCard(
+                                          label: outlet.label,
+                                          icon: FaIcon(outlet.icon),
+                                          iconColor: outlet.iconColor,
+                                          onTap: _busy
+                                              ? () {}
+                                              : () => _linkOutlet(outlet),
+                                        ),
+                                    ],
+                                  ),
                                   const SizedBox(height: 24),
                                 ],
                               ),
@@ -475,6 +519,7 @@ class _OutletCard extends StatelessWidget {
   final Widget icon;
   final Color iconColor;
   final bool isLinked;
+  final bool isDeviceShare;
   final VoidCallback onTap;
 
   const _OutletCard({
@@ -484,6 +529,7 @@ class _OutletCard extends StatelessWidget {
     required this.onTap,
     this.subtitle,
     this.isLinked = false,
+    this.isDeviceShare = false,
   });
 
   @override
@@ -495,8 +541,12 @@ class _OutletCard extends StatelessWidget {
           color: const Color(0xFF1A1333).withValues(alpha: 0.35),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isLinked ? const Color(0xFF22C55E) : const Color(0xFF3F1163),
-            width: isLinked ? 1.5 : 1,
+            color: isLinked
+                ? const Color(0xFF22C55E)
+                : isDeviceShare
+                ? const Color(0xFF25D366)
+                : const Color(0xFF3F1163),
+            width: isLinked || isDeviceShare ? 1.5 : 1,
           ),
         ),
         child: Stack(
@@ -514,6 +564,16 @@ class _OutletCard extends StatelessWidget {
                 child: Icon(
                   Icons.check_circle,
                   color: Color(0xFF22C55E),
+                  size: 18,
+                ),
+              )
+            else if (isDeviceShare)
+              const Positioned(
+                top: 8,
+                right: 8,
+                child: Icon(
+                  Icons.smartphone,
+                  color: Color(0xFF25D366),
                   size: 18,
                 ),
               ),

@@ -9,8 +9,13 @@ class OutletOption {
   final Color iconColor;
   final Set<String> postizIdentifiers;
 
-  /// Postiz connect path slug (`facebook`, `instagram`, `whatsapp`, …).
+  /// Postiz connect path slug (`facebook`, `instagram`, `tiktok`, …).
   final String? connectSlug;
+
+  /// True when posting happens via the phone share sheet, not a linked account.
+  final bool shareOnDevice;
+
+  final String? helperText;
 
   const OutletOption({
     required this.label,
@@ -18,9 +23,12 @@ class OutletOption {
     required this.iconColor,
     this.postizIdentifiers = const {},
     this.connectSlug,
+    this.shareOnDevice = false,
+    this.helperText,
   });
 
   bool matchesIntegration(PostizIntegration integration) {
+    if (shareOnDevice) return false;
     if (!integration.isActive) return false;
     if (postizIdentifiers.isEmpty) return false;
     return postizIdentifiers.contains(integration.identifier.toLowerCase());
@@ -61,8 +69,9 @@ class OutletCatalog {
       label: 'WhatsApp Status',
       icon: FontAwesomeIcons.whatsapp,
       iconColor: Color(0xFF25D366),
-      postizIdentifiers: {'whatsapp'},
-      connectSlug: 'whatsapp',
+      shareOnDevice: true,
+      helperText:
+          'Shared directly from the WhatsApp app on this phone. You do not need to link a WhatsApp account.',
     ),
     OutletOption(
       label: 'Instagram',
@@ -94,6 +103,7 @@ class OutletCatalog {
     final unlinked = <OutletOption>[];
 
     for (final outlet in all) {
+      if (outlet.shareOnDevice) continue;
       final matches =
           integrations.where((i) => outlet.matchesIntegration(i)).toList();
       if (matches.isNotEmpty) {
@@ -105,4 +115,7 @@ class OutletCatalog {
 
     return (linked: linked, unlinked: unlinked);
   }
+
+  static List<OutletOption> get deviceShareOutlets =>
+      all.where((o) => o.shareOnDevice).toList();
 }

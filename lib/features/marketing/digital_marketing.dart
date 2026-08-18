@@ -20,7 +20,8 @@ const _kNextButtonPurple = Color(0xFF2A1447);
 const _kPurple = Color(0xFF6C63FF);
 const _kSelectGreen = Color(0xFF22C55E);
 const _kAutobusIgPrefix = 'autobus-ig-';
-const _kWhatsAppIdentifier = 'whatsapp';
+const _kWhatsAppStatusOutletId = 'autobus-wa-status';
+const _kWhatsAppStatusGreen = Color(0xFF25D366);
 
 enum MarketingContentType { pictures, videos, text }
 
@@ -2681,7 +2682,12 @@ class _SelectOutletPageState extends State<_SelectOutletPage> {
     }
     if (mounted) {
       setState(() {
-        _postizIntegrations = postiz.where((p) => p.isActive).toList();
+        _postizIntegrations = postiz
+            .where(
+              (p) =>
+                  p.isActive && p.identifier.toLowerCase() != 'whatsapp',
+            )
+            .toList();
         _blotatoAccounts = blotato;
         _loadingAccounts = false;
       });
@@ -2722,11 +2728,156 @@ class _SelectOutletPageState extends State<_SelectOutletPage> {
     );
   }
 
+  void _toggleOutlet(String id) {
+    setState(() {
+      if (widget.campaign.selectedOutlets.contains(id)) {
+        widget.campaign.selectedOutlets.remove(id);
+      } else {
+        widget.campaign.selectedOutlets.add(id);
+      }
+    });
+  }
+
+  Widget _outletTile({
+    required String id,
+    required String label,
+    String? subtitle,
+    required FaIconData icon,
+    required Color color,
+    Widget? avatar,
+  }) {
+    final sel = widget.campaign.selectedOutlets.contains(id);
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _toggleOutlet(id),
+        borderRadius: BorderRadius.circular(12),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          height: 64,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            color: sel ? _kSelectGreen.withValues(alpha: 0.06) : Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: sel ? _kSelectGreen : Colors.grey.shade200,
+              width: sel ? 2 : 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              avatar ??
+                  SizedBox(
+                    width: 36,
+                    height: 36,
+                    child: Center(
+                      child: FaIcon(icon, size: 20, color: color),
+                    ),
+                  ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: GoogleFonts.montserrat(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    if (subtitle != null && subtitle.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.montserrat(
+                          fontSize: 11,
+                          color: Colors.black45,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              AnimatedOpacity(
+                duration: const Duration(milliseconds: 150),
+                opacity: sel ? 1 : 0,
+                child: const Icon(
+                  Icons.check_circle_rounded,
+                  color: _kSelectGreen,
+                  size: 22,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _connectedOutletTiles() {
+    final tiles = <Widget>[];
+    if (_usePostiz) {
+      for (final p in _postizIntegrations) {
+        final outlet = _outletFor(p);
+        final accountName = p.name.trim().isNotEmpty
+            ? p.name.trim()
+            : (p.profile?.trim() ?? '');
+        final pic = p.picture?.trim();
+        tiles.add(
+          _outletTile(
+            id: p.id,
+            label: outlet?.label ??
+                (p.identifier.isNotEmpty ? p.identifier : 'Channel'),
+            subtitle: accountName.isNotEmpty ? accountName : null,
+            icon: outlet?.icon ?? FontAwesomeIcons.globe,
+            color: outlet?.iconColor ?? _kPurple,
+            avatar: pic != null &&
+                    (pic.startsWith('http://') || pic.startsWith('https://'))
+                ? CircleAvatar(
+                    radius: 16,
+                    backgroundImage: NetworkImage(pic),
+                    onBackgroundImageError: (_, __) {},
+                  )
+                : null,
+          ),
+        );
+      }
+    } else if (_useBlotato) {
+      for (final acct in _blotatoAccounts) {
+        final id = (acct['id'] ?? '').toString();
+        if (id.isEmpty) continue;
+        tiles.add(
+          _outletTile(
+            id: id,
+            label: (acct['platform'] ?? 'Account').toString(),
+            subtitle: (acct['account_name'] ?? '').toString().trim(),
+            icon: FontAwesomeIcons.link,
+            color: _kPurple,
+          ),
+        );
+      }
+    }
+    return tiles;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final useConnected = !_loadingAccounts && (_usePostiz || _useBlotato);
-    final gridCount =
-        _usePostiz ? _postizIntegrations.length : _blotatoAccounts.length;
+    final connectedTiles = _connectedOutletTiles();
+    final tiles = <Widget>[
+      _outletTile(
+        id: _kWhatsAppStatusOutletId,
+        label: 'WhatsApp Status',
+        subtitle: 'Share from WhatsApp on this phone',
+        icon: FontAwesomeIcons.whatsapp,
+        color: _kWhatsAppStatusGreen,
+      ),
+      ...connectedTiles,
+    ];
 
     return _MarketingScaffold(
       child: Column(
@@ -2741,7 +2892,7 @@ class _SelectOutletPageState extends State<_SelectOutletPage> {
           ),
           const SizedBox(height: 6),
           Text(
-            'Choose where to publish. Linked Instagram, TikTok, and YouTube appear here.',
+            'WhatsApp Status is always available and shares from the WhatsApp app on this phone. Linked Instagram, TikTok, and YouTube also appear here.',
             textAlign: TextAlign.center,
             style: GoogleFonts.montserrat(
               fontSize: 12,
@@ -2752,186 +2903,43 @@ class _SelectOutletPageState extends State<_SelectOutletPage> {
           const SizedBox(height: 18),
           if (_loadingAccounts)
             const Expanded(child: Center(child: AutobusLoadingIndicator()))
-          else if (!useConnected)
-            Expanded(
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.link_off,
-                        size: 48,
-                        color: Colors.grey.shade400,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'No Social Media linked yet. Use Link Social Media to connect your channels; they will appear here for publishing.',
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.montserrat(
-                          fontSize: 13,
-                          color: Colors.black54,
-                          height: 1.4,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      _DarkButton(
-                        label: 'Open Link Social Media',
-                        compact: true,
-                        onTap: () async {
-                          await Navigator.of(context).push(
-                            MaterialPageRoute<void>(
-                              builder: (_) => const ManageOutlets(),
-                            ),
-                          );
-                          if (mounted) {
-                            setState(() => _loadingAccounts = true);
-                            await _loadAccounts();
-                          }
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            )
           else
             Expanded(
               child: ListView.separated(
-                itemCount: gridCount,
+                itemCount: tiles.length + (connectedTiles.isEmpty ? 1 : 0),
                 separatorBuilder: (_, __) => const SizedBox(height: 10),
                 itemBuilder: (_, i) {
-                  final String id;
-                  final String label;
-                  final String? subtitle;
-                  final Color color;
-                  final FaIconData icon;
-                  final Widget? avatar;
-
-                  if (_usePostiz) {
-                    final p = _postizIntegrations[i];
-                    final outlet = _outletFor(p);
-                    id = p.id;
-                    label = outlet?.label ??
-                        (p.identifier.isNotEmpty
-                            ? p.identifier
-                            : 'Channel');
-                    final accountName = p.name.trim().isNotEmpty
-                        ? p.name.trim()
-                        : (p.profile?.trim() ?? '');
-                    subtitle =
-                        accountName.isNotEmpty ? accountName : null;
-                    icon = outlet?.icon ?? FontAwesomeIcons.globe;
-                    color = outlet?.iconColor ?? _kPurple;
-                    final pic = p.picture?.trim();
-                    avatar = pic != null &&
-                            (pic.startsWith('http://') ||
-                                pic.startsWith('https://'))
-                        ? CircleAvatar(
-                            radius: 16,
-                            backgroundImage: NetworkImage(pic),
-                            onBackgroundImageError: (_, __) {},
-                          )
-                        : null;
-                  } else {
-                    final acct = _blotatoAccounts[i];
-                    id = acct['id'] as String? ?? '';
-                    label = (acct['platform'] ?? 'Account').toString();
-                    subtitle =
-                        (acct['account_name'] ?? '').toString().trim();
-                    icon = FontAwesomeIcons.link;
-                    color = _kPurple;
-                    avatar = null;
-                  }
-
-                  final sel =
-                      widget.campaign.selectedOutlets.contains(id);
-
-                  return Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: () => setState(
-                        () => sel
-                            ? widget.campaign.selectedOutlets.remove(id)
-                            : widget.campaign.selectedOutlets.add(id),
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 180),
-                        height: 64,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                        ),
-                        decoration: BoxDecoration(
-                          color: sel
-                              ? _kSelectGreen.withValues(alpha: 0.06)
-                              : Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: sel
-                                ? _kSelectGreen
-                                : Colors.grey.shade200,
-                            width: sel ? 2 : 1,
+                  if (i < tiles.length) return tiles[i];
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Column(
+                      children: [
+                        Text(
+                          'Link other channels in Link Social Media to publish them from Autobus.',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.montserrat(
+                            fontSize: 12,
+                            color: Colors.black45,
+                            height: 1.4,
                           ),
                         ),
-                        child: Row(
-                          children: [
-                            avatar ??
-                                SizedBox(
-                                  width: 36,
-                                  height: 36,
-                                  child: Center(
-                                    child: FaIcon(
-                                      icon,
-                                      size: 20,
-                                      color: color,
-                                    ),
-                                  ),
-                                ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    label,
-                                    style: GoogleFonts.montserrat(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.black87,
-                                    ),
-                                  ),
-                                  if (subtitle != null &&
-                                      subtitle.isNotEmpty) ...[
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      subtitle,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: GoogleFonts.montserrat(
-                                        fontSize: 11,
-                                        color: Colors.black45,
-                                      ),
-                                    ),
-                                  ],
-                                ],
+                        const SizedBox(height: 12),
+                        _DarkButton(
+                          label: 'Open Link Social Media',
+                          compact: true,
+                          onTap: () async {
+                            await Navigator.of(context).push(
+                              MaterialPageRoute<void>(
+                                builder: (_) => const ManageOutlets(),
                               ),
-                            ),
-                            AnimatedOpacity(
-                              duration: const Duration(milliseconds: 150),
-                              opacity: sel ? 1 : 0,
-                              child: const Icon(
-                                Icons.check_circle_rounded,
-                                color: _kSelectGreen,
-                                size: 22,
-                              ),
-                            ),
-                          ],
+                            );
+                            if (mounted) {
+                              setState(() => _loadingAccounts = true);
+                              await _loadAccounts();
+                            }
+                          },
                         ),
-                      ),
+                      ],
                     ),
                   );
                 },
@@ -3335,6 +3343,20 @@ class _PostDetailsPageState extends State<_PostDetailsPage> {
   @override
   Widget build(BuildContext context) {
     final postizCards = <Widget>[];
+    if (widget.campaign.selectedOutlets.contains(_kWhatsAppStatusOutletId)) {
+      postizCards.add(
+        _outletCard(
+          id: _kWhatsAppStatusOutletId,
+          label: 'WhatsApp Status',
+          subtitle: 'Share from WhatsApp on this phone',
+          icon: FontAwesomeIcons.whatsapp,
+          color: _kWhatsAppStatusGreen,
+          kind: PlatformDetailsKind.generic,
+          autobusIg: false,
+          whatsAppStatus: true,
+        ),
+      );
+    }
     for (final p in _selectedPostiz) {
       final outlet = _outletFor(p);
       final label = outlet?.label ??
@@ -3352,7 +3374,7 @@ class _PostDetailsPageState extends State<_PostDetailsPage> {
           color: outlet?.iconColor ?? _kPurple,
           kind: platformDetailsKindFor(p.identifier),
           autobusIg: autobusIg,
-          whatsAppStatus: _isWhatsAppStatusIntegration(p),
+          whatsAppStatus: false,
         ),
       );
     }
@@ -3463,8 +3485,8 @@ class _PostDetailsPageState extends State<_PostDetailsPage> {
     return fallback;
   }
 
-  bool _isWhatsAppStatusIntegration(PostizIntegration integration) {
-    return integration.identifier.toLowerCase() == _kWhatsAppIdentifier;
+  bool _isWhatsAppStatusSelected() {
+    return widget.campaign.selectedOutlets.contains(_kWhatsAppStatusOutletId);
   }
 
   String _shareFileExtension(
@@ -3542,10 +3564,8 @@ class _PostDetailsPageState extends State<_PostDetailsPage> {
   }
 
   Future<bool> _shareToWhatsAppStatus({
-    required List<PostizIntegration> integrations,
     required String fallbackCaption,
   }) async {
-    if (integrations.isEmpty) return false;
     if (kIsWeb || !(Platform.isAndroid || Platform.isIOS)) {
       throw Exception(
         'WhatsApp Status sharing is available on Android and iPhone only.',
@@ -3560,10 +3580,12 @@ class _PostDetailsPageState extends State<_PostDetailsPage> {
       if (file != null) files.add(file);
     }
 
-    final primary = integrations.first;
-    final caption = _captionForOutlet(primary.id, fallbackCaption).trim();
+    final caption =
+        _captionForOutlet(_kWhatsAppStatusOutletId, fallbackCaption).trim();
     if (files.isEmpty && caption.isEmpty) {
-      throw Exception('Add text, image, or video before sharing to WhatsApp Status.');
+      throw Exception(
+        'Add text, image, or video before sharing to WhatsApp Status.',
+      );
     }
 
     final result = await SharePlus.instance.share(
@@ -3617,20 +3639,12 @@ class _PostDetailsPageState extends State<_PostDetailsPage> {
           .map((id) => id.substring(_kAutobusIgPrefix.length))
           .where((id) => id.isNotEmpty)
           .toList();
-      final whatsAppStatusIntegrations = _selectedPostiz
-          .where(
-            (p) =>
-                selectedIds.contains(p.id) &&
-                _isWhatsAppStatusIntegration(p),
-          )
-          .toList();
-      final whatsAppStatusIds =
-          whatsAppStatusIntegrations.map((p) => p.id).toSet();
+      final shareWhatsAppStatus = _isWhatsAppStatusSelected();
       final postizIds = selectedIds
           .where(
             (id) =>
                 !id.startsWith(_kAutobusIgPrefix) &&
-                !whatsAppStatusIds.contains(id),
+                id != _kWhatsAppStatusOutletId,
           )
           .toList();
       final needsUploadedMedia = igIds.isNotEmpty || postizIds.isNotEmpty;
@@ -3719,10 +3733,9 @@ class _PostDetailsPageState extends State<_PostDetailsPage> {
         }
       }
 
-      if (whatsAppStatusIntegrations.isNotEmpty) {
+      if (shareWhatsAppStatus) {
         _setStatus('Opening WhatsApp share sheet…');
         sharedWhatsAppStatus = await _shareToWhatsAppStatus(
-          integrations: whatsAppStatusIntegrations,
           fallbackCaption: textContent,
         );
         if (!sharedWhatsAppStatus) {
@@ -3773,7 +3786,7 @@ class _PostDetailsPageState extends State<_PostDetailsPage> {
           scheduleTime: scheduleTime,
         );
         publishedCount += postizIds.length;
-      } else if (igIds.isEmpty) {
+      } else if (igIds.isEmpty && !shareWhatsAppStatus) {
         throw Exception(
           'Connect an outlet in Marketing → Link Social Media, then try again.',
         );
