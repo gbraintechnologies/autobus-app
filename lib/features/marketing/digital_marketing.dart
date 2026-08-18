@@ -7,7 +7,10 @@ import 'package:autobus/features/marketing/platform_post_details.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:video_player/video_player.dart';
 
 const _kPrimary = Color(0xFF1A1A2E);
@@ -17,6 +20,7 @@ const _kNextButtonPurple = Color(0xFF2A1447);
 const _kPurple = Color(0xFF6C63FF);
 const _kSelectGreen = Color(0xFF22C55E);
 const _kAutobusIgPrefix = 'autobus-ig-';
+const _kWhatsAppIdentifier = 'whatsapp';
 
 enum MarketingContentType { pictures, videos, text }
 
@@ -3230,14 +3234,16 @@ class _PostDetailsPageState extends State<_PostDetailsPage> {
     );
   }
 
-  Widget _genericFields(PlatformPostDetails d) {
+  Widget _genericFields(PlatformPostDetails d, {bool whatsAppStatus = false}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _captionField(d),
         const SizedBox(height: 8),
         Text(
-          'This channel uses caption and media. Extra options are not required.',
+          whatsAppStatus
+              ? 'Autobus will open your phone share sheet so you can post this to WhatsApp Status manually.'
+              : 'This channel uses caption and media. Extra options are not required.',
           style: GoogleFonts.montserrat(fontSize: 11, color: Colors.black45),
         ),
       ],
@@ -3252,6 +3258,7 @@ class _PostDetailsPageState extends State<_PostDetailsPage> {
     required Color color,
     required PlatformDetailsKind kind,
     required bool autobusIg,
+    bool whatsAppStatus = false,
   }) {
     final expanded = _expanded[id] ?? true;
     final d = _detailsFor(id);
@@ -3315,7 +3322,10 @@ class _PostDetailsPageState extends State<_PostDetailsPage> {
                       ? _tiktokFields(d)
                       : kind == PlatformDetailsKind.instagram
                           ? _instagramFields(d, autobusOnly: autobusIg)
-                          : _genericFields(d),
+                          : _genericFields(
+                              d,
+                              whatsAppStatus: whatsAppStatus,
+                            ),
             ),
         ],
       ),
@@ -3342,6 +3352,7 @@ class _PostDetailsPageState extends State<_PostDetailsPage> {
           color: outlet?.iconColor ?? _kPurple,
           kind: platformDetailsKindFor(p.identifier),
           autobusIg: autobusIg,
+          whatsAppStatus: _isWhatsAppStatusIntegration(p),
         ),
       );
     }
@@ -3452,6 +3463,119 @@ class _PostDetailsPageState extends State<_PostDetailsPage> {
     return fallback;
   }
 
+  bool _isWhatsAppStatusIntegration(PostizIntegration integration) {
+    return integration.identifier.toLowerCase() == _kWhatsAppIdentifier;
+  }
+
+  String _shareFileExtension(
+    MarketingContent content, {
+    String? sourceName,
+    String? mimeType,
+  }) {
+    final candidate = (sourceName ?? '').trim().toLowerCase();
+    final dot = candidate.lastIndexOf('.');
+    if (dot >= 0 && dot < candidate.length - 1) {
+      return candidate.substring(dot);
+    }
+
+    final mime = (mimeType ?? '').trim().toLowerCase();
+    if (mime == 'image/png') return '.png';
+    if (mime == 'image/webp') return '.webp';
+    if (mime == 'image/gif') return '.gif';
+    if (mime == 'video/quicktime') return '.mov';
+    if (mime.startsWith('video/')) return '.mp4';
+    return content.type == MarketingContentType.videos ? '.mp4' : '.jpg';
+  }
+
+  Future<XFile?> _materializeShareFile(
+    MarketingContent content,
+    int index,
+  ) async {
+    final localPath = content.localFilePath?.trim();
+    if (!kIsWeb && localPath != null && localPath.isNotEmpty) {
+      final file = File(localPath);
+      if (await file.exists() && await file.length() > 0) {
+        return XFile(file.path);
+      }
+    }
+
+    final bytes = content.generatedBytes;
+    if (bytes != null && bytes.isNotEmpty) {
+      final ext = _shareFileExtension(
+        content,
+        sourceName: content.generatedResult,
+        mimeType: content.generatedResult,
+      );
+      final tempDir = await getTemporaryDirectory();
+      final path =
+          '${tempDir.path}${Platform.pathSeparator}autobus-share-$index$ext';
+      final file = File(path);
+      await file.writeAsBytes(bytes, flush: true);
+      return XFile(file.path);
+    }
+
+    final remote = content.generatedResult?.trim() ?? '';
+    if (remote.startsWith('http://') || remote.startsWith('https://')) {
+      final response = await http.get(Uri.parse(remote));
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw Exception(
+          'Could not prepare media for WhatsApp Status (${response.statusCode}).',
+        );
+      }
+      final remoteUri = Uri.parse(remote);
+      final ext = _shareFileExtension(
+        content,
+        sourceName: remoteUri.pathSegments.isNotEmpty
+            ? remoteUri.pathSegments.last
+            : null,
+        mimeType: response.headers['content-type'],
+      );
+      final tempDir = await getTemporaryDirectory();
+      final path =
+          '${tempDir.path}${Platform.pathSeparator}autobus-share-$index$ext';
+      final file = File(path);
+      await file.writeAsBytes(response.bodyBytes, flush: true);
+      return XFile(file.path);
+    }
+
+    return null;
+  }
+
+  Future<bool> _shareToWhatsAppStatus({
+    required List<PostizIntegration> integrations,
+    required String fallbackCaption,
+  }) async {
+    if (integrations.isEmpty) return false;
+    if (kIsWeb || !(Platform.isAndroid || Platform.isIOS)) {
+      throw Exception(
+        'WhatsApp Status sharing is available on Android and iPhone only.',
+      );
+    }
+
+    final files = <XFile>[];
+    var fileIndex = 0;
+    for (final content in widget.campaign.contents) {
+      if (content.type == MarketingContentType.text) continue;
+      final file = await _materializeShareFile(content, fileIndex++);
+      if (file != null) files.add(file);
+    }
+
+    final primary = integrations.first;
+    final caption = _captionForOutlet(primary.id, fallbackCaption).trim();
+    if (files.isEmpty && caption.isEmpty) {
+      throw Exception('Add text, image, or video before sharing to WhatsApp Status.');
+    }
+
+    final result = await SharePlus.instance.share(
+      ShareParams(
+        title: 'Share to WhatsApp Status',
+        text: caption.isEmpty ? null : caption,
+        files: files.isEmpty ? null : files,
+      ),
+    );
+    return result.status != ShareResultStatus.dismissed;
+  }
+
   Future<void> _publish() async {
     final selectedIds = widget.campaign.selectedOutlets.toList();
     if (selectedIds.isEmpty || _publishing) return;
@@ -3488,66 +3612,83 @@ class _PostDetailsPageState extends State<_PostDetailsPage> {
     final textContent = widget.campaign.campaignCaption;
 
     try {
-      _setStatus('Uploading media…');
-      final mediaUrls = <String>[];
-      for (final c in widget.campaign.contents) {
-        if (c.type == MarketingContentType.text) continue;
-
-        final existing = c.generatedResult?.trim();
-        if (existing != null &&
-            existing.isNotEmpty &&
-            (existing.startsWith('http://') ||
-                existing.startsWith('https://'))) {
-          mediaUrls.add(existing);
-          continue;
-        }
-
-        final localPath = c.localFilePath?.trim();
-        if (!kIsWeb && localPath != null && localPath.isNotEmpty) {
-          try {
-            final file = File(localPath);
-            if (await file.exists() && await file.length() > 0) {
-              final url = await _apiService.uploadFile(
-                file: file,
-                filename: file.uri.pathSegments.isNotEmpty
-                    ? file.uri.pathSegments.last
-                    : null,
-              );
-              mediaUrls.add(url);
-              continue;
-            }
-          } catch (_) {
-            // Fall through to bytes upload if available.
-          }
-        }
-
-        final bytes = c.generatedBytes;
-        if (bytes != null && bytes.isNotEmpty) {
-          final filename = c.type == MarketingContentType.videos
-              ? 'marketing-video.mp4'
-              : (c.generatedResult?.trim().isNotEmpty == true
-                    ? c.generatedResult!.trim()
-                    : 'marketing-image.jpg');
-          final url = await _apiService.uploadFileBytes(
-            fileBytes: bytes,
-            filename: filename,
-          );
-          mediaUrls.add(url);
-        }
-      }
-
       final igIds = selectedIds
           .where((id) => id.startsWith(_kAutobusIgPrefix))
           .map((id) => id.substring(_kAutobusIgPrefix.length))
           .where((id) => id.isNotEmpty)
           .toList();
-      final postizIds =
-          selectedIds.where((id) => !id.startsWith(_kAutobusIgPrefix)).toList();
+      final whatsAppStatusIntegrations = _selectedPostiz
+          .where(
+            (p) =>
+                selectedIds.contains(p.id) &&
+                _isWhatsAppStatusIntegration(p),
+          )
+          .toList();
+      final whatsAppStatusIds =
+          whatsAppStatusIntegrations.map((p) => p.id).toSet();
+      final postizIds = selectedIds
+          .where(
+            (id) =>
+                !id.startsWith(_kAutobusIgPrefix) &&
+                !whatsAppStatusIds.contains(id),
+          )
+          .toList();
+      final needsUploadedMedia = igIds.isNotEmpty || postizIds.isNotEmpty;
+      final mediaUrls = <String>[];
+      if (needsUploadedMedia) {
+        _setStatus('Uploading media…');
+        for (final c in widget.campaign.contents) {
+          if (c.type == MarketingContentType.text) continue;
+
+          final existing = c.generatedResult?.trim();
+          if (existing != null &&
+              existing.isNotEmpty &&
+              (existing.startsWith('http://') ||
+                  existing.startsWith('https://'))) {
+            mediaUrls.add(existing);
+            continue;
+          }
+
+          final localPath = c.localFilePath?.trim();
+          if (!kIsWeb && localPath != null && localPath.isNotEmpty) {
+            try {
+              final file = File(localPath);
+              if (await file.exists() && await file.length() > 0) {
+                final url = await _apiService.uploadFile(
+                  file: file,
+                  filename: file.uri.pathSegments.isNotEmpty
+                      ? file.uri.pathSegments.last
+                      : null,
+                );
+                mediaUrls.add(url);
+                continue;
+              }
+            } catch (_) {
+              // Fall through to bytes upload if available.
+            }
+          }
+
+          final bytes = c.generatedBytes;
+          if (bytes != null && bytes.isNotEmpty) {
+            final filename = c.type == MarketingContentType.videos
+                ? 'marketing-video.mp4'
+                : (c.generatedResult?.trim().isNotEmpty == true
+                      ? c.generatedResult!.trim()
+                      : 'marketing-image.jpg');
+            final url = await _apiService.uploadFileBytes(
+              fileBytes: bytes,
+              filename: filename,
+            );
+            mediaUrls.add(url);
+          }
+        }
+      }
 
       final scheduleTime =
           widget.campaign.scheduledDate?.toUtc().toIso8601String();
 
       var publishedCount = 0;
+      var sharedWhatsAppStatus = false;
       final errors = <String>[];
 
       if (igIds.isNotEmpty) {
@@ -3575,6 +3716,17 @@ class _PostDetailsPageState extends State<_PostDetailsPage> {
               'Instagram: ${e.toString().replaceFirst('Exception: ', '')}',
             );
           }
+        }
+      }
+
+      if (whatsAppStatusIntegrations.isNotEmpty) {
+        _setStatus('Opening WhatsApp share sheet…');
+        sharedWhatsAppStatus = await _shareToWhatsAppStatus(
+          integrations: whatsAppStatusIntegrations,
+          fallbackCaption: textContent,
+        );
+        if (!sharedWhatsAppStatus) {
+          errors.add('WhatsApp Status share was dismissed.');
         }
       }
 
@@ -3633,11 +3785,26 @@ class _PostDetailsPageState extends State<_PostDetailsPage> {
         throw Exception(errors.join('\n'));
       }
 
+      final publishedMessage = widget.campaign.postRightAway
+          ? 'Published to $publishedCount channel(s)'
+          : 'Scheduled / published for $publishedCount channel(s)';
+      final successParts = <String>[];
+      if (publishedCount > 0) {
+        successParts.add(publishedMessage);
+      }
+      if (sharedWhatsAppStatus) {
+        successParts.add(
+          widget.campaign.postRightAway
+              ? 'Opened WhatsApp Status share'
+              : 'Opened WhatsApp Status share now (manual step)',
+        );
+      }
+      if (successParts.isEmpty && errors.isEmpty) {
+        successParts.add('Opened the share flow.');
+      }
       final successMsg = errors.isEmpty
-          ? (widget.campaign.postRightAway
-                ? 'Published to $publishedCount channel(s)'
-                : 'Scheduled / published for $publishedCount channel(s)')
-          : 'Published to $publishedCount channel(s). Some failed: ${errors.join('; ')}';
+          ? successParts.join('. ')
+          : '${successParts.join('. ')}. Some failed: ${errors.join('; ')}';
 
       messenger.showSnackBar(
         SnackBar(

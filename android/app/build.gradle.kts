@@ -1,6 +1,5 @@
 import java.util.Properties
 import java.io.FileInputStream
-import java.io.FileOutputStream
 
 plugins {
     id("com.android.application")
@@ -21,16 +20,34 @@ if (versionPropertiesFile.exists()) {
     versionProperties.load(FileInputStream(versionPropertiesFile))
 }
 
-var appVersionCode = versionProperties
+val storedVersionCode = versionProperties
     .getProperty("VERSION_CODE", flutter.versionCode.toString())
     .toInt()
 
-val isReleaseBuild = gradle.startParameter.taskNames.any {
-    it.contains("release", ignoreCase = true)
+// Flutter invokes `bundleRelease` for `flutter build appbundle`. Matching any
+// task that merely contains "release" also bumped the file during
+// `flutter run --release` / APK builds, while the AAB kept the old code.
+val isBundleReleaseBuild = gradle.startParameter.taskNames.any {
+    it.contains("bundleRelease", ignoreCase = true)
 }
-if (isReleaseBuild) {
-    versionProperties.setProperty("VERSION_CODE", (appVersionCode + 1).toString())
-    versionProperties.store(FileOutputStream(versionPropertiesFile), null)
+
+val appVersionCode: Int = run {
+    val extras = rootProject.extensions.extraProperties
+    if (extras.has("autobusVersionCode")) {
+        extras.get("autobusVersionCode") as Int
+    } else if (isBundleReleaseBuild) {
+        val next = storedVersionCode + 1
+        versionProperties.setProperty("VERSION_CODE", next.toString())
+        versionPropertiesFile.outputStream().use { stream ->
+            versionProperties.store(stream, "Android versionCode; bumped on bundleRelease")
+        }
+        extras.set("autobusVersionCode", next)
+        logger.warn("Bumping Android versionCode to $next for Play Store AAB")
+        next
+    } else {
+        extras.set("autobusVersionCode", storedVersionCode)
+        storedVersionCode
+    }
 }
 
 android {
@@ -88,4 +105,13 @@ android {
 
 flutter {
     source = "../.."
+}
+
+// AGP 8+ can ignore defaultConfig.versionCode on some outputs; pin it on every variant.
+androidComponents {
+    onVariants { variant ->
+        variant.outputs.forEach { output ->
+            output.versionCode.set(appVersionCode)
+        }
+    }
 }

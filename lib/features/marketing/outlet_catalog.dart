@@ -69,7 +69,7 @@ class OutletCatalog {
       icon: FontAwesomeIcons.instagram,
       iconColor: Color(0xFFDD2A7B),
       postizIdentifiers: {'instagram', 'instagram-standalone'},
-      connectSlug: 'instagram',
+      connectSlug: 'instagram', // Autobus Business Login (inbox + posting)
     ),
     OutletOption(
       label: 'YouTube',

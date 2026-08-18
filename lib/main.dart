@@ -15,9 +15,15 @@ void main() async {
   await AppConfig.init();
   print('✓ AppConfig initialized');
 
-  // Initialize Google Fonts
-  await GoogleFonts.pendingFonts([GoogleFonts.montserrat()]);
-  print('✓ Google Fonts loaded');
+  // Don't block first frame on font CDN or StoreKit/Keychain.
+  try {
+    await GoogleFonts.pendingFonts([
+      GoogleFonts.montserrat(),
+    ]).timeout(const Duration(seconds: 2));
+    print('✓ Google Fonts loaded');
+  } catch (_) {
+    print('⚠ Google Fonts timed out; using fallback');
+  }
 
   // Initialize session handling services
   _tokenService = TokenService();
@@ -28,9 +34,6 @@ void main() async {
   _apiService = ApiService(httpClient: _httpClient);
 
   _paystackService = PaystackService();
-  if (AppleIapIds.isSupported) {
-    await AppleIapService.instance.start(api: _apiService);
-  }
   print('✓ Services initialized');
 
   // Create blocs
@@ -60,6 +63,9 @@ void main() async {
       ),
     ),
   );
+  if (AppleIapIds.isSupported) {
+    unawaited(AppleIapService.instance.start(api: _apiService));
+  }
   print('=== APP INITIALIZED ===');
 }
 

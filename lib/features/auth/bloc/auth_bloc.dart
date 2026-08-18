@@ -539,10 +539,12 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     Emitter<AuthState> emit,
   ) async {
     try {
-      final hasValidSession = await tokenService.hasValidSession();
+      final hasValidSession = await tokenService
+          .hasValidSession()
+          .timeout(const Duration(seconds: 3), onTimeout: () => false);
 
       if (!hasValidSession) {
-        emit(SessionExpired());
+        emit(const Unauthenticated());
         return;
       }
 
@@ -567,12 +569,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         final user = json.decode(userString);
         emit(Authenticated(user: user));
       } else {
-        emit(Unauthenticated());
+        emit(const Unauthenticated());
       }
     } catch (e) {
-      emit(
-        AuthError(message: 'Session check failed: $e', source: 'check_session'),
-      );
+      emit(const Unauthenticated());
     }
   }
 }

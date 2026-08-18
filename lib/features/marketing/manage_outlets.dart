@@ -92,6 +92,9 @@ class _ManageOutletsState extends State<ManageOutlets> {
       context,
       label: outlet.label,
       fetchSession: () {
+        if (connectSlug == 'instagram') {
+          return api.getInstagramConnectSession();
+        }
         if (connectSlug != null && connectSlug.isNotEmpty) {
           return api.initiateSocialConnect(connectSlug);
         }
@@ -386,7 +389,7 @@ class _ManageOutletsState extends State<ManageOutlets> {
                                   ),
                                   const SizedBox(height: 12),
                                   Text(
-                                    'Linking opens Facebook, Instagram, TikTok, YouTube, or WhatsApp in your device browser. Finish there, then return here and pull to refresh.',
+                                    'Instagram uses Business Login for inbox and posting. Facebook, TikTok, YouTube, and WhatsApp open in your device browser. Finish there, then return here and pull to refresh.',
                                     textAlign: TextAlign.center,
                                     style: GoogleFonts.montserrat(
                                       color: Colors.white.withValues(alpha: 0.65),

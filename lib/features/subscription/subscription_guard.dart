@@ -156,7 +156,13 @@ class SubscriptionGuard extends StatelessWidget {
   Widget build(BuildContext context) {
     print('=== SUBSCRIPTION GUARD BUILDING ===');
     return FutureBuilder<({bool subscribed, String email})>(
-      future: _resolve(context),
+      future: _resolve(context).timeout(
+        const Duration(seconds: 8),
+        onTimeout: () => (
+          subscribed: _isSubscribedFromUser(user),
+          email: _extractEmail(user),
+        ),
+      ),
       builder: (context, snap) {
         print(
           'ConnectionState: ${snap.connectionState}, hasData: ${snap.hasData}',
