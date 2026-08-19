@@ -85,6 +85,8 @@ class _ResetPasswordState extends State<ResetPassword> {
                 } else {
                   focusNodes[index].unfocus();
                 }
+              } else if (val.isEmpty && index > 0) {
+                focusNodes[index - 1].requestFocus();
               }
             },
             onTap: () {

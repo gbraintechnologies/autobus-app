@@ -270,6 +270,10 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
         ).then((_) => _loadSubscriptionSummary());
       }),
+      if (AppleIapIds.isIosApp)
+        SettingsMenuItem("Manage Subscriptions", Icons.open_in_new, () {
+          openManageSubscriptionsWebsite();
+        }),
       SettingsMenuItem("Notifications", Icons.notifications_none, () {
         Navigator.push(
           context,

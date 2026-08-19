@@ -145,7 +145,16 @@ class SubscriptionGuard extends StatelessWidget {
       } catch (_) {}
     }
 
-    // 3) Fallback: if the app previously completed a subscribe flow on this
+    // 3) iOS: App Store subscriptions are under review, so grant the
+    // complimentary Free plan and skip in-app purchase.
+    if (AppleIapIds.isIosApp) {
+      try {
+        await api.enrollIosFreePlan();
+      } catch (_) {}
+      return (subscribed: true, email: resolvedEmail);
+    }
+
+    // 4) Fallback: if the app previously completed a subscribe flow on this
     // device, it stores the selection.
     final (planId, _) = await SubscriptionStorage().loadSelection();
     final subscribed = planId != null && planId.trim().isNotEmpty;
@@ -159,7 +168,7 @@ class SubscriptionGuard extends StatelessWidget {
       future: _resolve(context).timeout(
         const Duration(seconds: 8),
         onTimeout: () => (
-          subscribed: _isSubscribedFromUser(user),
+          subscribed: AppleIapIds.isIosApp || _isSubscribedFromUser(user),
           email: _extractEmail(user),
         ),
       ),

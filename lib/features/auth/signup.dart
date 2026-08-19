@@ -144,8 +144,6 @@ class _SignupState extends State<Signup> {
                   _pinFocusNodes[index].unfocus();
                 }
               } else if (val.isEmpty && index > 0) {
-                // Handle backspace: move focus to previous field and clear it
-                _pinControllers[index - 1].clear();
                 _pinFocusNodes[index - 1].requestFocus();
               }
             },

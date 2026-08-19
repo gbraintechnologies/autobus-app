@@ -14,7 +14,6 @@ class _ManageChatsState extends State<ManageChats> {
 
   bool _chatwootConfigured = false;
   bool _subscriptionActive = false;
-  bool _inboxesFetchFailed = false;
 
   String _shortError(String raw, {int max = 160}) {
     final t = raw.trim();
@@ -27,40 +26,22 @@ class _ManageChatsState extends State<ManageChats> {
     setState(() {
       _loading = true;
       _statusError = null;
-      _inboxesFetchFailed = false;
     });
     try {
       final api = context.read<ApiService>();
       final status = await api.getChatwootStatus();
       if (!mounted) return;
 
-      final configured = status['chatwoot_configured'] as bool? ?? false;
-      final provisioned = status['chatwoot_provisioned'] as bool? ?? false;
-      final subActive = status['subscription_active'] as bool? ?? false;
-
-      var inboxFailed = false;
-
-      if (configured && provisioned && subActive) {
-        try {
-          await api.getChatwootInboxTotal();
-        } catch (_) {
-          inboxFailed = true;
-        }
-      }
-
-      if (!mounted) return;
       setState(() {
         _loading = false;
-        _chatwootConfigured = configured;
-        _subscriptionActive = subActive;
-        _inboxesFetchFailed = inboxFailed;
+        _chatwootConfigured = status['chatwoot_configured'] as bool? ?? false;
+        _subscriptionActive = status['subscription_active'] as bool? ?? false;
       });
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _loading = false;
         _statusError = e.toString();
-        _inboxesFetchFailed = false;
       });
     }
   }
@@ -186,38 +167,6 @@ class _ManageChatsState extends State<ManageChats> {
                               iconColor: Colors.amber.shade300,
                               child: Text(
                                 'An active subscription is required to link messaging channels in Chatwoot.',
-                                style: GoogleFonts.montserrat(
-                                  color: Colors.white.withValues(alpha: 0.88),
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w400,
-                                  height: 1.45,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 32),
-                          ] else if (_inboxesFetchFailed) ...[
-                            _ChatwootMessagePanel(
-                              backgroundColor: Colors.amber.withValues(
-                                alpha: 0.12,
-                              ),
-                              borderColor: Colors.amber.withValues(alpha: 0.45),
-                              icon: Icons.cloud_off_outlined,
-                              iconColor: Colors.amber.shade300,
-                              trailing: IconButton(
-                                onPressed: _loadChannelIntegrationState,
-                                icon: Icon(
-                                  Icons.refresh,
-                                  color: Colors.white.withValues(alpha: 0.85),
-                                  size: 22,
-                                ),
-                                padding: EdgeInsets.zero,
-                                constraints: const BoxConstraints(
-                                  minWidth: 32,
-                                  minHeight: 32,
-                                ),
-                              ),
-                              child: Text(
-                                'Could not load your Chatwoot inboxes. Pull to refresh after reconnecting.',
                                 style: GoogleFonts.montserrat(
                                   color: Colors.white.withValues(alpha: 0.88),
                                   fontSize: 12,

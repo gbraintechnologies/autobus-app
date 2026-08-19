@@ -7,6 +7,7 @@ class AppConfig {
   static late String paystackCallbackUrl;
   static late String privacyPolicyUrl;
   static late String termsOfServiceUrl;
+  static const String publicWebsiteUrl = 'https://useautobus.com';
 
   static Future<void> init() async {
     bool envLoaded = true;

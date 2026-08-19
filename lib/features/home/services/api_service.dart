@@ -128,6 +128,27 @@ class ApiService {
     return map;
   }
 
+  /// POST /api/v1/subscription/me/enroll-free — JWT.
+  /// Grants the complimentary Free plan (iOS / App Review).
+  Future<bool> enrollIosFreePlan() async {
+    final response = await httpClient.post(
+      Uri.parse('$baseUrl/subscription/me/enroll-free'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({}),
+    );
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      try {
+        final data = json.decode(response.body);
+        if (data is Map && data['success'] == false) return false;
+      } catch (_) {}
+      return true;
+    }
+    debugPrint(
+      'enrollIosFreePlan: failed (${response.statusCode}) ${response.body}',
+    );
+    return false;
+  }
+
   /// POST /api/v1/subscription/me/upgrade — JWT.
   Future<bool> upgradeMySubscription({
     required int newPlanId,

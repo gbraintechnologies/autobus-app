@@ -17,12 +17,21 @@ class _SignupOtpState extends State<SignupOtp> {
     return MultiBlocListener(
       listeners: [
         BlocListener<AuthBloc, AuthState>(
-          listener: (context, state) {
+          listener: (context, state) async {
             if (state is SignupOtpVerified) {
+              var nextScreen = 'subscribe';
+              if (AppleIapIds.isIosApp) {
+                try {
+                  await context.read<ApiService>().enrollIosFreePlan();
+                } catch (_) {}
+                nextScreen = 'welcome';
+                context.read<AuthBloc>().add(const CheckSessionEvent());
+              }
+              if (!context.mounted) return;
               context.read<SuccessBloc>().add(
                 ShowSuccessEvent(
                   message: 'Account verified successfully!',
-                  nextScreen: 'subscribe',
+                  nextScreen: nextScreen,
                 ),
               );
               Navigator.of(context).pushReplacement(

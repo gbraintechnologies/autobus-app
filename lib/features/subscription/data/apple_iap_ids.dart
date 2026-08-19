@@ -31,4 +31,10 @@ class AppleIapIds {
     return defaultTargetPlatform == TargetPlatform.iOS ||
         defaultTargetPlatform == TargetPlatform.macOS;
   }
+
+  /// iPhone / iPad app only. Used to skip in-app IAP until App Store review completes.
+  static bool get isIosApp {
+    if (kIsWeb) return false;
+    return defaultTargetPlatform == TargetPlatform.iOS;
+  }
 }

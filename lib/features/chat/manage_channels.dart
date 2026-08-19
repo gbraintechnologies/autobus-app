@@ -384,7 +384,7 @@ class _ChannelGrid extends StatelessWidget {
       crossAxisCount: 2,
       crossAxisSpacing: 16,
       mainAxisSpacing: 16,
-      childAspectRatio: 133 / 89,
+      childAspectRatio: 1.12,
       children: children,
     );
   }
@@ -412,6 +412,7 @@ class _ChannelCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
+        padding: const EdgeInsets.fromLTRB(12, 14, 12, 10),
         decoration: BoxDecoration(
           color: const Color(0xFF1A1333).withValues(alpha: 0.35),
           borderRadius: BorderRadius.circular(20),
@@ -422,57 +423,54 @@ class _ChannelCard extends StatelessWidget {
         ),
         child: Stack(
           children: [
-            Center(
-              child: IconTheme(
-                data: IconThemeData(color: iconColor, size: 40),
-                child: icon,
-              ),
+            Column(
+              children: [
+                Expanded(
+                  child: Center(
+                    child: IconTheme(
+                      data: IconThemeData(color: iconColor, size: 28),
+                      child: icon,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  label,
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.montserrat(
+                    color: Colors.white.withValues(alpha: 0.88),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                if (subtitle != null && subtitle!.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle!,
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.montserrat(
+                      color: Colors.white.withValues(alpha: 0.55),
+                      fontSize: 10,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                ],
+              ],
             ),
             if (isLinked)
               const Positioned(
-                top: 8,
-                right: 8,
+                top: 0,
+                right: 0,
                 child: Icon(
                   Icons.check_circle,
                   color: Color(0xFF22C55E),
                   size: 18,
                 ),
               ),
-            Positioned(
-              left: 8,
-              right: 8,
-              bottom: 8,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    label,
-                    textAlign: TextAlign.center,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.montserrat(
-                      color: Colors.white.withValues(alpha: 0.88),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  if (subtitle != null && subtitle!.isNotEmpty) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle!,
-                      textAlign: TextAlign.center,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.montserrat(
-                        color: Colors.white.withValues(alpha: 0.55),
-                        fontSize: 10,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
           ],
         ),
       ),

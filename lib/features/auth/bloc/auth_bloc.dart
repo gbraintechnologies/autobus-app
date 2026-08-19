@@ -133,6 +133,18 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           final tokenData = json.decode(loginResponse.body);
           final tokenModel = TokenModel.fromJson(tokenData);
           await tokenService.saveToken(tokenModel);
+
+          try {
+            final userResponse = await http.get(
+              Uri.parse('${AppConfig.backendUrl}/api/v1/user/me'),
+              headers: await _getAuthHeaders(),
+            );
+            if (userResponse.statusCode == 200) {
+              final userData = json.decode(userResponse.body);
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setString('user', json.encode(userData));
+            }
+          } catch (_) {}
         }
         // Emit Registered regardless — subscription flow proceeds even if
         // auto-login fails (user can still log in manually afterwards).
