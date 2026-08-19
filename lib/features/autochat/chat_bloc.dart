@@ -58,7 +58,9 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         return m;
       }).toList();
 
-      updated.add(botReply);
+      if (botReply.text.trim().isNotEmpty) {
+        updated.add(botReply);
+      }
       emit(ChatLoadSuccess(updated));
     } catch (e) {
       if (event.hidden && current.isEmpty) {

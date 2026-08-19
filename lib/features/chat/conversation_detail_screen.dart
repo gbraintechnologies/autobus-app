@@ -91,7 +91,9 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
       final active = detail['intervention_active'];
       final isActive =
           active is bool ? active : active?.toString().toLowerCase() == 'true';
-      if (!isActive) {
+      final lifecycle =
+          (detail['conversation_lifecycle'] ?? '').toString().toLowerCase();
+      if (!isActive || lifecycle == 'completed') {
         _stopLivePolling();
       } else if (nextLen > prevLen) {
         _scrollToBottom();
@@ -171,16 +173,56 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
     return v?.toString().toLowerCase() == 'true';
   }
 
-  bool get _showComposer =>
-      widget.mode == ConversationScreenMode.liveChat && _interventionActive;
+  bool get _isCompleted {
+    final v = (_detail?['conversation_lifecycle'] ?? '').toString().toLowerCase();
+    return v == 'completed';
+  }
 
-  Future<void> _deactivateIntervention() async {
+  bool get _showComposer =>
+      widget.mode == ConversationScreenMode.liveChat &&
+      _interventionActive &&
+      !_isCompleted;
+
+  Future<void> _completeConversation() async {
     final sid = _resolvedSessionId;
     if (sid == null) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E0A32),
+        title: Text(
+          'Mark as completed?',
+          style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.w600),
+        ),
+        content: Text(
+          'This ends the intervention. The next customer message will start a new conversation with the assistant.',
+          style: GoogleFonts.outfit(color: Colors.white70, fontSize: 14, height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('Cancel', style: GoogleFonts.outfit(color: Colors.white70)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(
+              'Complete',
+              style: GoogleFonts.outfit(
+                color: const Color(0xFFA855F7),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
     setState(() => _actionBusy = true);
     try {
       final api = context.read<ApiService>();
-      final updated = await api.deactivateConversationIntervention(sid);
+      final updated = await api.completeConversationSession(sid);
       if (!mounted) return;
       setState(() {
         _detail = updated;
@@ -188,7 +230,7 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
       });
       _stopLivePolling();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Intervention turned off')),
+        const SnackBar(content: Text('Conversation marked as completed')),
       );
     } catch (e) {
       if (!mounted) return;
@@ -278,13 +320,14 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
 
   Widget _buildControls() {
     if (widget.mode == ConversationScreenMode.liveChat &&
-        _interventionActive) {
+        _interventionActive &&
+        !_isCompleted) {
       return Padding(
         padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
         child: SizedBox(
           width: double.infinity,
           child: FilledButton.icon(
-            onPressed: _actionBusy ? null : _deactivateIntervention,
+            onPressed: _actionBusy ? null : _completeConversation,
             style: FilledButton.styleFrom(
               backgroundColor: const Color(0xFFA855F7),
               foregroundColor: Colors.white,
@@ -295,11 +338,25 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
             ),
             icon: _actionBusy
                 ? const AutobusLoadingIndicator(size: 18)
-                : const Icon(Icons.smart_toy_outlined, size: 20),
+                : const Icon(Icons.check_circle_outline, size: 20),
             label: Text(
-              'Turn off intervention',
+              'Mark as completed',
               style: GoogleFonts.outfit(fontSize: 15, fontWeight: FontWeight.w500),
             ),
+          ),
+        ),
+      );
+    }
+
+    if (widget.mode == ConversationScreenMode.liveChat && _isCompleted) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+        child: Text(
+          'This conversation is completed. A new customer message will start a fresh assistant chat.',
+          style: GoogleFonts.outfit(
+            color: Colors.white.withValues(alpha: 0.65),
+            fontSize: 13,
+            height: 1.4,
           ),
         ),
       );

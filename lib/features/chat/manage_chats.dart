@@ -13,11 +13,7 @@ class _ManageChatsState extends State<ManageChats> {
   String? _statusError;
 
   bool _chatwootConfigured = false;
-  bool _chatwootProvisioned = false;
   bool _subscriptionActive = false;
-
-  /// Inbox total from Chatwoot when fetched; `null` if not fetched or fetch failed.
-  int? _linkedInboxTotal;
   bool _inboxesFetchFailed = false;
 
   String _shortError(String raw, {int max = 160}) {
@@ -42,12 +38,11 @@ class _ManageChatsState extends State<ManageChats> {
       final provisioned = status['chatwoot_provisioned'] as bool? ?? false;
       final subActive = status['subscription_active'] as bool? ?? false;
 
-      int? inboxTotal;
       var inboxFailed = false;
 
       if (configured && provisioned && subActive) {
         try {
-          inboxTotal = await api.getChatwootInboxTotal();
+          await api.getChatwootInboxTotal();
         } catch (_) {
           inboxFailed = true;
         }
@@ -57,9 +52,7 @@ class _ManageChatsState extends State<ManageChats> {
       setState(() {
         _loading = false;
         _chatwootConfigured = configured;
-        _chatwootProvisioned = provisioned;
         _subscriptionActive = subActive;
-        _linkedInboxTotal = inboxFailed ? null : inboxTotal;
         _inboxesFetchFailed = inboxFailed;
       });
     } catch (e) {
@@ -67,7 +60,6 @@ class _ManageChatsState extends State<ManageChats> {
       setState(() {
         _loading = false;
         _statusError = e.toString();
-        _linkedInboxTotal = null;
         _inboxesFetchFailed = false;
       });
     }
@@ -184,27 +176,6 @@ class _ManageChatsState extends State<ManageChats> {
                               ),
                             ),
                             const SizedBox(height: 32),
-                          ] else if (!_chatwootProvisioned) ...[
-                            _ChatwootMessagePanel(
-                              backgroundColor: const Color(
-                                0xFF581C87,
-                              ).withValues(alpha: 0.1),
-                              borderColor: const Color(
-                                0xFF9333EA,
-                              ).withValues(alpha: 0.5),
-                              icon: Icons.warning_rounded,
-                              iconColor: Colors.red.shade400,
-                              child: Text(
-                                'No Chatwoot workspace is linked to your account yet. An active subscription provisions your workspace.',
-                                style: GoogleFonts.montserrat(
-                                  color: Colors.white.withValues(alpha: 0.85),
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w400,
-                                  height: 1.45,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 32),
                           ] else if (!_subscriptionActive) ...[
                             _ChatwootMessagePanel(
                               backgroundColor: Colors.amber.withValues(
@@ -249,27 +220,6 @@ class _ManageChatsState extends State<ManageChats> {
                                 'Could not load your Chatwoot inboxes. Pull to refresh after reconnecting.',
                                 style: GoogleFonts.montserrat(
                                   color: Colors.white.withValues(alpha: 0.88),
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w400,
-                                  height: 1.45,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 32),
-                          ] else if ((_linkedInboxTotal ?? 0) == 0) ...[
-                            _ChatwootMessagePanel(
-                              backgroundColor: const Color(
-                                0xFF581C87,
-                              ).withValues(alpha: 0.1),
-                              borderColor: const Color(
-                                0xFF9333EA,
-                              ).withValues(alpha: 0.5),
-                              icon: Icons.warning_rounded,
-                              iconColor: Colors.red.shade400,
-                              child: Text(
-                                'You have not linked any messaging channel in Chatwoot yet. Use Link Channel to add WhatsApp, Facebook, and other inboxes.',
-                                style: GoogleFonts.montserrat(
-                                  color: Colors.white.withValues(alpha: 0.85),
                                   fontSize: 12,
                                   fontWeight: FontWeight.w400,
                                   height: 1.45,

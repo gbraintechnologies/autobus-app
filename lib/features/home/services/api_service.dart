@@ -2357,12 +2357,12 @@ class ApiService {
     );
   }
 
-  /// POST /api/v1/conversations/session/{sessionId}/deactivate-intervention
-  Future<Map<String, dynamic>> deactivateConversationIntervention(
+  /// POST /api/v1/conversations/session/{sessionId}/complete
+  Future<Map<String, dynamic>> completeConversationSession(
     int sessionId,
   ) async {
     final uri = Uri.parse(
-      '$baseUrl/conversations/session/$sessionId/deactivate-intervention',
+      '$baseUrl/conversations/session/$sessionId/complete',
     );
     final response = await httpClient.post(uri);
     if (response.statusCode == 200) {
@@ -2378,9 +2378,15 @@ class ApiService {
     }
     throw Exception(
       _httpDetailMessage(response.body) ??
-          'Failed to deactivate intervention (${response.statusCode})',
+          'Failed to complete conversation (${response.statusCode})',
     );
   }
+
+  /// Deprecated alias — completing the session is the only way to leave intervention.
+  Future<Map<String, dynamic>> deactivateConversationIntervention(
+    int sessionId,
+  ) =>
+      completeConversationSession(sessionId);
 
   /// GET /api/v1/orders/{orderId}
   Future<Map<String, dynamic>> getOrder(String orderId) async {
