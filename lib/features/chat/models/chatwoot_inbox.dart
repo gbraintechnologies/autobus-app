@@ -4,10 +4,14 @@ class ChatwootInbox {
   final String name;
   final String kind;
 
+  /// Autobus WhatsApp / Instagram account id used by DELETE unlink APIs.
+  final String? accountId;
+
   const ChatwootInbox({
     required this.id,
     required this.name,
     required this.kind,
+    this.accountId,
   });
 
   factory ChatwootInbox.fromJson(Map<String, dynamic> json) {
@@ -51,5 +55,6 @@ class ChatwootInbox {
     return raw;
   }
 
-  bool get isActive => id > 0;
+  bool get isActive =>
+      id > 0 || (accountId != null && accountId!.trim().isNotEmpty);
 }

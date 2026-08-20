@@ -12,6 +12,7 @@ class ManageChannels extends StatefulWidget {
 class _ManageChannelsState extends State<ManageChannels>
     with WidgetsBindingObserver {
   var _loading = true;
+  var _busy = false;
   var _awaitingBrowserConnect = false;
   String? _loadError;
   List<LinkedChannel> _linked = [];
@@ -59,11 +60,13 @@ class _ManageChannelsState extends State<ManageChannels>
               (row['display_phone_number'] ?? row['phone_number_id'] ?? '')
                   .toString();
           final name = (row['verified_name'] ?? '').toString().trim();
+          final accountId = (row['id'] ?? '').toString().trim();
           inboxes.add(
             ChatwootInbox(
               id: (row['phone_number_id'] ?? row['id'] ?? phone).hashCode.abs(),
               name: name.isNotEmpty ? '$name ($phone)' : phone,
               kind: 'whatsapp',
+              accountId: accountId.isNotEmpty ? accountId : null,
             ),
           );
         }
@@ -75,16 +78,19 @@ class _ManageChannelsState extends State<ManageChannels>
         for (final row in igAccounts) {
           final username = (row['username'] ?? '').toString().trim();
           final name = (row['name'] ?? '').toString().trim();
-          final igId = (row['ig_user_id'] ?? row['id'] ?? '').toString();
+          final dbId = (row['id'] ?? '').toString().trim();
+          final igId = (row['ig_user_id'] ?? dbId).toString();
           final label = username.isNotEmpty
               ? '@$username'
               : (name.isNotEmpty ? name : igId);
-          if (label.isEmpty) continue;
+          final unlinkId = dbId.isNotEmpty ? dbId : igId;
+          if (label.isEmpty || unlinkId.isEmpty) continue;
           inboxes.add(
             ChatwootInbox(
               id: igId.hashCode.abs(),
               name: label,
               kind: 'instagram',
+              accountId: unlinkId,
             ),
           );
         }
@@ -218,6 +224,186 @@ class _ManageChannelsState extends State<ManageChannels>
     }
   }
 
+  Future<void> _onLinkedTap(LinkedChannel item) async {
+    if (_busy) return;
+    if (item.channel.apiSlug == 'sms') {
+      await _openSmsSenderIds();
+      return;
+    }
+
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: const Color(0xFF1A1333),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        side: BorderSide(color: Color(0xFF3F1163)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  item.channel.label,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.montserrat(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                if (item.subtitle.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    item.subtitle,
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.montserrat(
+                      color: Colors.white54,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 16),
+                ListTile(
+                  leading: const Icon(Icons.link, color: Colors.white70),
+                  title: Text(
+                    'Link another account',
+                    style: GoogleFonts.montserrat(color: Colors.white),
+                  ),
+                  onTap: () => Navigator.of(ctx).pop('link'),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.link_off, color: Color(0xFFEF4444)),
+                  title: Text(
+                    'Unlink',
+                    style: GoogleFonts.montserrat(
+                      color: const Color(0xFFEF4444),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  onTap: () => Navigator.of(ctx).pop('unlink'),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+    if (!mounted || action == null) return;
+    if (action == 'link') {
+      await _linkChannel(item.channel);
+    } else if (action == 'unlink') {
+      await _confirmUnlink(item);
+    }
+  }
+
+  Future<void> _confirmUnlink(LinkedChannel item) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF1A1333),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: const BorderSide(color: Color(0xFF3F1163)),
+          ),
+          title: Text(
+            'Unlink ${item.channel.label}?',
+            style: GoogleFonts.montserrat(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+              fontSize: 18,
+            ),
+          ),
+          content: Text(
+            item.inboxes.length == 1
+                ? 'This removes ${item.subtitle} from Autobus. You can link it again later.'
+                : 'This removes all ${item.inboxes.length} linked ${item.channel.label} accounts. You can link again later.',
+            style: GoogleFonts.montserrat(
+              color: Colors.white.withValues(alpha: 0.75),
+              fontSize: 14,
+              height: 1.45,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: Text(
+                'Cancel',
+                style: GoogleFonts.montserrat(
+                  color: Colors.white70,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: Text(
+                'Unlink',
+                style: GoogleFonts.montserrat(
+                  color: const Color(0xFFEF4444),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+    if (confirmed == true && mounted) {
+      await _unlinkChannel(item);
+    }
+  }
+
+  Future<void> _unlinkChannel(LinkedChannel item) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final api = context.read<ApiService>();
+    final ids = item.inboxes
+        .map((inbox) => (inbox.accountId ?? '').trim())
+        .where((id) => id.isNotEmpty)
+        .toList();
+    if (ids.isEmpty) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            'Could not unlink ${item.channel.label}. Pull to refresh and try again.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    setState(() => _busy = true);
+    try {
+      for (final id in ids) {
+        if (item.channel.apiSlug == 'whatsapp') {
+          await api.deleteWhatsAppAccount(id);
+        } else if (item.channel.apiSlug == 'instagram') {
+          await api.deleteInstagramAccount(id);
+        } else {
+          throw Exception('${item.channel.label} cannot be unlinked from here.');
+        }
+      }
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text('${item.channel.label} unlinked')),
+      );
+      await _refreshInboxes();
+    } catch (e) {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -242,7 +428,7 @@ class _ManageChannelsState extends State<ManageChannels>
                       children: [
                         if (!_loading)
                           IconButton(
-                            onPressed: _refreshInboxes,
+                            onPressed: _busy ? null : _refreshInboxes,
                             icon: const Icon(
                               Icons.refresh,
                               color: Colors.white70,
@@ -286,6 +472,16 @@ class _ManageChannelsState extends State<ManageChannels>
                                       letterSpacing: -0.3,
                                     ),
                                   ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Tap a linked channel to unlink or add another account.',
+                                    textAlign: TextAlign.center,
+                                    style: GoogleFonts.montserrat(
+                                      color: Colors.white.withValues(alpha: 0.55),
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w300,
+                                    ),
+                                  ),
                                   const SizedBox(height: 20),
                                   if (_linked.isEmpty)
                                     Padding(
@@ -315,8 +511,7 @@ class _ManageChannelsState extends State<ManageChannels>
                                             icon: FaIcon(item.channel.icon),
                                             iconColor: item.channel.iconColor,
                                             isLinked: true,
-                                            onTap: () =>
-                                                _linkChannel(item.channel),
+                                            onTap: () => _onLinkedTap(item),
                                           ),
                                       ],
                                     ),
