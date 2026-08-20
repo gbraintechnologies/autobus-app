@@ -9,8 +9,10 @@ class ManageChannels extends StatefulWidget {
   State<ManageChannels> createState() => _ManageChannelsState();
 }
 
-class _ManageChannelsState extends State<ManageChannels> {
+class _ManageChannelsState extends State<ManageChannels>
+    with WidgetsBindingObserver {
   var _loading = true;
+  var _awaitingBrowserConnect = false;
   String? _loadError;
   List<LinkedChannel> _linked = [];
   List<ChannelOption> _unlinked = ChannelCatalog.all;
@@ -18,7 +20,22 @@ class _ManageChannelsState extends State<ManageChannels> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _refreshInboxes();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _awaitingBrowserConnect) {
+      _awaitingBrowserConnect = false;
+      _refreshInboxes();
+    }
   }
 
   Future<void> _refreshInboxes() async {
@@ -178,6 +195,7 @@ class _ManageChannelsState extends State<ManageChannels> {
 
     if (channel.apiSlug == 'whatsapp' || channel.apiSlug == 'instagram') {
       final api = context.read<ApiService>();
+      _awaitingBrowserConnect = true;
       await openPlatformConnectInBrowser(
         context,
         label: channel.label,
@@ -185,7 +203,6 @@ class _ManageChannelsState extends State<ManageChannels> {
             ? api.getWhatsAppConnectSession
             : api.getInstagramConnectSession,
       );
-      if (mounted) await _refreshInboxes();
       return;
     }
 

@@ -50,7 +50,7 @@ class _ManageSmsSenderIdsState extends State<ManageSmsSenderIds> {
 
   Future<void> _openRegisterDialog() async {
     final result =
-        await showDialog<({String senderId, String? companyName, String? notes})>(
+        await showDialog<({String senderId, String? notes})>(
       context: context,
       builder: (_) => const _SmsSenderIdDialog(),
     );
@@ -59,7 +59,6 @@ class _ManageSmsSenderIdsState extends State<ManageSmsSenderIds> {
     try {
       await context.read<ApiService>().registerSmsSenderId(
             senderId: result.senderId,
-            companyName: result.companyName,
             notes: result.notes,
           );
       if (!mounted) return;
@@ -395,14 +394,12 @@ class _SmsSenderIdDialog extends StatefulWidget {
 
 class _SmsSenderIdDialogState extends State<_SmsSenderIdDialog> {
   final _senderIdController = TextEditingController();
-  final _companyController = TextEditingController();
   final _notesController = TextEditingController();
   String? _error;
 
   @override
   void dispose() {
     _senderIdController.dispose();
-    _companyController.dispose();
     _notesController.dispose();
     super.dispose();
   }
@@ -449,9 +446,6 @@ class _SmsSenderIdDialogState extends State<_SmsSenderIdDialog> {
     }
     Navigator.of(context).pop((
       senderId: senderId,
-      companyName: _companyController.text.trim().isEmpty
-          ? null
-          : _companyController.text.trim(),
       notes: _notesController.text.trim().isEmpty
           ? null
           : _notesController.text.trim(),
@@ -491,7 +485,7 @@ class _SmsSenderIdDialogState extends State<_SmsSenderIdDialog> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Submit the name that appears as the SMS sender. The Autobus team will verify and approve it before it can be used.',
+                'Submit the name that appears as the SMS sender. It is registered under your business name from signup so SMS cannot be sent under a different company. The Autobus team will verify and approve it before it can be used.',
                 style: GoogleFonts.montserrat(
                   color: Colors.white.withValues(alpha: 0.75),
                   fontSize: 12,
@@ -512,12 +506,6 @@ class _SmsSenderIdDialogState extends State<_SmsSenderIdDialog> {
                   if (_error != null) setState(() => _error = null);
                 },
                 onSubmitted: (_) => _submit(),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _companyController,
-                style: GoogleFonts.montserrat(color: Colors.white, fontSize: 14),
-                decoration: _fieldDecoration(hint: 'Company name (optional)'),
               ),
               const SizedBox(height: 12),
               TextField(

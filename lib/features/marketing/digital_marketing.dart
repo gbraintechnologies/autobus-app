@@ -253,7 +253,6 @@ class _PromptBar extends StatelessWidget {
   final String hint;
   final VoidCallback? onAttach;
   final VoidCallback? onGenerate;
-  final IconData generateIcon;
   final int minLines;
   final int maxLines;
 
@@ -262,7 +261,6 @@ class _PromptBar extends StatelessWidget {
     required this.hint,
     this.onAttach,
     this.onGenerate,
-    this.generateIcon = Icons.auto_awesome,
     this.minLines = 2,
     this.maxLines = 4,
   });
@@ -328,19 +326,25 @@ class _PromptBar extends StatelessWidget {
               GestureDetector(
                 onTap: onGenerate,
                 child: Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 10,
+                  ),
                   decoration: BoxDecoration(
                     color: onGenerate != null
-                        ? CustColors.logodeep.withValues(alpha: 0.14)
-                        : Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(10),
+                        ? _kNextButtonPurple
+                        : Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(20),
                   ),
-                  child: Icon(
-                    generateIcon,
-                    color: onGenerate != null
-                        ? CustColors.logodeep
-                        : Colors.black38,
-                    size: 20,
+                  child: Text(
+                    'Create',
+                    style: GoogleFonts.montserrat(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: onGenerate != null
+                          ? Colors.white
+                          : Colors.white70,
+                    ),
                   ),
                 ),
               ),
@@ -1182,7 +1186,6 @@ class _GenerateMediaPageState extends State<_GenerateMediaPage> {
               hint: _activeContent.promptHint,
               onAttach: _isText ? null : _pickAndAttachMedia,
               onGenerate: canGenerate ? _generate : null,
-              generateIcon: Icons.auto_awesome,
             ),
             const SizedBox(height: 16),
           ],

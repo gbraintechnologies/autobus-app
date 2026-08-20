@@ -279,7 +279,10 @@ Future<void> openPlatformConnectInBrowser(
       );
       return;
     }
-    final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    var ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!ok) {
+      ok = await launchUrl(uri, mode: LaunchMode.platformDefault);
+    }
     if (!ok) {
       messenger.showSnackBar(
         SnackBar(content: Text('Could not open the $label signup page.')),
@@ -289,7 +292,7 @@ Future<void> openPlatformConnectInBrowser(
     messenger.showSnackBar(
       SnackBar(
         content: Text(
-          'Finish $label signup in your browser, then return here and pull to refresh.',
+          'Finish $label signup in your browser. We will return you to the app when it completes.',
         ),
       ),
     );

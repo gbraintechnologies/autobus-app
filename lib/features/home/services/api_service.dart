@@ -4,6 +4,7 @@ import 'package:autobus/features/chat/models/chatwoot_inbox.dart';
 import 'package:autobus/features/marketing/models/postiz_integration.dart';
 import 'package:autobus/features/notifications/models/app_notification.dart';
 import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 
 class ApiService {
@@ -1645,7 +1646,9 @@ class ApiService {
   Future<PlatformEmbedSession> initiateSocialConnect(String platform) async {
     final slug = platform.trim().toLowerCase();
     final response = await httpClient.get(
-      Uri.parse('$baseUrl/social/connect/$slug'),
+      Uri.parse('$baseUrl/social/connect/$slug').replace(
+        queryParameters: const {'return_to': 'app'},
+      ),
     );
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
@@ -1761,8 +1764,14 @@ class ApiService {
 
   /// GET /api/v1/whatsapp/connect — Meta WhatsApp Embedded Signup URL.
   Future<PlatformEmbedSession> getWhatsAppConnectSession() async {
+    final query = <String, String>{'return_to': 'app'};
+    // iOS Safari blocks the Facebook JS SDK popup, so the server 302s to
+    // Facebook Login for Business instead of the in-page embed used on Android.
+    if (!kIsWeb && Platform.isIOS) {
+      query['launch'] = 'redirect';
+    }
     final response = await httpClient.get(
-      Uri.parse('$baseUrl/whatsapp/connect'),
+      Uri.parse('$baseUrl/whatsapp/connect').replace(queryParameters: query),
     );
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
@@ -1810,7 +1819,9 @@ class ApiService {
   /// GET /api/v1/instagram/connect — Instagram Business Login authorize URL.
   Future<PlatformEmbedSession> getInstagramConnectSession() async {
     final response = await httpClient.get(
-      Uri.parse('$baseUrl/instagram/connect'),
+      Uri.parse('$baseUrl/instagram/connect').replace(
+        queryParameters: const {'return_to': 'app'},
+      ),
     );
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
@@ -1916,13 +1927,10 @@ class ApiService {
   /// POST /api/v1/sms-sender-ids — register a sender ID for team approval.
   Future<Map<String, dynamic>> registerSmsSenderId({
     required String senderId,
-    String? companyName,
     String? notes,
   }) async {
     final body = <String, dynamic>{
       'sender_id': senderId.trim(),
-      if (companyName != null && companyName.trim().isNotEmpty)
-        'company_name': companyName.trim(),
       if (notes != null && notes.trim().isNotEmpty) 'notes': notes.trim(),
     };
     final response = await httpClient.post(

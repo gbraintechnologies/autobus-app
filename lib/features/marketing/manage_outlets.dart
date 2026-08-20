@@ -9,9 +9,11 @@ class ManageOutlets extends StatefulWidget {
   State<ManageOutlets> createState() => _ManageOutletsState();
 }
 
-class _ManageOutletsState extends State<ManageOutlets> {
+class _ManageOutletsState extends State<ManageOutlets>
+    with WidgetsBindingObserver {
   var _loading = true;
   var _busy = false;
+  var _awaitingBrowserConnect = false;
   String? _loadError;
   List<LinkedOutlet> _linked = [];
   List<OutletOption> _unlinked = OutletCatalog.all;
@@ -19,7 +21,22 @@ class _ManageOutletsState extends State<ManageOutlets> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _refreshIntegrations();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _awaitingBrowserConnect) {
+      _awaitingBrowserConnect = false;
+      _refreshIntegrations();
+    }
   }
 
   Future<void> _refreshIntegrations() async {
@@ -136,6 +153,7 @@ class _ManageOutletsState extends State<ManageOutlets> {
     final connectSlug = outlet.connectSlug?.trim();
     // Meta / TikTok / Google block in-app WebViews; use the device browser
     // the same way Chatwoot WhatsApp Embedded Signup does.
+    _awaitingBrowserConnect = true;
     await openPlatformConnectInBrowser(
       context,
       label: outlet.label,
@@ -149,10 +167,6 @@ class _ManageOutletsState extends State<ManageOutlets> {
         return api.postizAutoLogin();
       },
     );
-
-    if (mounted) {
-      await _refreshIntegrations();
-    }
   }
 
   Future<void> _confirmUnlink(LinkedOutlet item) async {
