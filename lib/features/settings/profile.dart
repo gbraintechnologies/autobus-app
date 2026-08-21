@@ -94,7 +94,7 @@ class _ProfileState extends State<Profile> {
       final g = (user['gender'] ?? '').toString().trim();
       _gender = g.isEmpty ? null : g;
     } catch (e) {
-      if (mounted) setState(() => _error = e.toString());
+      if (mounted) setState(() => _error = userFacingError(e));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -545,6 +545,8 @@ class _ProfileState extends State<Profile> {
                               ),
                             Expanded(
                               child: SingleChildScrollView(
+                                keyboardDismissBehavior:
+                                    ScrollViewKeyboardDismissBehavior.onDrag,
                                 child: Column(
                                   children: [
                                     _profileHeaderCard(context),
@@ -930,6 +932,7 @@ class _ProfileState extends State<Profile> {
       textInputAction: textInputAction,
       readOnly: readOnly,
       onTap: onTap,
+      onTapOutside: dismissAppKeyboard,
       validator: validator,
       decoration: _underlineDecoration(
         label: label,

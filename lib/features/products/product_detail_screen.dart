@@ -140,7 +140,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       if (!mounted) return;
       setState(() {
         if (!photosOnly) {
-          _loadError = e.toString().replaceFirst('Exception: ', '');
+          _loadError = userFacingError(e);
         }
         _loading = false;
         _photoBusy = false;
@@ -229,7 +229,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       setState(() => _saving = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          content: Text(userFacingError(e)),
         ),
       );
     }
@@ -252,7 +252,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          content: Text(userFacingError(e)),
         ),
       );
       setState(() => _photoBusy = false);
@@ -283,7 +283,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       setState(() => _photoBusy = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          content: Text(userFacingError(e)),
         ),
       );
     }
@@ -339,7 +339,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       setState(() => _saving = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          content: Text(userFacingError(e)),
         ),
       );
     }
@@ -426,6 +426,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     return Form(
       key: _formKey,
       child: ListView(
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
         children: [
           if (_inventoryId != null && _inventoryId!.isNotEmpty)
@@ -506,6 +507,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       keyboardType: keyboardType,
       maxLines: maxLines,
       onChanged: onChanged,
+      onTapOutside: dismissAppKeyboard,
       style: GoogleFonts.outfit(color: Colors.white, fontSize: 14),
       cursorColor: const Color(0xFFA855F7),
       decoration: _fieldDecoration(label),

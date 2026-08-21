@@ -85,8 +85,6 @@ class _WelcomeState extends State<Welcome> {
                                       context.read<AuthBloc>().state;
                                   final user = authState is Authenticated
                                       ? authState.user
-                                      : authState is TokenRefreshed
-                                      ? authState.user
                                       : null;
                                   if (user is Map) {
                                     final userMap = user is Map<String, dynamic>

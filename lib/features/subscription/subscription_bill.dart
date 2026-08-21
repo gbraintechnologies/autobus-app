@@ -457,7 +457,11 @@ class _SubscriptionBillPageState extends State<SubscriptionBillPage> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('An error occurred: $e')));
+        ).showSnackBar(
+          SnackBar(
+            content: Text(userFacingError(e, action: 'starting payment')),
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);

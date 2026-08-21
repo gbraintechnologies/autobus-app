@@ -92,7 +92,7 @@ class _ManageOutletsState extends State<ManageOutlets>
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _loadError = e.toString().replaceFirst('Exception: ', '');
+        _loadError = userFacingError(e);
         _linked = [];
         _unlinked = OutletCatalog.all;
         _loading = false;
@@ -151,10 +151,10 @@ class _ManageOutletsState extends State<ManageOutlets>
     }
     final api = context.read<ApiService>();
     final connectSlug = outlet.connectSlug?.trim();
-    // Meta / TikTok / Google block in-app WebViews; use the device browser
-    // the same way Chatwoot WhatsApp Embedded Signup does.
+    // Meta / TikTok / Google block WKWebView; Safari View / Custom Tabs
+    // (YouTube-style in-app browser with an X) is allowed and stays in-app.
     _awaitingBrowserConnect = true;
-    await openPlatformConnectInBrowser(
+    final closed = await openPlatformConnectInBrowser(
       context,
       label: outlet.label,
       fetchSession: () {
@@ -167,6 +167,10 @@ class _ManageOutletsState extends State<ManageOutlets>
         return api.postizAutoLogin();
       },
     );
+    if (closed && mounted) {
+      _awaitingBrowserConnect = false;
+      await _refreshIntegrations();
+    }
   }
 
   Future<void> _confirmUnlink(LinkedOutlet item) async {
@@ -249,7 +253,7 @@ class _ManageOutletsState extends State<ManageOutlets>
       if (!mounted) return;
       messenger.showSnackBar(
         SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          content: Text(userFacingError(e)),
         ),
       );
     } finally {
@@ -451,7 +455,7 @@ class _ManageOutletsState extends State<ManageOutlets>
                                   ),
                                   const SizedBox(height: 12),
                                   Text(
-                                    'Instagram uses Business Login for inbox and posting. Facebook, TikTok, and YouTube open in your device browser. Finish there, then return here and pull to refresh. WhatsApp Status is shared from the WhatsApp app on this phone — no account link is needed.',
+                                    'Instagram uses Business Login for inbox and posting. Facebook, TikTok, and YouTube open in a lightweight in-app browser — tap X when you are done. WhatsApp Status is shared from the WhatsApp app on this phone — no account link is needed.',
                                     textAlign: TextAlign.center,
                                     style: GoogleFonts.montserrat(
                                       color: Colors.white.withValues(alpha: 0.65),

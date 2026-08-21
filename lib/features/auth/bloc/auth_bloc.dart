@@ -3,6 +3,7 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
+import 'package:autobus/common_design/app_error.dart';
 import 'package:autobus/config/app_config.dart';
 import 'package:autobus/common_bloc/success_bloc.dart';
 import '../models/token_model.dart';
@@ -29,8 +30,29 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<SendResetCodeEvent>(_onSendResetCode);
     on<RefreshTokenEvent>(_onRefreshToken);
     on<CheckSessionEvent>(_onCheckSession);
+    on<SessionExpiredEvent>(_onSessionExpired);
     on<VerifySignupOtpEvent>(_onVerifySignupOtp);
     on<ResendSignupOtpEvent>(_onResendSignupOtp);
+  }
+
+  Future<void> _clearLocalSession() async {
+    await tokenService.clearTokens();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('user');
+  }
+
+  Future<void> _onSessionExpired(
+    SessionExpiredEvent event,
+    Emitter<AuthState> emit,
+  ) async {
+    try {
+      await _clearLocalSession();
+    } catch (_) {}
+    emit(
+      const SessionExpired(
+        message: 'Your session has expired. Please login again.',
+      ),
+    );
   }
 
   // Helper method to get headers with auth token
@@ -40,6 +62,14 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       'Content-Type': 'application/json',
       if (accessToken != null) 'Authorization': 'Bearer $accessToken',
     };
+  }
+
+  String _authHttpError(http.Response response, {required String action}) {
+    return AppException.fromAuthResponse(response, action: action).userMessage;
+  }
+
+  String _authCaught(Object error, {required String action}) {
+    return userFacingError(error, action: action);
   }
 
   Future<void> _onLogin(LoginEvent event, Emitter<AuthState> emit) async {
@@ -75,31 +105,29 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           await prefs.setString('user', json.encode(userData));
           emit(Authenticated(user: userData));
         } else {
-          String errorMsg = 'Failed to fetch user data';
-          try {
-            final errorData = json.decode(userResponse.body);
-            if (errorData is Map && errorData['detail'] != null) {
-              errorMsg = errorData['detail'];
-            }
-          } catch (_) {}
           print('User fetch error: ${userResponse.body}');
-          emit(AuthError(message: errorMsg, source: 'login'));
+          emit(
+            AuthError(
+              message: _authHttpError(userResponse, action: 'signing in'),
+              source: 'login',
+            ),
+          );
         }
       } else {
-        String errorMsg = 'Login failed';
-        try {
-          final errorData = json.decode(response.body);
-          if (errorData is Map && errorData['detail'] != null) {
-            errorMsg = errorData['detail'].toString();
-          }
-        } catch (_) {}
-        if (errorMsg.toLowerCase().contains('invalid username and password')) {
-          errorMsg = 'Invalid email/username or PIN';
-        }
-        emit(AuthError(message: errorMsg, source: 'login'));
+        emit(
+          AuthError(
+            message: _authHttpError(response, action: 'signing in'),
+            source: 'login',
+          ),
+        );
       }
     } catch (e) {
-      emit(AuthError(message: e.toString(), source: 'login'));
+      emit(
+        AuthError(
+          message: _authCaught(e, action: 'signing in'),
+          source: 'login',
+        ),
+      );
     }
   }
 
@@ -155,17 +183,20 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           ),
         );
       } else {
-        String errorMsg = 'Signup failed';
-        try {
-          final errorData = json.decode(response.body);
-          if (errorData is Map && errorData['detail'] != null) {
-            errorMsg = errorData['detail'];
-          }
-        } catch (_) {}
-        emit(AuthError(message: errorMsg, source: 'signup'));
+        emit(
+          AuthError(
+            message: _authHttpError(response, action: 'creating account'),
+            source: 'signup',
+          ),
+        );
       }
     } catch (e) {
-      emit(AuthError(message: e.toString(), source: 'signup'));
+      emit(
+        AuthError(
+          message: _authCaught(e, action: 'creating account'),
+          source: 'signup',
+        ),
+      );
     }
   }
 
@@ -186,7 +217,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         if (data is Map && data['success'] == false) {
           emit(
             AuthError(
-              message: (data['message'] ?? 'OTP verification failed').toString(),
+              message: userFacingError(
+                data['message'] ?? 'Error verifying code',
+                action: 'verifying code',
+              ),
               source: 'signup_otp',
             ),
           );
@@ -201,25 +235,20 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           ),
         );
       } else {
-        String errorMsg = 'OTP verification failed';
-        try {
-          final errorData = json.decode(response.body);
-          if (errorData is Map && errorData['detail'] != null) {
-            final detail = errorData['detail'];
-            if (detail is List && detail.isNotEmpty) {
-              final first = detail.first;
-              errorMsg = first is Map
-                  ? (first['msg'] ?? errorMsg).toString()
-                  : detail.toString();
-            } else {
-              errorMsg = detail.toString();
-            }
-          }
-        } catch (_) {}
-        emit(AuthError(message: errorMsg, source: 'signup_otp'));
+        emit(
+          AuthError(
+            message: _authHttpError(response, action: 'verifying code'),
+            source: 'signup_otp',
+          ),
+        );
       }
     } catch (e) {
-      emit(AuthError(message: e.toString(), source: 'signup_otp'));
+      emit(
+        AuthError(
+          message: _authCaught(e, action: 'verifying code'),
+          source: 'signup_otp',
+        ),
+      );
     }
   }
 
@@ -246,17 +275,20 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           ),
         );
       } else {
-        String errorMsg = 'Failed to resend OTP';
-        try {
-          final errorData = json.decode(response.body);
-          if (errorData is Map && errorData['detail'] != null) {
-            errorMsg = errorData['detail'];
-          }
-        } catch (_) {}
-        emit(AuthError(message: errorMsg, source: 'signup_otp_resend'));
+        emit(
+          AuthError(
+            message: _authHttpError(response, action: 'sending code'),
+            source: 'signup_otp_resend',
+          ),
+        );
       }
     } catch (e) {
-      emit(AuthError(message: e.toString(), source: 'signup_otp_resend'));
+      emit(
+        AuthError(
+          message: _authCaught(e, action: 'sending code'),
+          source: 'signup_otp_resend',
+        ),
+      );
     }
   }
 
@@ -277,7 +309,12 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         emit(Unauthenticated());
       }
     } catch (e) {
-      emit(AuthError(message: e.toString(), source: 'check_auth'));
+      emit(
+        AuthError(
+          message: _authCaught(e, action: 'checking session'),
+          source: 'check_auth',
+        ),
+      );
     }
   }
 
@@ -297,12 +334,15 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           // Best-effort server logout; always clear local session.
         }
       }
-      await tokenService.clearTokens();
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove('user');
-      emit(Unauthenticated());
+      await _clearLocalSession();
+      emit(const Unauthenticated());
     } catch (e) {
-      emit(AuthError(message: 'Logout failed: $e', source: 'logout'));
+      emit(
+        AuthError(
+          message: _authCaught(e, action: 'signing out'),
+          source: 'logout',
+        ),
+      );
     }
   }
 
@@ -331,17 +371,20 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       if (response.statusCode == 200) {
         emit(PasswordResetSuccess(message: 'Password reset successfully'));
       } else {
-        String errorMsg = 'Password reset failed';
-        try {
-          final errorData = json.decode(response.body);
-          if (errorData is Map && errorData['detail'] != null) {
-            errorMsg = errorData['detail'].toString();
-          }
-        } catch (_) {}
-        emit(AuthError(message: errorMsg, source: 'reset_password'));
+        emit(
+          AuthError(
+            message: _authHttpError(response, action: 'resetting password'),
+            source: 'reset_password',
+          ),
+        );
       }
     } catch (e) {
-      emit(AuthError(message: e.toString(), source: 'reset_password'));
+      emit(
+        AuthError(
+          message: _authCaught(e, action: 'resetting password'),
+          source: 'reset_password',
+        ),
+      );
     }
   }
 
@@ -367,17 +410,20 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       if (response.statusCode == 200) {
         emit(EmailExists(email: event.email, phone: event.phone));
       } else {
-        String errorMsg = 'Account check failed';
-        try {
-          final errorData = json.decode(response.body);
-          if (errorData is Map && errorData['detail'] != null) {
-            errorMsg = errorData['detail'].toString();
-          }
-        } catch (_) {}
-        emit(AuthError(message: errorMsg, source: 'check_email'));
+        emit(
+          AuthError(
+            message: _authHttpError(response, action: 'finding account'),
+            source: 'check_email',
+          ),
+        );
       }
     } catch (e) {
-      emit(AuthError(message: e.toString(), source: 'check_email'));
+      emit(
+        AuthError(
+          message: _authCaught(e, action: 'finding account'),
+          source: 'check_email',
+        ),
+      );
     }
   }
 
@@ -412,17 +458,20 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           ),
         );
       } else {
-        String errorMsg = 'Failed to send reset code';
-        try {
-          final errorData = json.decode(response.body);
-          if (errorData is Map && errorData['detail'] != null) {
-            errorMsg = errorData['detail'].toString();
-          }
-        } catch (_) {}
-        emit(AuthError(message: errorMsg, source: 'send_reset_code'));
+        emit(
+          AuthError(
+            message: _authHttpError(response, action: 'sending code'),
+            source: 'send_reset_code',
+          ),
+        );
       }
     } catch (e) {
-      emit(AuthError(message: e.toString(), source: 'send_reset_code'));
+      emit(
+        AuthError(
+          message: _authCaught(e, action: 'sending code'),
+          source: 'send_reset_code',
+        ),
+      );
     }
   }
 
@@ -458,17 +507,20 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           ),
         );
       } else {
-        String errorMsg = 'Invalid verification code';
-        try {
-          final errorData = json.decode(response.body);
-          if (errorData is Map && errorData['detail'] != null) {
-            errorMsg = errorData['detail'].toString();
-          }
-        } catch (_) {}
-        emit(AuthError(message: errorMsg, source: 'verify_code'));
+        emit(
+          AuthError(
+            message: _authHttpError(response, action: 'verifying code'),
+            source: 'verify_code',
+          ),
+        );
       }
     } catch (e) {
-      emit(AuthError(message: e.toString(), source: 'verify_code'));
+      emit(
+        AuthError(
+          message: _authCaught(e, action: 'verifying code'),
+          source: 'verify_code',
+        ),
+      );
     }
   }
 
@@ -477,13 +529,24 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     RefreshTokenEvent event,
     Emitter<AuthState> emit,
   ) async {
-    emit(TokenRefreshing());
+    // Avoid TokenRefreshing while already signed in — that swapped the auth
+    // gate to LogorSign and left the UI labeled "Guest" after refresh.
+    final keepAuthedShell =
+        state is Authenticated || state is TokenRefreshed;
+    if (!keepAuthedShell) {
+      emit(const TokenRefreshing());
+    }
     try {
       final refreshToken =
           event.refreshToken ?? await tokenService.getRefreshToken();
 
       if (refreshToken == null) {
-        emit(SessionExpired());
+        await _clearLocalSession();
+        emit(
+          const SessionExpired(
+            message: 'Your session has expired. Please login again.',
+          ),
+        );
         return;
       }
 
@@ -514,34 +577,38 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           final userData = json.decode(userResponse.body);
           final prefs = await SharedPreferences.getInstance();
           await prefs.setString('user', json.encode(userData));
-          emit(TokenRefreshed(user: userData));
+          // Stay Authenticated so UI never falls through to a Guest label.
+          emit(Authenticated(user: userData));
         } else {
+          await _clearLocalSession();
           emit(
-            TokenRefreshFailed(
-              message: 'Failed to fetch user data after token refresh',
+            const SessionExpired(
+              message: 'Your session has expired. Please login again.',
             ),
           );
         }
       } else if (response.statusCode == 401) {
-        // Refresh token is invalid or expired
-        await tokenService.clearTokens();
+        await _clearLocalSession();
         emit(
-          SessionExpired(
+          const SessionExpired(
             message: 'Your session has expired. Please login again.',
           ),
         );
       } else {
-        String errorMsg = 'Failed to refresh token';
-        try {
-          final errorData = json.decode(response.body);
-          if (errorData is Map && errorData['detail'] != null) {
-            errorMsg = errorData['detail'];
-          }
-        } catch (_) {}
-        emit(TokenRefreshFailed(message: errorMsg));
+        await _clearLocalSession();
+        emit(
+          SessionExpired(
+            message: _authHttpError(response, action: 'refreshing session'),
+          ),
+        );
       }
     } catch (e) {
-      emit(TokenRefreshFailed(message: 'Token refresh error: $e'));
+      await _clearLocalSession();
+      emit(
+        SessionExpired(
+          message: _authCaught(e, action: 'refreshing session'),
+        ),
+      );
     }
   }
 

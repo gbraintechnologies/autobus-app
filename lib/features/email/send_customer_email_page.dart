@@ -85,7 +85,7 @@ class _SendCustomerEmailPageState extends State<SendCustomerEmailPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            e.toString().replaceFirst('Exception: ', ''),
+            userFacingError(e),
             style: GoogleFonts.montserrat(),
           ),
           backgroundColor: Colors.red.shade700,
@@ -132,10 +132,13 @@ class _SendCustomerEmailPageState extends State<SendCustomerEmailPage> {
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: ListView(
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
                   children: [
                     TextField(
                       controller: _subjectController,
                       cursorColor: _purple,
+                      onTapOutside: dismissAppKeyboard,
                       style: GoogleFonts.montserrat(color: _purple, fontSize: 14),
                       decoration: _inputDecoration('Subject'),
                     ),
@@ -146,6 +149,7 @@ class _SendCustomerEmailPageState extends State<SendCustomerEmailPage> {
                       minLines: 6,
                       maxLines: 12,
                       keyboardType: TextInputType.multiline,
+                      onTapOutside: dismissAppKeyboard,
                       style: GoogleFonts.montserrat(color: _purple, fontSize: 14),
                       decoration: _inputDecoration('Write your email…'),
                     ),

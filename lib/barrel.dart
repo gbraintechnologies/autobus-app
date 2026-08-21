@@ -60,6 +60,8 @@ export 'package:autobus/features/products/view_products_list.dart';
 export 'package:autobus/features/products/product_detail_screen.dart';
 export 'package:autobus/features/marketing/manage_marketing.dart';
 export 'package:autobus/common_design/manage_screen_style.dart';
+export 'package:autobus/common_design/plain_ai_text.dart';
+export 'package:autobus/common_design/dismiss_keyboard.dart';
 export 'package:autobus/common_design/credit_category.dart';
 export 'package:autobus/common_design/widgets/credit_avatar.dart';
 export 'package:autobus/common_design/widgets/ctabutton.dart';
@@ -129,5 +131,6 @@ export 'package:autobus/icons/fluent.dart';
 // Design Imports
 export 'package:autobus/common_design/colors.dart';
 export 'package:autobus/common_design/widgets/appbutton.dart';
+export 'package:autobus/common_design/app_error.dart';
 export 'package:autobus/common_design/widgets/app_snackbar.dart';
 export 'package:page_transition/page_transition.dart';

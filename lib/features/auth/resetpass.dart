@@ -65,6 +65,7 @@ class _ResetPasswordState extends State<ResetPassword> {
         return SizedBox(
           width: 52,
           child: TextField(
+            onTapOutside: dismissAppKeyboard,
             controller: controllers[index],
             focusNode: focusNodes[index],
             textAlign: TextAlign.center,
@@ -118,7 +119,10 @@ class _ResetPasswordState extends State<ResetPassword> {
           );
         } else if (state is AuthError && state.source == 'reset_password') {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.message), backgroundColor: Colors.red),
+            SnackBar(
+              content: Text(userFacingError(state.message, action: 'resetting password')),
+              backgroundColor: Colors.red,
+            ),
           );
         }
       },

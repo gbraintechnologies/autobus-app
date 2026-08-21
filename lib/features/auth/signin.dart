@@ -40,6 +40,7 @@ class _SigninState extends State<Signin> {
         SizedBox(
           width: 52,
           child: TextField(
+            onTapOutside: dismissAppKeyboard,
             controller: _pinControllers[index],
             focusNode: _pinFocusNodes[index],
             enabled: enabled,
@@ -118,7 +119,7 @@ class _SigninState extends State<Signin> {
               (route) => false,
             );
           } else if (state is AuthError && state.source == 'login') {
-            showAppSnackBar(context, state.message);
+            showAppSnackBar(context, userFacingError(state.message, action: 'signing in'));
           }
         },
         builder: (context, state) {
@@ -126,6 +127,8 @@ class _SigninState extends State<Signin> {
 
           return SafeArea(
             child: SingleChildScrollView(
+              keyboardDismissBehavior:
+                  ScrollViewKeyboardDismissBehavior.onDrag,
               child: Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 24.0,
@@ -203,6 +206,7 @@ class _SigninState extends State<Signin> {
                             ),
                             const SizedBox(height: 8),
                             TextField(
+                              onTapOutside: dismissAppKeyboard,
                               controller: emailController,
                               style: GoogleFonts.montserrat(
                                 fontSize: 14,

@@ -1,3 +1,4 @@
+import 'package:autobus/common_design/app_error.dart';
 import 'package:bloc/bloc.dart';
 import 'chat_event.dart';
 import 'chat_state.dart';
@@ -64,7 +65,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       emit(ChatLoadSuccess(updated));
     } catch (e) {
       if (event.hidden && current.isEmpty) {
-        emit(ChatLoadFailure(e.toString()));
+        emit(ChatLoadFailure(userFacingError(e, action: 'sending your message')));
         return;
       }
 

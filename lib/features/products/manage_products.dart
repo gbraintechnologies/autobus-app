@@ -44,7 +44,7 @@ class _ManageProductsState extends State<ManageProducts> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _loadError = e.toString();
+        _loadError = userFacingError(e);
         _loading = false;
         _hasCatalogueFiles = false;
       });

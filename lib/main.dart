@@ -42,6 +42,14 @@ void main() async {
     tokenService: _tokenService,
     successBloc: successBloc,
   );
+  _httpClient.onSessionExpired = () {
+    final state = authBloc.state;
+    if (state is Authenticated ||
+        state is TokenRefreshed ||
+        state is TokenRefreshing) {
+      authBloc.add(const SessionExpiredEvent());
+    }
+  };
   print('✓ BLoCs created');
 
   runApp(

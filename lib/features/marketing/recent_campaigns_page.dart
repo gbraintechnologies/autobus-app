@@ -73,7 +73,7 @@ class _RecentCampaignsPageState extends State<RecentCampaignsPage> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _loadError = e.toString().replaceFirst('Exception: ', '');
+        _loadError = userFacingError(e);
         _loading = false;
         _items = const [];
         _total = 0;
@@ -122,7 +122,7 @@ class _RecentCampaignsPageState extends State<RecentCampaignsPage> {
                   Expanded(
                     child: _loading
                         ? const Center(
-                            child:                             const AutobusLoadingIndicator(size: 32),
+                            child: const AutobusLoadingIndicator(size: 32),
                           )
                         : _loadError != null
                         ? Center(
@@ -177,7 +177,7 @@ class _RecentCampaignsPageState extends State<RecentCampaignsPage> {
                                             horizontal: 20,
                                           ),
                                           child: Text(
-                                            'No campaigns yet. Publish from Digital Marketing with Postiz to see them here.',
+                                            'No campaigns yet. Create one in Digital Marketing — chats and generated media are saved here.',
                                             textAlign: TextAlign.center,
                                             style: GoogleFonts.outfit(
                                               color: Colors.white.withValues(
@@ -200,82 +200,249 @@ class _RecentCampaignsPageState extends State<RecentCampaignsPage> {
                                     itemBuilder: (context, index) {
                                       final m = _items[index];
                                       final links = _linkCount(m);
-                                      return Container(
-                                        padding: const EdgeInsets.all(22),
-                                        decoration: BoxDecoration(
-                                          border: Border.all(
-                                            color: const Color(0xFF3F1163),
-                                            width: 1,
-                                          ),
-                                          borderRadius: BorderRadius.circular(
-                                            28,
-                                          ),
-                                        ),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              _previewText(m),
-                                              style: GoogleFonts.outfit(
-                                                color: Colors.white,
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.w400,
-                                                height: 1.35,
+                                      final id = (m['id'] ?? '').toString();
+                                      return Material(
+                                        color: Colors.transparent,
+                                        child: InkWell(
+                                          onTap: id.isEmpty
+                                              ? null
+                                              : () {
+                                                  Navigator.push<void>(
+                                                    context,
+                                                    MaterialPageRoute<void>(
+                                                      builder: (_) =>
+                                                          CampaignConversationPage(
+                                                        assetId: id,
+                                                      ),
+                                                    ),
+                                                  );
+                                                },
+                                          borderRadius:
+                                              BorderRadius.circular(28),
+                                          child: Ink(
+                                            padding: const EdgeInsets.all(22),
+                                            decoration: BoxDecoration(
+                                              border: Border.all(
+                                                color: const Color(0xFF3F1163),
+                                                width: 1,
                                               ),
+                                              borderRadius:
+                                                  BorderRadius.circular(28),
                                             ),
-                                            const SizedBox(height: 12),
-                                            Row(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
                                               children: [
-                                                Expanded(
-                                                  child: Text(
-                                                    (m['agent_name'] ?? '')
-                                                        .toString(),
-                                                    maxLines: 1,
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                                    style: GoogleFonts.outfit(
+                                                Text(
+                                                  _previewText(m),
+                                                  style: GoogleFonts.outfit(
+                                                    color: Colors.white,
+                                                    fontSize: 16,
+                                                    fontWeight: FontWeight.w400,
+                                                    height: 1.35,
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 12),
+                                                Row(
+                                                  children: [
+                                                    Expanded(
+                                                      child: Text(
+                                                        (m['agent_name'] ?? '')
+                                                            .toString(),
+                                                        maxLines: 1,
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                        style:
+                                                            GoogleFonts.outfit(
+                                                          color: Colors.white
+                                                              .withValues(
+                                                                alpha: 0.45,
+                                                              ),
+                                                          fontSize: 11,
+                                                          fontWeight:
+                                                              FontWeight.w300,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    Text(
+                                                      _createdLabel(m),
+                                                      style:
+                                                          GoogleFonts.outfit(
+                                                        color: Colors.white
+                                                            .withValues(
+                                                              alpha: 0.45,
+                                                            ),
+                                                        fontSize: 11,
+                                                        fontWeight:
+                                                            FontWeight.w300,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                const SizedBox(height: 8),
+                                                Row(
+                                                  children: [
+                                                    Text(
+                                                      links > 0
+                                                          ? '$links attachment${links == 1 ? '' : 's'} · View conversation'
+                                                          : 'View conversation',
+                                                      style:
+                                                          GoogleFonts.outfit(
+                                                        color: const Color(
+                                                          0xFFA855F7,
+                                                        ),
+                                                        fontSize: 11,
+                                                        fontWeight:
+                                                            FontWeight.w400,
+                                                      ),
+                                                    ),
+                                                    const Spacer(),
+                                                    Icon(
+                                                      Icons
+                                                          .chevron_right_rounded,
                                                       color: Colors.white
                                                           .withValues(
                                                             alpha: 0.45,
                                                           ),
-                                                      fontSize: 11,
-                                                      fontWeight:
-                                                          FontWeight.w300,
+                                                      size: 20,
                                                     ),
-                                                  ),
-                                                ),
-                                                Text(
-                                                  _createdLabel(m),
-                                                  style: GoogleFonts.outfit(
-                                                    color: Colors.white
-                                                        .withValues(
-                                                          alpha: 0.45,
-                                                        ),
-                                                    fontSize: 11,
-                                                    fontWeight: FontWeight.w300,
-                                                  ),
+                                                  ],
                                                 ),
                                               ],
                                             ),
-                                            if (links > 0) ...[
-                                              const SizedBox(height: 8),
-                                              Text(
-                                                '$links attachment${links == 1 ? '' : 's'}',
-                                                style: GoogleFonts.outfit(
-                                                  color: const Color(
-                                                    0xFFA855F7,
-                                                  ),
-                                                  fontSize: 11,
-                                                  fontWeight: FontWeight.w400,
-                                                ),
-                                              ),
-                                            ],
-                                          ],
+                                          ),
                                         ),
                                       );
                                     },
                                   ),
+                          ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Loads a saved campaign and shows the chat + media as it was created.
+class CampaignConversationPage extends StatefulWidget {
+  final String assetId;
+
+  const CampaignConversationPage({super.key, required this.assetId});
+
+  @override
+  State<CampaignConversationPage> createState() =>
+      _CampaignConversationPageState();
+}
+
+class _CampaignConversationPageState extends State<CampaignConversationPage> {
+  DigitalMarketingCampaign? _campaign;
+  bool _loading = true;
+  String? _loadError;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _load());
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _loadError = null;
+    });
+    try {
+      final api = context.read<ApiService>();
+      final asset = await api.getDigitalMarketingAsset(widget.assetId);
+      if (!mounted) return;
+      setState(() {
+        _campaign = DigitalMarketingCampaign.fromAsset(asset);
+        _loading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loadError = userFacingError(e);
+        _loading = false;
+        _campaign = null;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final campaign = _campaign;
+    if (campaign != null && !_loading && _loadError == null) {
+      return DigitalMarketingPage(campaign: campaign, readOnly: true);
+    }
+
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const DecoratedBox(
+            decoration: ManageScreenStyle.homeDashboardBodyDecoration,
+          ),
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const ManageScreenBackButton(),
+                      const SizedBox(width: 18),
+                      Expanded(
+                        child: Text(
+                          'Campaign conversation',
+                          style: ManageScreenStyle.headerTitleStyle(),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  Expanded(
+                    child: _loading
+                        ? const Center(
+                            child: AutobusLoadingIndicator(size: 32),
+                          )
+                        : Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                  ),
+                                  child: Text(
+                                    _loadError ?? 'Unable to load conversation',
+                                    textAlign: TextAlign.center,
+                                    style: GoogleFonts.outfit(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.75,
+                                      ),
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                TextButton(
+                                  onPressed: _load,
+                                  child: Text(
+                                    'Retry',
+                                    style: GoogleFonts.outfit(
+                                      color: const Color(0xFFA855F7),
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                   ),
                 ],

@@ -88,7 +88,7 @@ class _LiveChatsPageState extends State<LiveChatsPage> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _loadError = e.toString().replaceFirst('Exception: ', '');
+        _loadError = userFacingError(e);
         _loading = false;
         _chats = const [];
       });

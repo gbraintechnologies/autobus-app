@@ -134,7 +134,7 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _loadError = e.toString().replaceFirst('Exception: ', '');
+        _loadError = userFacingError(e);
         _loading = false;
       });
     }
@@ -236,7 +236,7 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
       if (!mounted) return;
       setState(() => _actionBusy = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+        SnackBar(content: Text(userFacingError(e))),
       );
     }
   }
@@ -271,14 +271,17 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
       if (!mounted) return;
       setState(() => _sending = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+        SnackBar(content: Text(userFacingError(e))),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return GestureDetector(
+      onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+      behavior: HitTestBehavior.translucent,
+      child: Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
         fit: StackFit.expand,
@@ -314,6 +317,7 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
             ),
           ),
         ],
+      ),
       ),
     );
   }
@@ -390,6 +394,7 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
               maxLines: 4,
               onChanged: (_) => setState(() {}),
               onSubmitted: canSend ? (_) => _sendMessage() : null,
+              onTapOutside: dismissAppKeyboard,
               style: GoogleFonts.outfit(color: Colors.white, fontSize: 14),
               decoration: InputDecoration(
                 hintText: 'Reply as agent…',
@@ -459,15 +464,19 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
 
     final history = _history;
     if (history.isEmpty) {
-      return Center(
-        child: Text(
-          _showComposer
-              ? 'No messages yet — send a reply below'
-              : 'No messages in this conversation',
-          textAlign: TextAlign.center,
-          style: GoogleFonts.outfit(
-            color: Colors.white.withValues(alpha: 0.6),
-            fontSize: 16,
+      return GestureDetector(
+        onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+        behavior: HitTestBehavior.opaque,
+        child: Center(
+          child: Text(
+            _showComposer
+                ? 'No messages yet — send a reply below'
+                : 'No messages in this conversation',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.outfit(
+              color: Colors.white.withValues(alpha: 0.6),
+              fontSize: 16,
+            ),
           ),
         ),
       );
@@ -475,6 +484,7 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
 
     return ListView.builder(
       controller: _scrollCtrl,
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
       itemCount: history.length,
       itemBuilder: (context, index) {
@@ -529,7 +539,7 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
                 ),
               ),
             Text(
-              text,
+              isUser ? text : stripAiMarkdown(text),
               style: GoogleFonts.outfit(
                 color: Colors.white,
                 fontSize: 14,

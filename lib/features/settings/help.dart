@@ -62,7 +62,7 @@ class HelpPage extends StatelessWidget {
                     /// Username / Company
                     BlocBuilder<AuthBloc, AuthState>(
                       builder: (context, state) {
-                        String username = 'Guest';
+                        String username = 'User';
                         if (state is Authenticated) {
                           username =
                               state.user['fullname'] ??

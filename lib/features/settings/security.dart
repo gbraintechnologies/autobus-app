@@ -49,7 +49,7 @@ class Security extends StatelessWidget {
                     /// Company Name
                     BlocBuilder<AuthBloc, AuthState>(
                       builder: (context, state) {
-                        String username = 'Guest';
+                        String username = 'User';
                         if (state is Authenticated) {
                           username =
                               state.user['fullname'] ??

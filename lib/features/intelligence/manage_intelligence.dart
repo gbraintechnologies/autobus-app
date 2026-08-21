@@ -75,7 +75,7 @@ class _ManageIntelligenceState extends State<ManageIntelligence> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _presenceError = e.toString();
+        _presenceError = userFacingError(e);
         _presenceLoading = false;
         _hasRagDocuments = false;
         _ragFiles = const [];
@@ -225,14 +225,7 @@ class _ManageIntelligenceState extends State<ManageIntelligence> {
   }
 
   String _uploadErrorMessage(Object e) {
-    final raw = e.toString();
-    if (raw.contains('403')) {
-      return 'Upload blocked: an active subscription is required for RAG documents.';
-    }
-    if (raw.contains('Session expired') || raw.contains('401')) {
-      return 'Session expired. Please sign in again.';
-    }
-    return raw.replaceFirst('Exception: ', '');
+    return userFacingError(e, action: 'uploading document');
   }
 
   Future<void> _openIndexedWebsite(String url) async {
@@ -575,7 +568,7 @@ class _ManageIntelligenceState extends State<ManageIntelligence> {
                                     MaterialPageRoute<void>(
                                       builder: (_) => const AutoBus(
                                         title: 'My Ai',
-                                        webhookContext: 'interactions_agent',
+                                        webhookContext: 'my_ai_agent',
                                       ),
                                     ),
                                   );
@@ -691,6 +684,7 @@ class _WebsiteUrlDialogState extends State<_WebsiteUrlDialog> {
               controller: _controller,
               autofocus: true,
               keyboardType: TextInputType.url,
+              onTapOutside: dismissAppKeyboard,
               style: GoogleFonts.montserrat(color: Colors.white, fontSize: 14),
               decoration: InputDecoration(
                 hintText: 'https://example.com or www.example.com',
@@ -826,7 +820,7 @@ class _RagIndexProgressDialogState extends State<_RagIndexProgressDialog> {
       if (!mounted) return;
       setState(() {
         _failed = true;
-        _message = e.toString().replaceFirst('Exception: ', '');
+        _message = userFacingError(e);
         _progress = 100;
       });
       await Future<void>.delayed(const Duration(milliseconds: 900));
@@ -1059,7 +1053,7 @@ class _IntelligenceHistoryPageState extends State<IntelligenceHistoryPage> {
         );
       }
     } catch (e) {
-      _showSnack(e.toString().replaceFirst('Exception: ', ''));
+      _showSnack(userFacingError(e));
     }
   }
 
@@ -1101,7 +1095,10 @@ class _IntelligenceHistoryPageState extends State<IntelligenceHistoryPage> {
                 }
                 if (snapshot.hasError) {
                   return Text(
-                    snapshot.error.toString().replaceFirst('Exception: ', ''),
+                    userFacingError(
+                      snapshot.error!,
+                      action: 'previewing file',
+                    ),
                     style: GoogleFonts.outfit(
                       color: Colors.white.withValues(alpha: 0.75),
                       fontSize: 13,
@@ -1262,7 +1259,7 @@ class _IntelligenceHistoryPageState extends State<IntelligenceHistoryPage> {
       _showSnack(message);
     } catch (e) {
       if (!mounted) return;
-      _showSnack(e.toString().replaceFirst('Exception: ', ''));
+      _showSnack(userFacingError(e));
     }
   }
 
@@ -1298,7 +1295,7 @@ class _IntelligenceHistoryPageState extends State<IntelligenceHistoryPage> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _loadError = e.toString();
+        _loadError = userFacingError(e);
         _loading = false;
       });
     }
@@ -1328,7 +1325,7 @@ class _IntelligenceHistoryPageState extends State<IntelligenceHistoryPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            e.toString().replaceFirst('Exception: ', ''),
+            userFacingError(e),
             style: GoogleFonts.outfit(),
           ),
         ),

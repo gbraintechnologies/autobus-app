@@ -129,7 +129,7 @@ class _ManageChannelsState extends State<ManageChannels>
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _loadError = e.toString().replaceFirst('Exception: ', '');
+        _loadError = userFacingError(e);
         _linked = [];
         _unlinked = ChannelCatalog.all;
         _loading = false;
@@ -202,13 +202,17 @@ class _ManageChannelsState extends State<ManageChannels>
     if (channel.apiSlug == 'whatsapp' || channel.apiSlug == 'instagram') {
       final api = context.read<ApiService>();
       _awaitingBrowserConnect = true;
-      await openPlatformConnectInBrowser(
+      final closed = await openPlatformConnectInBrowser(
         context,
         label: channel.label,
         fetchSession: channel.apiSlug == 'whatsapp'
             ? api.getWhatsAppConnectSession
             : api.getInstagramConnectSession,
       );
+      if (closed && mounted) {
+        _awaitingBrowserConnect = false;
+        await _refreshInboxes();
+      }
       return;
     }
 
@@ -396,7 +400,7 @@ class _ManageChannelsState extends State<ManageChannels>
       if (!mounted) return;
       messenger.showSnackBar(
         SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          content: Text(userFacingError(e)),
         ),
       );
     } finally {
@@ -528,7 +532,7 @@ class _ManageChannelsState extends State<ManageChannels>
                                   ),
                                   const SizedBox(height: 12),
                   Text(
-                    'Instagram uses Meta Business Login. WhatsApp uses Meta signup. SMS opens your Sender ID page.',
+                    'Instagram uses Meta Business Login. WhatsApp uses Meta signup. Both open in a lightweight in-app browser — tap X when you are done. SMS opens your Sender ID page.',
                     textAlign: TextAlign.center,
                     style: GoogleFonts.montserrat(
                       color: Colors.white.withValues(alpha: 0.65),

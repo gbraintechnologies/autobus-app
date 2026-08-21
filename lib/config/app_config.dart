@@ -8,6 +8,7 @@ class AppConfig {
   static late String privacyPolicyUrl;
   static late String termsOfServiceUrl;
   static const String publicWebsiteUrl = 'https://useautobus.com';
+  static const String publicWebsiteLoginUrl = '$publicWebsiteUrl/login';
 
   static Future<void> init() async {
     bool envLoaded = true;

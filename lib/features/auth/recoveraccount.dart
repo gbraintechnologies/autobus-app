@@ -42,7 +42,10 @@ class _RecoverAccountState extends State<RecoverAccount> {
             (state.source == 'check_email' ||
                 state.source == 'send_reset_code')) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.message), backgroundColor: Colors.red),
+            SnackBar(
+              content: Text(userFacingError(state.message, action: 'finding account')),
+              backgroundColor: Colors.red,
+            ),
           );
         }
       },
@@ -120,6 +123,7 @@ class _RecoverAccountState extends State<RecoverAccount> {
               Padding(
                 padding: const EdgeInsets.only(left: 20.0, right: 20.0),
                 child: TextField(
+                  onTapOutside: dismissAppKeyboard,
                   controller: identifierController,
                   keyboardType: TextInputType.emailAddress,
                   decoration: InputDecoration(

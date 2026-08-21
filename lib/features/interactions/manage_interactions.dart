@@ -69,7 +69,7 @@ class ManageInteractions extends StatelessWidget {
                                     MaterialPageRoute<void>(
                                       builder: (_) => const AutoBus(
                                         title: 'My Ai',
-                                        webhookContext: 'interactions_agent',
+                                        webhookContext: 'my_ai_agent',
                                       ),
                                     ),
                                   );

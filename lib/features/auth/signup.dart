@@ -118,6 +118,7 @@ class _SignupState extends State<Signup> {
         SizedBox(
           width: 52,
           child: TextField(
+            onTapOutside: dismissAppKeyboard,
             controller: _pinControllers[index],
             focusNode: _pinFocusNodes[index],
             enabled: enabled,
@@ -186,7 +187,10 @@ class _SignupState extends State<Signup> {
                   ),
                 );
               } else if (state is AuthError && state.source == 'signup') {
-                showAppSnackBar(context, state.message);
+                showAppSnackBar(
+                  context,
+                  userFacingError(state.message, action: 'creating account'),
+                );
               }
             },
           ),
@@ -196,6 +200,8 @@ class _SignupState extends State<Signup> {
             final bool isLoading = state is AuthLoading;
             return SafeArea(
               child: SingleChildScrollView(
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
                 child: Padding(
                   padding: const EdgeInsets.all(20.0),
                   child: Column(
@@ -263,6 +269,7 @@ class _SignupState extends State<Signup> {
                                 style: _fieldLabelStyle(),
                               ),
                               TextField(
+                                onTapOutside: dismissAppKeyboard,
                                 controller: usernameController,
                                 style: _fieldTextStyle(),
                                 decoration: InputDecoration(
@@ -277,6 +284,7 @@ class _SignupState extends State<Signup> {
                                 style: _fieldLabelStyle(),
                               ),
                               TextField(
+                                onTapOutside: dismissAppKeyboard,
                                 controller: phoneController,
                                 keyboardType: TextInputType.phone,
                                 style: _fieldTextStyle(),
@@ -292,6 +300,7 @@ class _SignupState extends State<Signup> {
                                 style: _fieldLabelStyle(),
                               ),
                               TextField(
+                                onTapOutside: dismissAppKeyboard,
                                 controller: companyController,
                                 style: _fieldTextStyle(),
                                 decoration: InputDecoration(
@@ -314,6 +323,7 @@ class _SignupState extends State<Signup> {
                                     SizedBox(
                                       width: 56,
                                       child: TextField(
+                                        onTapOutside: dismissAppKeyboard,
                                         controller: _ghaPrefixController,
                                         readOnly: true,
                                         enableInteractiveSelection: false,
@@ -351,6 +361,7 @@ class _SignupState extends State<Signup> {
                                     SizedBox(
                                       width: _ghanaTenFieldWidth(context),
                                       child: TextField(
+                                        onTapOutside: dismissAppKeyboard,
                                         controller: ghanaCardTenController,
                                         keyboardType: TextInputType.number,
                                         inputFormatters: [
@@ -401,6 +412,7 @@ class _SignupState extends State<Signup> {
                                     SizedBox(
                                       width: 44,
                                       child: TextField(
+                                        onTapOutside: dismissAppKeyboard,
                                         controller: ghanaCardCheckController,
                                         focusNode: _ghanaCardCheckFocusNode,
                                         keyboardType: TextInputType.number,
@@ -437,6 +449,7 @@ class _SignupState extends State<Signup> {
                                 style: _fieldLabelStyle(),
                               ),
                               TextField(
+                                onTapOutside: dismissAppKeyboard,
                                 controller: emailController,
                                 keyboardType: TextInputType.emailAddress,
                                 style: _fieldTextStyle(),

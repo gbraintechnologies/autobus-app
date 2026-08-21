@@ -53,7 +53,10 @@ class _SignupOtpState extends State<SignupOtp> {
             if (state is AuthError &&
                 (state.source == 'signup_otp' ||
                     state.source == 'signup_otp_resend')) {
-              showAppSnackBar(context, state.message);
+              showAppSnackBar(
+                context,
+                userFacingError(state.message, action: 'verifying code'),
+              );
             }
           },
         ),
@@ -130,6 +133,7 @@ class _SignupOtpState extends State<SignupOtp> {
               Padding(
                 padding: const EdgeInsets.only(left: 20.0, right: 20.0),
                 child: TextField(
+                  onTapOutside: dismissAppKeyboard,
                   controller: codeController,
                   decoration: InputDecoration(
                     hintText: 'Enter 6-digit OTP',

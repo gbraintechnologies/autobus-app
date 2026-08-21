@@ -141,7 +141,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
       setState(() => _saving = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          content: Text(userFacingError(e)),
         ),
       );
     }
@@ -180,6 +180,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
                   child: Form(
                     key: _formKey,
                     child: ListView(
+                      keyboardDismissBehavior:
+                          ScrollViewKeyboardDismissBehavior.onDrag,
                       padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
                       children: [
                         ProductFormImageSection(
@@ -294,6 +296,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
       validator: validator,
       keyboardType: keyboardType,
       maxLines: maxLines,
+      onTapOutside: dismissAppKeyboard,
       style: GoogleFonts.outfit(color: Colors.white, fontSize: 14),
       cursorColor: const Color(0xFFA855F7),
       decoration: _fieldDecoration(label),

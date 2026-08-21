@@ -48,7 +48,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
       });
     } catch (e) {
       if (!mounted) return;
-      setState(() => _error = e.toString());
+      setState(() => _error = userFacingError(e));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -126,7 +126,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                     /// Company Name
                     BlocBuilder<AuthBloc, AuthState>(
                       builder: (context, state) {
-                        String username = 'Guest';
+                        String username = 'User';
                         if (state is Authenticated) {
                           username =
                               state.user['fullname'] ??

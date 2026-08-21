@@ -2,18 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:autobus/common_design/app_error.dart';
 import 'package:autobus/config/app_config.dart';
 import 'package:autobus/common_design/colors.dart';
 import 'package:autobus/common_design/credit_category.dart';
+import 'package:autobus/common_design/dismiss_keyboard.dart';
 import 'package:autobus/common_design/widgets/autobus_loading_indicator.dart';
 import 'package:autobus/features/home/services/api_service.dart';
 import 'package:autobus/features/subscription/data/apple_iap_ids.dart';
 import 'package:autobus/features/subscription/services/apple_iap_service.dart';
 import 'package:autobus/features/subscription/userplan.dart';
 
-/// Opens the Autobus website so iOS users can subscribe via Paystack in Safari.
+/// Opens the Autobus login page so iOS users can sign in and subscribe via Paystack.
 Future<void> openManageSubscriptionsWebsite() async {
-  final uri = Uri.parse(AppConfig.publicWebsiteUrl);
+  final uri = Uri.parse(AppConfig.publicWebsiteLoginUrl);
   await launchUrl(uri, mode: LaunchMode.externalApplication);
 }
 
@@ -333,6 +335,7 @@ class _ManageSubscriptionPageState extends State<ManageSubscriptionPage> {
               const SizedBox(height: 12),
               TextField(
                 controller: reasonCtrl,
+                onTapOutside: dismissAppKeyboard,
                 decoration: const InputDecoration(
                   labelText: 'Reason (optional)',
                   border: OutlineInputBorder(),
@@ -375,7 +378,9 @@ class _ManageSubscriptionPageState extends State<ManageSubscriptionPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Could not cancel: $e')));
+      ).showSnackBar(
+        SnackBar(content: Text(userFacingError(e, action: 'canceling subscription'))),
+      );
     }
   }
 
@@ -517,15 +522,6 @@ class _ManageSubscriptionPageState extends State<ManageSubscriptionPage> {
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          Text(
-                            'Apple is still reviewing in-app subscriptions. Sign in at useautobus.com to choose a paid plan with Paystack, then return to the app.',
-                            style: GoogleFonts.montserrat(
-                              fontSize: 12,
-                              height: 1.4,
-                              color: Colors.black54,
                             ),
                           ),
                         ] else ...[

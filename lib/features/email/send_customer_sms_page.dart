@@ -94,7 +94,7 @@ class _SendCustomerSmsPageState extends State<SendCustomerSmsPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            e.toString().replaceFirst('Exception: ', ''),
+            userFacingError(e),
             style: GoogleFonts.montserrat(),
           ),
           backgroundColor: Colors.red.shade700,
@@ -134,6 +134,7 @@ class _SendCustomerSmsPageState extends State<SendCustomerSmsPage> {
                         maxLines: 8,
                         maxLength: 160,
                         keyboardType: TextInputType.multiline,
+                        onTapOutside: dismissAppKeyboard,
                         style: GoogleFonts.montserrat(
                           color: _purple,
                           fontSize: 14,

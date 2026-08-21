@@ -67,7 +67,7 @@ class ManageMarketing extends StatelessWidget {
                                     context,
                                     MaterialPageRoute<void>(
                                       builder: (_) =>
-                                          const DigitalMarketingSelection(),
+                                        const DigitalMarketingPage(),
                                     ),
                                   );
                                 },

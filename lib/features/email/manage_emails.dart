@@ -38,7 +38,7 @@ class _ManageEmailsState extends State<ManageEmails> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _loadError = e.toString();
+        _loadError = userFacingError(e);
         _loading = false;
         _profileEmail = '';
       });

@@ -89,7 +89,7 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            e.toString().replaceFirst('Exception: ', ''),
+            userFacingError(e),
             style: GoogleFonts.montserrat(),
           ),
           backgroundColor: Colors.red.shade700,
@@ -168,9 +168,12 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
                     child: Form(
                       key: _formKey,
                       child: ListView(
+                        keyboardDismissBehavior:
+                            ScrollViewKeyboardDismissBehavior.onDrag,
                         children: [
                           TextFormField(
                             controller: _nameController,
+                            onTapOutside: dismissAppKeyboard,
                             style: GoogleFonts.montserrat(color: Colors.white),
                             cursorColor: const Color(0xFFA855F7),
                             decoration: _fieldDecoration('Name'),
@@ -181,6 +184,7 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
                           TextFormField(
                             controller: _phoneController,
                             keyboardType: TextInputType.phone,
+                            onTapOutside: dismissAppKeyboard,
                             style: GoogleFonts.montserrat(color: Colors.white),
                             cursorColor: const Color(0xFFA855F7),
                             decoration: _fieldDecoration(
@@ -194,6 +198,7 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
                           TextFormField(
                             controller: _emailController,
                             keyboardType: TextInputType.emailAddress,
+                            onTapOutside: dismissAppKeyboard,
                             style: GoogleFonts.montserrat(color: Colors.white),
                             cursorColor: const Color(0xFFA855F7),
                             decoration: _fieldDecoration(
@@ -204,6 +209,7 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
                           const SizedBox(height: 16),
                           TextFormField(
                             controller: _networkController,
+                            onTapOutside: dismissAppKeyboard,
                             style: GoogleFonts.montserrat(color: Colors.white),
                             cursorColor: const Color(0xFFA855F7),
                             decoration: _fieldDecoration(

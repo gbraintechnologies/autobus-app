@@ -52,7 +52,10 @@ class _VerifyCodeState extends State<VerifyCode> {
             (state.source == 'verify_code' ||
                 state.source == 'send_reset_code')) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.message), backgroundColor: Colors.red),
+            SnackBar(
+              content: Text(userFacingError(state.message, action: 'verifying code')),
+              backgroundColor: Colors.red,
+            ),
           );
         }
       },
@@ -142,6 +145,7 @@ class _VerifyCodeState extends State<VerifyCode> {
               Padding(
                 padding: const EdgeInsets.only(left: 20.0, right: 20.0),
                 child: TextField(
+                  onTapOutside: dismissAppKeyboard,
                   controller: codeController,
                   decoration: InputDecoration(
                     hintText: 'Enter 6-digit code',

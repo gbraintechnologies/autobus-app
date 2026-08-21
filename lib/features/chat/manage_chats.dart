@@ -41,7 +41,7 @@ class _ManageChatsState extends State<ManageChats> {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _statusError = e.toString();
+        _statusError = userFacingError(e);
       });
     }
   }

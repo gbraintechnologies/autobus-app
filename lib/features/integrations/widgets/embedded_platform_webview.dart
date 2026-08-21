@@ -23,6 +23,7 @@ class _EmbeddedPlatformWebViewState extends State<EmbeddedPlatformWebView> {
   late final WebViewController _controller;
   var _loading = true;
   var _loginStepDone = false;
+  var _closing = false;
   String? _error;
 
   PlatformEmbedSession get _session => widget.session;
@@ -34,12 +35,27 @@ class _EmbeddedPlatformWebViewState extends State<EmbeddedPlatformWebView> {
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setNavigationDelegate(
         NavigationDelegate(
-          onPageStarted: (_) {
-            if (mounted) setState(() => _loading = true);
+          onNavigationRequest: (request) {
+            if (isPlatformConnectReturnUrl(request.url)) {
+              _closeSheet();
+              return NavigationDecision.prevent;
+            }
+            return NavigationDecision.navigate;
+          },
+          onPageStarted: (url) {
+            if (!mounted) return;
+            setState(() => _loading = true);
+            if (isPlatformConnectReturnUrl(url)) {
+              _closeSheet();
+            }
           },
           onPageFinished: (url) async {
             if (!mounted) return;
             setState(() => _loading = false);
+            if (isPlatformConnectReturnUrl(url)) {
+              _closeSheet();
+              return;
+            }
             if (_loginStepDone) return;
             if (_session.isChatwoot) {
               await _tryChatwootFormSubmit();
@@ -57,6 +73,12 @@ class _EmbeddedPlatformWebViewState extends State<EmbeddedPlatformWebView> {
         ),
       );
     _startLoginFlow();
+  }
+
+  void _closeSheet() {
+    if (_closing || !mounted) return;
+    _closing = true;
+    Navigator.of(context).pop();
   }
 
   Future<void> _startLoginFlow() async {
@@ -208,20 +230,23 @@ fetch('/api/auth/login', {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black87,
+        elevation: 0.4,
         title: Text(
           widget.title,
           style: GoogleFonts.montserrat(
             fontSize: 16,
             fontWeight: FontWeight.w500,
+            color: Colors.black87,
           ),
         ),
         actions: [
-          TextButton(
-            onPressed: _openAuthorizationPage,
-            child: Text(
-              'Continue',
-              style: GoogleFonts.montserrat(fontWeight: FontWeight.w600),
-            ),
+          IconButton(
+            tooltip: 'Close',
+            onPressed: _closeSheet,
+            icon: const Icon(Icons.close, size: 26),
           ),
         ],
       ),
@@ -256,9 +281,33 @@ fetch('/api/auth/login', {
   }
 }
 
-/// Opens provider OAuth / Meta signup in the device browser.
-/// In-app WebViews are blocked by Facebook, Instagram, TikTok, and Google.
-Future<void> openPlatformConnectInBrowser(
+bool isPlatformConnectReturnUrl(String url) {
+  final uri = Uri.tryParse(url);
+  if (uri == null) return false;
+  final scheme = uri.scheme.toLowerCase();
+  return scheme == 'autobus' || scheme == 'intent';
+}
+
+Future<void> _pushConnectWebView(
+  BuildContext context, {
+  required String title,
+  required PlatformEmbedSession session,
+}) {
+  return Navigator.of(context).push<void>(
+    MaterialPageRoute<void>(
+      fullscreenDialog: true,
+      builder: (_) => EmbeddedPlatformWebView(title: title, session: session),
+    ),
+  );
+}
+
+/// Opens provider OAuth in a lightweight in-app browser (Safari View /
+/// Chrome Custom Tabs) with an X close button — not Chrome/Safari itself.
+///
+/// Returns `true` when the user has already closed the connect UI (our
+/// sheet). Returns `false` when a system in-app browser is still open and
+/// the caller should refresh on app resume.
+Future<bool> openPlatformConnectInBrowser(
   BuildContext context, {
   required String label,
   required Future<PlatformEmbedSession> Function() fetchSession,
@@ -266,45 +315,58 @@ Future<void> openPlatformConnectInBrowser(
   final messenger = ScaffoldMessenger.of(context);
   try {
     final session = await fetchSession();
-    if (!context.mounted) return;
+    if (!context.mounted) return true;
     final raw = session.authorizationUrl.trim().isNotEmpty
         ? session.authorizationUrl.trim()
         : (session.postizLoginPageUrl ?? '').trim();
-    final uri = Uri.tryParse(raw);
+    final resolved = resolveEmbeddedPlatformUrl(raw);
+    final uri = Uri.tryParse(resolved);
     if (uri == null || !uri.hasScheme) {
       messenger.showSnackBar(
         SnackBar(
           content: Text('Server did not return a valid $label link.'),
         ),
       );
-      return;
+      return true;
     }
-    var ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+
+    // Chatwoot / Postiz login need JS in our sheet. OAuth providers go through
+    // Safari View / Custom Tabs so Facebook, Instagram, Google, and TikTok
+    // do not block the session.
+    if (session.isChatwoot || session.isPostiz) {
+      await _pushConnectWebView(context, title: label, session: session);
+      return true;
+    }
+
+    var ok = await launchUrl(
+      uri,
+      mode: LaunchMode.inAppBrowserView,
+      browserConfiguration: const BrowserConfiguration(showTitle: true),
+    );
     if (!ok) {
-      ok = await launchUrl(uri, mode: LaunchMode.platformDefault);
+      ok = await launchUrl(uri, mode: LaunchMode.inAppWebView);
+    }
+    if (!ok && context.mounted) {
+      await _pushConnectWebView(context, title: label, session: session);
+      return true;
     }
     if (!ok) {
       messenger.showSnackBar(
         SnackBar(content: Text('Could not open the $label signup page.')),
       );
-      return;
+      return true;
     }
-    messenger.showSnackBar(
-      SnackBar(
-        content: Text(
-          'Finish $label signup in your browser. We will return you to the app when it completes.',
-        ),
-      ),
-    );
+    return false;
   } catch (e) {
-    if (!context.mounted) return;
+    if (!context.mounted) return true;
     messenger.showSnackBar(
-      SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+      SnackBar(content: Text(userFacingError(e))),
     );
+    return true;
   }
 }
 
-/// Fetches a Postiz or Chatwoot embed session and opens the WebView.
+/// Fetches a Postiz or Chatwoot embed session and opens the in-app sheet.
 Future<void> openEmbeddedPlatformSession(
   BuildContext context, {
   required String title,
@@ -320,15 +382,11 @@ Future<void> openEmbeddedPlatformSession(
       );
       return;
     }
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(
-        builder: (_) => EmbeddedPlatformWebView(title: title, session: session),
-      ),
-    );
+    await _pushConnectWebView(context, title: title, session: session);
   } catch (e) {
     if (!context.mounted) return;
     messenger.showSnackBar(
-      SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+      SnackBar(content: Text(userFacingError(e))),
     );
   }
 }

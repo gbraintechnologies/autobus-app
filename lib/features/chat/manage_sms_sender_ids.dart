@@ -33,7 +33,7 @@ class _ManageSmsSenderIdsState extends State<ManageSmsSenderIds> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _loadError = e.toString().replaceFirst('Exception: ', '');
+        _loadError = userFacingError(e);
         _rows = const [];
         _loading = false;
       });
@@ -76,7 +76,7 @@ class _ManageSmsSenderIdsState extends State<ManageSmsSenderIds> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            e.toString().replaceFirst('Exception: ', ''),
+            userFacingError(e),
             style: GoogleFonts.montserrat(),
           ),
         ),
@@ -496,6 +496,7 @@ class _SmsSenderIdDialogState extends State<_SmsSenderIdDialog> {
               TextField(
                 controller: _senderIdController,
                 autofocus: true,
+                onTapOutside: dismissAppKeyboard,
                 style: GoogleFonts.montserrat(color: Colors.white, fontSize: 14),
                 textCapitalization: TextCapitalization.characters,
                 decoration: _fieldDecoration(
@@ -510,6 +511,7 @@ class _SmsSenderIdDialogState extends State<_SmsSenderIdDialog> {
               const SizedBox(height: 12),
               TextField(
                 controller: _notesController,
+                onTapOutside: dismissAppKeyboard,
                 style: GoogleFonts.montserrat(color: Colors.white, fontSize: 14),
                 maxLines: 2,
                 decoration: _fieldDecoration(hint: 'Notes (optional)'),

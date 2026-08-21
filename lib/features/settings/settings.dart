@@ -85,7 +85,9 @@ class _SettingsPageState extends State<SettingsPage> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                state.message,
+                state.message.isNotEmpty
+                    ? userFacingError(state.message)
+                    : 'Error signing out',
                 style: GoogleFonts.montserrat(color: Colors.white),
               ),
               backgroundColor: Colors.red,
@@ -127,7 +129,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       /// Company Name / Username
                       BlocBuilder<AuthBloc, AuthState>(
                         builder: (context, state) {
-                          String username = 'Guest';
+                          String username = 'User';
                           if (state is Authenticated) {
                             username =
                                 state.user['fullname'] ??

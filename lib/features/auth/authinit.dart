@@ -12,6 +12,10 @@ class _AuthWrapperState extends State<AuthWrapper> {
   /// Last login/signup landing page. Kept mounted through AuthLoading/AuthError
   /// so form snackbar listeners are not torn down (iOS).
   Widget _formGate = const LogorSign();
+
+  /// Last authenticated shell — kept during in-place token refresh so the app
+  /// does not flash LogorSign / a Guest-labeled home.
+  Widget? _authedShell;
   Timer? _initialTimeout;
 
   @override
@@ -38,9 +42,34 @@ class _AuthWrapperState extends State<AuthWrapper> {
     return <String, dynamic>{};
   }
 
+  bool _hasUserIdentity(Map<String, dynamic> user) {
+    final id = (user['id'] ?? user['user_id'] ?? user['userId'] ?? '')
+        .toString()
+        .trim();
+    final email = (user['email'] ?? user['user_email'] ?? user['userEmail'] ?? '')
+        .toString()
+        .trim();
+    final phone =
+        (user['phone'] ?? user['user_phone'] ?? user['phone_number'] ?? '')
+            .toString()
+            .trim();
+    return id.isNotEmpty || email.isNotEmpty || phone.isNotEmpty;
+  }
+
   void _popToRoot() {
     final nav = Navigator.of(context, rootNavigator: true);
     nav.popUntil((route) => route.isFirst);
+  }
+
+  Widget _requireAuthShell(dynamic user) {
+    final map = _userMap(user);
+    if (!_hasUserIdentity(map)) {
+      _authedShell = null;
+      _formGate = const LogorSign();
+      return _formGate;
+    }
+    _authedShell = SubscriptionGuard(user: map);
+    return _authedShell!;
   }
 
   @override
@@ -50,14 +79,15 @@ class _AuthWrapperState extends State<AuthWrapper> {
         if (state is Unauthenticated ||
             state is SessionExpired ||
             state is TokenRefreshFailed) {
+          _authedShell = null;
           _formGate = const LogorSign();
+          _popToRoot();
         }
 
         if (state is SessionExpired) {
-          showAppSnackBar(context, state.message);
-          _popToRoot();
+          showAppSnackBar(context, userFacingError(state.message));
         } else if (state is TokenRefreshFailed) {
-          showAppSnackBar(context, 'Session error: ${state.message}');
+          showAppSnackBar(context, userFacingError(state.message));
         }
       },
       builder: (context, state) {
@@ -66,19 +96,25 @@ class _AuthWrapperState extends State<AuthWrapper> {
         if (state is Authenticated) {
           print('✓ User is Authenticated');
           _initialTimeout?.cancel();
-          return SubscriptionGuard(user: _userMap(state.user));
+          return _requireAuthShell(state.user);
         }
         if (state is TokenRefreshed) {
           _initialTimeout?.cancel();
-          return SubscriptionGuard(user: _userMap(state.user));
+          return _requireAuthShell(state.user);
         }
 
         if (state is Unauthenticated ||
             state is SessionExpired ||
             state is TokenRefreshFailed) {
           print('✗ ${state.runtimeType} - showing LogorSign');
+          _authedShell = null;
           _formGate = const LogorSign();
           return _formGate;
+        }
+
+        // In-app refresh: keep the authenticated shell mounted.
+        if (state is TokenRefreshing && _authedShell != null) {
+          return _authedShell!;
         }
 
         // Keep Signin/LogorSign mounted through login/signup load and error so

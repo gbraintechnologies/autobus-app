@@ -65,7 +65,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _loadError = e.toString().replaceFirst('Exception: ', '');
+        _loadError = userFacingError(e);
         _loading = false;
       });
     }
@@ -95,7 +95,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       if (!mounted) return;
       setState(() => _actionBusy = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+        SnackBar(content: Text(userFacingError(e))),
       );
     }
   }
@@ -246,7 +246,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       if (!mounted) return;
       setState(() => _invoiceBusy = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+        SnackBar(content: Text(userFacingError(e))),
       );
     }
   }

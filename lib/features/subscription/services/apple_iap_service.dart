@@ -3,6 +3,7 @@ import 'dart:developer';
 
 import 'package:in_app_purchase/in_app_purchase.dart';
 
+import 'package:autobus/common_design/app_error.dart';
 import 'package:autobus/features/home/services/api_service.dart';
 import 'package:autobus/features/subscription/data/apple_iap_ids.dart';
 
@@ -152,7 +153,10 @@ class AppleIapService {
         error: 'Timed out waiting for the App Store. Try Restore Purchases.',
       );
     } catch (e) {
-      return AppleIapPurchaseResult(success: false, error: e.toString());
+      return AppleIapPurchaseResult(
+        success: false,
+        error: userFacingError(e, action: 'completing purchase'),
+      );
     } finally {
       _inflight.remove(product.id);
     }
@@ -195,7 +199,10 @@ class AppleIapService {
         error: 'Apple purchase could not be activated. Try Restore Purchases.',
       );
     } catch (e) {
-      return AppleIapPurchaseResult(success: false, error: e.toString());
+      return AppleIapPurchaseResult(
+        success: false,
+        error: userFacingError(e, action: 'activating subscription'),
+      );
     }
   }
 
@@ -269,7 +276,10 @@ class AppleIapService {
         error: 'Restored Apple purchase could not be activated.',
       );
     } catch (e) {
-      return AppleIapPurchaseResult(success: false, error: e.toString());
+      return AppleIapPurchaseResult(
+        success: false,
+        error: userFacingError(e, action: 'restoring purchase'),
+      );
     }
   }
 

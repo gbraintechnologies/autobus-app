@@ -85,7 +85,7 @@ class _ManageReportsState extends State<ManageReports> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _loadError = e.toString().replaceFirst('Exception: ', '');
+        _loadError = userFacingError(e);
         _loading = false;
         _snapshot = ReportsSnapshot(period: _period, error: _loadError);
       });

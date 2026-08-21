@@ -168,7 +168,7 @@ class _HomeState extends State<Home> {
                   const SizedBox(height: 32),
                   BlocBuilder<AuthBloc, AuthState>(
                     builder: (context, state) {
-                      String displayName = 'Guest';
+                      String displayName = 'User';
                       if (state is Authenticated) {
                         displayName =
                             (state.user['fullname'] ??

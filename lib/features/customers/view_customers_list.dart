@@ -34,7 +34,7 @@ class _ViewCustomersPageState extends State<ViewCustomersPage> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _loadError = e.toString().replaceFirst('Exception: ', '');
+        _loadError = userFacingError(e);
         _loading = false;
       });
     }
@@ -101,7 +101,7 @@ class _ViewCustomersPageState extends State<ViewCustomersPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            e.toString().replaceFirst('Exception: ', ''),
+            userFacingError(e),
             style: GoogleFonts.montserrat(),
           ),
           backgroundColor: Colors.red.shade700,

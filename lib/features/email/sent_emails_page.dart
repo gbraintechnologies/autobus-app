@@ -54,7 +54,7 @@ class _SentEmailsPageState extends State<SentEmailsPage> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _loadError = e.toString().replaceFirst('Exception: ', '');
+        _loadError = userFacingError(e);
         _loading = false;
         _emails = const [];
       });
