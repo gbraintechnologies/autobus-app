@@ -67,14 +67,6 @@ class ChannelCatalog {
       iconColor: Color(0xFF0EA5E9),
       chatwootKinds: {'sms'},
     ),
-    ChannelOption(
-      label: 'X',
-      apiSlug: 'twitter',
-      icon: FontAwesomeIcons.xTwitter,
-      iconColor: Colors.white,
-      chatwootKinds: {'twitter'},
-      comingSoon: true,
-    ),
   ];
 
   static ({List<LinkedChannel> linked, List<ChannelOption> unlinked}) partition(
