@@ -458,6 +458,25 @@ class _FinalizePostPageState extends State<_FinalizePostPage> {
         return;
       }
       d.youtubeTitle = title;
+      final hasVideo = _campaign.selectedContents.any((c) {
+        if (c.type == MarketingContentType.videos) return true;
+        final hint = [
+          c.generatedResult,
+          c.localFilePath,
+        ].whereType<String>().join(' ');
+        return postizMediaLooksLikeVideo(hint);
+      });
+      if (!hasVideo) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'YouTube needs an MP4 video. Photos cannot be posted to YouTube.',
+              style: GoogleFonts.montserrat(fontSize: 13),
+            ),
+          ),
+        );
+        return;
+      }
     }
 
     setState(() {

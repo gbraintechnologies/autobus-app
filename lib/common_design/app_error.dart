@@ -59,9 +59,17 @@ class AppException implements Exception {
     required String action,
   }) {
     final kind = AppErrorMapper.fromHttp(response.statusCode, response.body);
+    String? override;
+    if (kind == AppErrorKind.validation) {
+      final detail = AppErrorMapper.extractDetail(response.body).trim();
+      if (AppErrorMapper.isSafeUserMessage(detail)) {
+        override = detail;
+      }
+    }
     return AppException(
       kind: kind,
       action: action,
+      userOverride: override,
       statusCode: response.statusCode,
       debugDetail: response.body,
     );

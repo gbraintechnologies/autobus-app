@@ -18,6 +18,25 @@ String _clampTitle(String title, int max) {
   return t.length > max ? t.substring(0, max) : t;
 }
 
+/// Postiz YouTube `checkValidity` only accepts a path containing `mp4`.
+bool postizMediaLooksLikeVideo(String url) {
+  final path = url.split('?').first.toLowerCase();
+  return path.endsWith('.mp4') ||
+      path.endsWith('.mov') ||
+      path.endsWith('.m4v') ||
+      path.endsWith('.webm') ||
+      path.contains('.mp4');
+}
+
+String postizDateIso(DateTime utc) {
+  final s = utc.toUtc().toIso8601String();
+  final match = RegExp(r'^(.+\.\d{3})\d*(Z)?$').firstMatch(s);
+  if (match != null) {
+    return '${match.group(1)}${match.group(2) ?? 'Z'}';
+  }
+  return s.endsWith('Z') ? s : '${s}Z';
+}
+
 /// `settings` for Postiz Public API `POST /api/public/v1/posts`.
 /// See https://docs.postiz.com/public-api/posts/create
 Map<String, dynamic> postizSettingsForIntegration(
@@ -135,7 +154,7 @@ Map<String, dynamic> buildPostizCreatePostPayload({
   } else {
     dateUtc = DateTime.now().toUtc();
   }
-  final dateIso = dateUtc.toIso8601String();
+  final dateIso = postizDateIso(dateUtc);
 
   final imageBlocks = <Map<String, dynamic>>[
     for (var i = 0; i < mediaUrls.length; i++)
