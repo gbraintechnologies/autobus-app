@@ -72,18 +72,26 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     return userFacingError(error, action: action);
   }
 
+  static const _authTimeout = Duration(seconds: 20);
+
+  Future<http.Response> _timed(Future<http.Response> request) {
+    return request.timeout(_authTimeout);
+  }
+
   Future<void> _onLogin(LoginEvent event, Emitter<AuthState> emit) async {
     emit(AuthLoading());
     try {
       final identifier = event.identifier.trim();
-      final response = await http.post(
-        Uri.parse('${AppConfig.backendUrl}/api/v1/auth/signin'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'email': identifier,
-          'username': identifier,
-          'password': event.password,
-        }),
+      final response = await _timed(
+        http.post(
+          Uri.parse('${AppConfig.backendUrl}/api/v1/auth/signin'),
+          headers: {'Content-Type': 'application/json'},
+          body: json.encode({
+            'email': identifier,
+            'username': identifier,
+            'password': event.password,
+          }),
+        ),
       );
 
       if (response.statusCode == 200) {
@@ -94,9 +102,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         await tokenService.saveToken(tokenModel);
 
         // Fetch user data using access token
-        final userResponse = await http.get(
-          Uri.parse('${AppConfig.backendUrl}/api/v1/user/me'),
-          headers: await _getAuthHeaders(),
+        final userResponse = await _timed(
+          http.get(
+            Uri.parse('${AppConfig.backendUrl}/api/v1/user/me'),
+            headers: await _getAuthHeaders(),
+          ),
         );
 
         if (userResponse.statusCode == 200) {

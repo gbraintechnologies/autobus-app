@@ -58,10 +58,19 @@ class AppException implements Exception {
     http.Response response, {
     required String action,
   }) {
+    final detail = AppErrorMapper.extractDetail(response.body).trim();
+    final fromBody = AppErrorMapper.fromMessage(detail);
+    if (fromBody == AppErrorKind.network || fromBody == AppErrorKind.timeout) {
+      return AppException(
+        kind: fromBody,
+        action: action,
+        statusCode: response.statusCode,
+        debugDetail: response.body,
+      );
+    }
     final kind = AppErrorMapper.fromHttp(response.statusCode, response.body);
     String? override;
     if (kind == AppErrorKind.validation) {
-      final detail = AppErrorMapper.extractDetail(response.body).trim();
       if (AppErrorMapper.isSafeUserMessage(detail)) {
         override = detail;
       }
@@ -204,9 +213,9 @@ class AppErrorMapper {
   static String messageFor(AppErrorKind kind, String action) {
     switch (kind) {
       case AppErrorKind.network:
-        return 'No internet connection. Please try again.';
+        return 'Network error. Please check your network.';
       case AppErrorKind.timeout:
-        return 'This is taking too long. Please try again.';
+        return 'Network error. Please check your network.';
       case AppErrorKind.unauthorized:
         return 'Your session expired. Please sign in again.';
       case AppErrorKind.forbidden:
@@ -261,10 +270,11 @@ class AppErrorMapper {
     if (error is TimeoutException) return AppErrorKind.timeout;
     if (error is SocketException ||
         error is HandshakeException ||
-        error is http.ClientException) {
+        error is TlsException ||
+        error is http.ClientException ||
+        error is HttpException) {
       return AppErrorKind.network;
     }
-    if (error is HttpException) return AppErrorKind.network;
     return AppErrorKind.unexpected;
   }
 
@@ -272,15 +282,32 @@ class AppErrorMapper {
     final t = raw.toLowerCase();
     if (_containsAny(t, const [
       'socketexception',
+      'clientexception',
+      'handshakeexception',
+      'tlsexception',
+      'httpexception',
       'failed host lookup',
+      'failed to fetch',
+      'failed to connect',
+      'xmlhttprequest',
       'network is unreachable',
+      'unreachable network',
+      'no internet',
+      'internet connection',
+      'network error',
+      'network request failed',
       'connection refused',
       'connection reset',
-      'clientexception',
+      'connection failed',
+      'connection closed',
+      'connection abort',
+      'connection timed',
       'no address associated',
-      'network error',
-      'socketexception:',
-      'handshakeexception',
+      'no such host',
+      'name or service not known',
+      'no route to host',
+      'broken pipe',
+      'network changed',
     ])) {
       return AppErrorKind.network;
     }
@@ -334,6 +361,12 @@ class AppErrorMapper {
       'typeerror',
       'formatexception',
       'file_url',
+      'failed to fetch',
+      'xmlhttprequest',
+      'errno',
+      'uri=',
+      'http://',
+      'https://',
     ])) {
       return false;
     }
