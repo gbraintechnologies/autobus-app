@@ -98,10 +98,11 @@ class _SettingsPageState extends State<SettingsPage> {
       child: Scaffold(
         body: _SettingsBackground(
           child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 18),
-              child: Column(
-                children: [
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(18, 0, 18, 24),
+                child: Column(
+                  children: [
                   const SizedBox(height: 20),
 
                   /// 🔝 Top Bar
@@ -252,6 +253,7 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
         ),
       ),
+      ),
     );
   }
 
@@ -293,6 +295,12 @@ class _SettingsPageState extends State<SettingsPage> {
           context,
           MaterialPageRoute(builder: (_) => const HelpPage()),
         );
+      }),
+      SettingsMenuItem("Terms and Conditions", Icons.description_outlined, () {
+        openAuthLegalUrl(AppConfig.termsOfServiceUrl);
+      }),
+      SettingsMenuItem("Privacy Policy", Icons.privacy_tip_outlined, () {
+        openAuthLegalUrl(AppConfig.privacyPolicyUrl);
       }),
     ];
   }

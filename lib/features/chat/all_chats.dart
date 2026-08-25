@@ -193,6 +193,11 @@ class _AllChatsPageState extends State<AllChatsPage> {
                                         title: _chatListTitle(c),
                                         id: _chatListSubtitlePhoneOrId(c),
                                         date: _formatChatListDate(c),
+                                        completed:
+                                            (c['conversation_lifecycle'] ?? '')
+                                                .toString()
+                                                .toLowerCase() ==
+                                            'completed',
                                         onTap: () => _openConversation(context, c),
                                       );
                                     },
@@ -213,12 +218,14 @@ class _AllChatTile extends StatelessWidget {
   final String title;
   final String id;
   final String date;
+  final bool completed;
   final VoidCallback? onTap;
 
   const _AllChatTile({
     required this.title,
     required this.id,
     required this.date,
+    this.completed = false,
     this.onTap,
   });
 
@@ -264,6 +271,17 @@ class _AllChatTile extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 10),
+              if (completed) ...[
+                Text(
+                  'Completed',
+                  style: GoogleFonts.outfit(
+                    color: const Color(0xFFA855F7),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(width: 8),
+              ],
               Text(
                 date,
                 maxLines: 1,

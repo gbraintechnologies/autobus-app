@@ -1745,12 +1745,11 @@ class ApiService {
 
   /// GET /api/v1/whatsapp/connect — Meta WhatsApp Embedded Signup URL.
   Future<PlatformEmbedSession> getWhatsAppConnectSession() async {
-    // Full-page Facebook OAuth (no JS SDK popup). In-app browsers and iOS
-    // Safari both block FB.login() popups, which made the redirect_uri appear
-    // broken after the previous Safari-app change.
+    // JS SDK on the Meta-whitelisted callback URL. Do not use launch=redirect:
+    // Facebook's OAuth dialog then sends a redirect_uri that is not in
+    // Client OAuth Settings ("URL blocked").
     final query = <String, String>{
       'return_to': 'app',
-      'launch': 'redirect',
     };
     final response = await httpClient.get(
       Uri.parse('$baseUrl/whatsapp/connect').replace(queryParameters: query),
@@ -2419,6 +2418,23 @@ class ApiService {
       throw Exception('Session expired');
     }
     _fail(response, 'sending invoice');
+  }
+
+  /// POST /api/v1/orders/{orderId}/save-customer — copy order contact into customers.
+  Future<Map<String, dynamic>> saveCustomerFromOrder(String orderId) async {
+    final uri = Uri.parse(
+      '$baseUrl/orders/${Uri.encodeComponent(orderId)}/save-customer',
+    );
+    final response = await httpClient.post(uri);
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data is Map<String, dynamic>) return data;
+      if (data is Map) return Map<String, dynamic>.from(data);
+    }
+    if (response.statusCode == 401) {
+      throw Exception('Session expired');
+    }
+    _fail(response, 'saving customer from order');
   }
 
   /// GET /api/v1/conversations/me — `{ completed, intervention_active }`.

@@ -90,16 +90,9 @@ class AppException implements Exception {
     required String action,
   }) {
     final detail = AppErrorMapper.extractDetail(response.body).toLowerCase();
-    if (_containsAny(detail, const [
-      'invalid username',
-      'invalid password',
-      'incorrect password',
-      'incorrect pin',
-      'invalid email/username',
-      'invalid credentials',
-    ])) {
+    if (AppErrorMapper.isCredentialFailure(detail)) {
       return AppException.user(
-        'Invalid email, username, or PIN',
+        AppErrorMapper.credentialsCheckMessage,
         kind: AppErrorKind.unauthorized,
         action: action,
         statusCode: response.statusCode,
@@ -155,6 +148,16 @@ class AppException implements Exception {
         debugDetail: response.body,
       );
     }
+    // Login/signup 401s are bad credentials, not an expired session.
+    if (response.statusCode == 401) {
+      return AppException.user(
+        AppErrorMapper.credentialsCheckMessage,
+        kind: AppErrorKind.unauthorized,
+        action: action,
+        statusCode: response.statusCode,
+        debugDetail: response.body,
+      );
+    }
     return AppException.fromResponse(response, action: action);
   }
 
@@ -174,6 +177,15 @@ class AppException implements Exception {
     final raw = AppErrorMapper.stripPrefix(error.toString());
     if (kind != AppErrorKind.unexpected) {
       return AppException(kind: kind, action: action, debugDetail: raw);
+    }
+
+    if (AppErrorMapper.isCredentialFailure(raw)) {
+      return AppException.user(
+        AppErrorMapper.credentialsCheckMessage,
+        kind: AppErrorKind.unauthorized,
+        action: action,
+        debugDetail: raw,
+      );
     }
 
     final fromText = AppErrorMapper.fromMessage(raw);
@@ -210,6 +222,26 @@ String userFacingError(Object error, {String? action}) {
 class AppErrorMapper {
   AppErrorMapper._();
 
+  static const credentialsCheckMessage =
+      'Please check your username, email, or PIN and try again.';
+
+  static bool isSignInAction(String action) {
+    final t = action.toLowerCase();
+    return t.contains('signing in') || t.contains('sign in') || t == 'login';
+  }
+
+  static bool isCredentialFailure(String raw) {
+    return _containsAny(raw.toLowerCase(), const [
+      'invalid email or password',
+      'invalid username',
+      'invalid password',
+      'incorrect password',
+      'incorrect pin',
+      'invalid email/username',
+      'invalid credentials',
+    ]);
+  }
+
   static String messageFor(AppErrorKind kind, String action) {
     switch (kind) {
       case AppErrorKind.network:
@@ -217,6 +249,7 @@ class AppErrorMapper {
       case AppErrorKind.timeout:
         return 'Network error. Please check your network.';
       case AppErrorKind.unauthorized:
+        if (isSignInAction(action)) return credentialsCheckMessage;
         return 'Your session expired. Please sign in again.';
       case AppErrorKind.forbidden:
         return 'You don’t have permission to do this.';
@@ -317,6 +350,11 @@ class AppErrorMapper {
       'timeout',
     ])) {
       return AppErrorKind.timeout;
+    }
+    // Credential failures can arrive as 401/"unauthorized" dumps; do not
+    // treat those as an expired session.
+    if (isCredentialFailure(t)) {
+      return AppErrorKind.unexpected;
     }
     if (_containsAny(t, const [
       'session expired',

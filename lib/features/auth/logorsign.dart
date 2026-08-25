@@ -178,31 +178,6 @@ class _BottomPanel extends StatelessWidget {
               ),
             ),
           ),
-          Positioned(
-            left: 0,
-            right: 0,
-            top: 315 * s,
-            child: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  GestureDetector(
-                    onTap: () {},
-                    child: Text(
-                      'Terms and Conditions',
-                      style: tStyle(size: 12),
-                    ),
-                  ),
-                  SizedBox(height: 8 * s),
-                  GestureDetector(
-                    onTap: () {},
-                    child: Text('Privacy Policy', style: tStyle(size: 12)),
-                  ),
-                  SizedBox(height: 8 * s),
-                ],
-              ),
-            ),
-          ),
         ],
       ),
     );

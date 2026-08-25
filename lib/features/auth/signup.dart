@@ -496,6 +496,12 @@ class _SignupState extends State<Signup> {
                           buttonText: 'Sign Up',
                         ),
                       ),
+                      const SizedBox(height: 16),
+                      const AuthLegalNotice(
+                        prefix: 'By signing up, you agree to the ',
+                        textColor: Colors.black54,
+                        linkColor: CustColors.mainCol,
+                      ),
                       const SizedBox(height: 20),
                       Center(
                         child: Text(

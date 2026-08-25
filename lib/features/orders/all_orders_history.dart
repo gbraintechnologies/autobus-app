@@ -23,7 +23,16 @@ String _formatOrderHistoryDate(Map<String, dynamic> o) {
 }
 
 class AllOrdersHistory extends StatefulWidget {
-  const AllOrdersHistory({super.key});
+  final String title;
+  final String? orderStatus;
+  final String emptyMessage;
+
+  const AllOrdersHistory({
+    super.key,
+    this.title = 'All Orders',
+    this.orderStatus,
+    this.emptyMessage = 'No orders yet',
+  });
 
   @override
   State<AllOrdersHistory> createState() => _AllOrdersHistoryState();
@@ -47,7 +56,24 @@ class _AllOrdersHistoryState extends State<AllOrdersHistory> {
     });
     try {
       final api = context.read<ApiService>();
-      final list = await api.listOrders(skip: 0, limit: 200);
+      var list = await api.listOrders(
+        skip: 0,
+        limit: 200,
+        orderStatus: widget.orderStatus,
+      );
+      final statusFilter = widget.orderStatus?.trim().toLowerCase();
+      if (statusFilter != null && statusFilter.isNotEmpty) {
+        list = list
+            .where(
+              (o) =>
+                  (o['order_status'] ?? '')
+                      .toString()
+                      .trim()
+                      .toLowerCase() ==
+                  statusFilter,
+            )
+            .toList();
+      }
       if (!mounted) return;
       setState(() {
         _orders = list;
@@ -74,7 +100,9 @@ class _AllOrdersHistoryState extends State<AllOrdersHistory> {
           initialTitle: _orderHistoryTitle(o),
         ),
       ),
-    );
+    ).then((refreshed) {
+      if (refreshed == true && mounted) _loadOrders();
+    });
   }
 
   Widget _orderTile(BuildContext context, Map<String, dynamic> o) {
@@ -98,15 +126,17 @@ class _AllOrdersHistoryState extends State<AllOrdersHistory> {
               fontWeight: FontWeight.w400,
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            (o['order_status'] ?? '').toString(),
-            style: GoogleFonts.outfit(
-              color: Colors.white.withValues(alpha: 0.55),
-              fontSize: 12,
-              fontWeight: FontWeight.w300,
+          if (widget.orderStatus == null) ...[
+            const SizedBox(height: 8),
+            Text(
+              (o['order_status'] ?? '').toString(),
+              style: GoogleFonts.outfit(
+                color: Colors.white.withValues(alpha: 0.55),
+                fontSize: 12,
+                fontWeight: FontWeight.w300,
+              ),
             ),
-          ),
+          ],
           const SizedBox(height: 12),
           Row(
             children: [
@@ -161,7 +191,7 @@ class _AllOrdersHistoryState extends State<AllOrdersHistory> {
                       const SizedBox(width: 18),
                       Expanded(
                         child: Text(
-                          'All Orders',
+                          widget.title,
                           style: ManageScreenStyle.headerTitleStyle(),
                         ),
                       ),
@@ -222,7 +252,7 @@ class _AllOrdersHistoryState extends State<AllOrdersHistory> {
                                       ),
                                       Center(
                                         child: Text(
-                                          'No orders yet',
+                                          widget.emptyMessage,
                                           style: GoogleFonts.outfit(
                                             color: Colors.white.withValues(
                                               alpha: 0.6,

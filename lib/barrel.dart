@@ -29,6 +29,7 @@ export 'package:autobus/common_bloc/success_state.dart';
 export 'package:google_fonts/google_fonts.dart';
 
 // Screen Imports
+export 'package:autobus/features/auth/auth_legal.dart';
 export 'package:autobus/features/auth/logorsign.dart';
 export 'package:autobus/features/initial_ui/splash.dart';
 export 'package:autobus/features/auth/signin.dart';

@@ -34,6 +34,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   String? _loadError;
   bool _actionBusy = false;
   bool _invoiceBusy = false;
+  bool _saveCustomerBusy = false;
   String? _selectedOrderStatus;
 
   @override
@@ -94,6 +95,79 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _actionBusy = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(userFacingError(e))),
+      );
+    }
+  }
+
+  bool _hasSavedCustomer(Map<String, dynamic> o) {
+    final id = (o['customer_id'] ?? '').toString().trim();
+    return id.isNotEmpty && id.toLowerCase() != 'null';
+  }
+
+  bool _hasSaveablePhone(Map<String, dynamic> o) {
+    final phone = (o['customer_phone'] ?? '').toString().trim();
+    if (phone.isEmpty) return false;
+    final lower = phone.toLowerCase();
+    return lower != 'n/a' &&
+        lower != 'na' &&
+        lower != 'none' &&
+        lower != '-' &&
+        lower != 'unknown';
+  }
+
+  Map<String, dynamic> _customerPrefill(Map<String, dynamic> o) {
+    return {
+      'name': (o['customer_name'] ?? '').toString(),
+      'customer_number': (o['customer_phone'] ?? '').toString(),
+      'email': (o['customer_email'] ?? '').toString(),
+    };
+  }
+
+  Future<void> _openPrefillCustomerForm() async {
+    final o = _order;
+    if (o == null) return;
+    final saved = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AddCustomerPage(
+          prefill: _customerPrefill(o),
+          linkOrderId: widget.orderId,
+        ),
+      ),
+    );
+    if (saved == true && mounted) {
+      await _load();
+    }
+  }
+
+  Future<void> _saveCustomerFromOrder() async {
+    setState(() => _saveCustomerBusy = true);
+    try {
+      final api = context.read<ApiService>();
+      final result = await api.saveCustomerFromOrder(widget.orderId);
+      if (!mounted) return;
+      final updated = result['order'];
+      setState(() {
+        if (updated is Map) {
+          _order = Map<String, dynamic>.from(updated);
+        }
+        _saveCustomerBusy = false;
+      });
+      final msg = (result['message'] ?? 'Customer saved').toString();
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _saveCustomerBusy = false);
+      final msg = userFacingError(e).toLowerCase();
+      final needsReview = msg.contains('network') ||
+          msg.contains('customer number') ||
+          msg.contains('invalid');
+      if (needsReview) {
+        await _openPrefillCustomerForm();
+        return;
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(userFacingError(e))),
       );
@@ -317,6 +391,60 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
             _infoRow('Email', (o['customer_email'] ?? '').toString()),
           if ((o['customer_location'] ?? '').toString().isNotEmpty)
             _infoRow('Location', (o['customer_location'] ?? '').toString()),
+          const SizedBox(height: 4),
+          if (_hasSavedCustomer(o))
+            Row(
+              children: [
+                Icon(
+                  Icons.check_circle_outline,
+                  size: 18,
+                  color: Colors.white.withValues(alpha: 0.7),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Saved to customers',
+                  style: GoogleFonts.outfit(
+                    color: Colors.white.withValues(alpha: 0.7),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            )
+          else if (_hasSaveablePhone(o))
+            OutlinedButton.icon(
+              onPressed: _saveCustomerBusy ? null : _saveCustomerFromOrder,
+              icon: _saveCustomerBusy
+                  ? const AutobusLoadingIndicator(size: 18)
+                  : const Icon(Icons.person_add_outlined, size: 20),
+              label: Text(
+                'Save as customer',
+                style: GoogleFonts.outfit(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFFA855F7),
+                side: const BorderSide(color: Color(0xFF6B21A8)),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 12,
+                  horizontal: 16,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+            )
+          else
+            Text(
+              'Add a phone number on this order before saving the customer.',
+              style: GoogleFonts.outfit(
+                color: Colors.white.withValues(alpha: 0.5),
+                fontSize: 12,
+                height: 1.35,
+              ),
+            ),
         ]),
         if (notes.isNotEmpty)
           _section('Notes', [
@@ -373,7 +501,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                 Expanded(
                   child: _loading
                       ? const Center(
-                          child:                           const AutobusLoadingIndicator(size: 32),
+                          child: AutobusLoadingIndicator(size: 32),
                         )
                       : _loadError != null
                       ? Center(

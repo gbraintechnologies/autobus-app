@@ -352,7 +352,7 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
       );
     }
 
-    if (widget.mode == ConversationScreenMode.liveChat && _isCompleted) {
+    if (_isCompleted) {
       return Padding(
         padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
         child: Text(

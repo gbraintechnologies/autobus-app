@@ -69,6 +69,22 @@ class ManageOrders extends StatelessWidget {
                                 },
                               ),
                               _OrderHubCard(
+                                icon: Icons.check_circle_outline,
+                                title: 'Completed Orders',
+                                onTap: () {
+                                  Navigator.push<void>(
+                                    context,
+                                    MaterialPageRoute<void>(
+                                      builder: (_) => const AllOrdersHistory(
+                                        title: 'Completed Orders',
+                                        orderStatus: 'completed',
+                                        emptyMessage: 'No completed orders',
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                              _OrderHubCard(
                                 icon: Icons.receipt_long_outlined,
                                 title: 'All Orders',
                                 onTap: () {
