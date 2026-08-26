@@ -30,6 +30,7 @@ export 'package:google_fonts/google_fonts.dart';
 
 // Screen Imports
 export 'package:autobus/features/auth/auth_legal.dart';
+export 'package:autobus/features/auth/auth_page_header.dart';
 export 'package:autobus/features/auth/logorsign.dart';
 export 'package:autobus/features/initial_ui/splash.dart';
 export 'package:autobus/features/auth/signin.dart';
@@ -130,6 +131,7 @@ export 'package:iconify_flutter/icons/uim.dart';
 export 'package:autobus/icons/fluent.dart';
 
 // Design Imports
+export 'package:autobus/common_design/app_scale.dart';
 export 'package:autobus/common_design/colors.dart';
 export 'package:autobus/common_design/widgets/appbutton.dart';
 export 'package:autobus/common_design/app_error.dart';

@@ -5,16 +5,10 @@ class LogorSign extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final h = size.height;
-
-    // Figma: 428x926
-    const figmaH = 926.0;
-    final brandingTop = h * (148 / figmaH);
-    final bottomPanelH = h * (420 / figmaH);
+    final size = MediaQuery.sizeOf(context);
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.black,
       body: Container(
         height: size.height,
         width: size.width,
@@ -37,30 +31,25 @@ class LogorSign extends StatelessWidget {
             ),
           ),
           child: SafeArea(
-            child: Stack(
+            child: Column(
               children: [
-                Positioned(
-                  top: brandingTop,
-                  left: 0,
-                  right: 0,
-                  child: Center(
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: const [
-                        AutobusMark(),
-                        SizedBox(width: 9),
-                        AutobusWordmark(baseColor: Colors.white),
-                      ],
+                Expanded(
+                  child: Align(
+                    alignment: const Alignment(0, -0.35),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: const [
+                          AutobusMark(),
+                          SizedBox(width: 9),
+                          AutobusWordmark(baseColor: Colors.white),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  height: bottomPanelH,
-                  child: _BottomPanel(height: bottomPanelH),
-                ),
+                const _BottomPanel(),
               ],
             ),
           ),
@@ -71,18 +60,13 @@ class LogorSign extends StatelessWidget {
 }
 
 class _BottomPanel extends StatelessWidget {
-  const _BottomPanel({required this.height});
-
-  final double height;
+  const _BottomPanel();
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    // Figma bottom panel size: 428x420
-    const figmaPanelH = 420.0;
-    final s = height / figmaPanelH;
-
+    final size = MediaQuery.sizeOf(context);
     const panelColor = Color(0xFF2A1447);
+    final minPanelH = (size.height * 0.38).clamp(260.0, 400.0);
 
     TextStyle tStyle({double size = 14, FontWeight weight = FontWeight.w400}) {
       return GoogleFonts.montserrat(
@@ -92,91 +76,89 @@ class _BottomPanel extends StatelessWidget {
       );
     }
 
+    Widget authLink({
+      required String label,
+      required VoidCallback onPressed,
+    }) {
+      return TextButton(
+        onPressed: onPressed,
+        style: TextButton.styleFrom(
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+          minimumSize: const Size(0, 44),
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        ),
+        child: AppFitText(
+          label,
+          style: GoogleFonts.montserrat(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.w200,
+          ),
+        ),
+      );
+    }
+
     return Container(
       width: double.infinity,
+      constraints: BoxConstraints(minHeight: minPanelH),
       color: panelColor,
-      child: Stack(
+      padding: const EdgeInsets.fromLTRB(26, 28, 26, 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Positioned(
-            left: 26 * s,
-            top: 23 * s,
-            right: 26 * s,
-            child: Text(
-              'The power of Ai in your pocket',
-              style: tStyle(size: 32, weight: FontWeight.w600),
-            ),
-          ),
-          Positioned(
-            left: 26 * s,
-            top: 131 * s,
-            right: 26 * s,
-            child: Text(
-              'Agentic business management',
-              style: tStyle(size: 16, weight: FontWeight.w400),
-            ),
-          ),
-          Positioned(
-            left: 0,
-            right: 0,
-            top: 218 * s,
-            child: Center(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  SizedBox(
-                    width: size.width * 0.25,
-                    child: TextButton(
-                      onPressed: () {
-                        Navigator.of(context).push(
-                          PageTransition(
-                            type: PageTransitionType.rightToLeftWithFade,
-                            childCurrent: const Signin(),
-                            duration: const Duration(milliseconds: 350),
-                            reverseDuration: const Duration(milliseconds: 300),
-                            child: const Signin(),
-                          ),
-                        );
-                      },
-                      child: Center(
-                        child: Text(
-                          'Log In',
-                          style: GoogleFonts.montserrat(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w200,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  Container(height: 40, width: 1.5, color: Colors.white),
-                  SizedBox(
-                    width: size.width * 0.25,
-                    child: TextButton(
-                      onPressed: () {
-                        Navigator.of(context).push(
-                          PageTransition(
-                            type: PageTransitionType.rightToLeftWithFade,
-                            childCurrent: const Signup(),
-                            duration: const Duration(milliseconds: 350),
-                            reverseDuration: const Duration(milliseconds: 300),
-                            child: const Signup(),
-                          ),
-                        );
-                      },
-                      child: Text(
-                        'Sign Up',
-                        style: GoogleFonts.montserrat(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w200,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'The power of Ai in your pocket',
+                style: tStyle(size: 32, weight: FontWeight.w600),
               ),
-            ),
+              const SizedBox(height: 16),
+              Text(
+                'Agentic business management',
+                style: tStyle(size: 16, weight: FontWeight.w400),
+              ),
+            ],
+          ),
+          const SizedBox(height: 28),
+          Row(
+            children: [
+              Expanded(
+                child: authLink(
+                  label: 'Log In',
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      PageTransition(
+                        type: PageTransitionType.rightToLeftWithFade,
+                        childCurrent: const Signin(),
+                        duration: const Duration(milliseconds: 350),
+                        reverseDuration: const Duration(milliseconds: 300),
+                        child: const Signin(),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              Container(height: 40, width: 1.5, color: Colors.white),
+              Expanded(
+                child: authLink(
+                  label: 'Sign Up',
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      PageTransition(
+                        type: PageTransitionType.rightToLeftWithFade,
+                        childCurrent: const Signup(),
+                        duration: const Duration(milliseconds: 350),
+                        reverseDuration: const Duration(milliseconds: 300),
+                        child: const Signup(),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
           ),
         ],
       ),

@@ -11,13 +11,16 @@ class AppButton extends StatelessWidget {
     return TextButton(
       style: TextButton.styleFrom(
         backgroundColor: CustColors.mainCol,
-        minimumSize: const Size(270, 50),
+        minimumSize: Size(
+          (MediaQuery.sizeOf(context).width * 0.72).clamp(200.0, 270.0),
+          50,
+        ),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(14.0),
         ),
       ),
       onPressed: onPressed,
-      child: Text(
+      child: AppFitText(
         buttonText,
         style: GoogleFonts.montserrat(
           color: Colors.white,

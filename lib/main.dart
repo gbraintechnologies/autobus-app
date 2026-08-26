@@ -98,6 +98,14 @@ class MyApp extends StatelessWidget {
           debugShowCheckedModeBanner: false,
           title: 'Autobus',
           theme: state.themeData,
+          builder: (context, child) {
+            return MediaQuery(
+              data: MediaQuery.of(context).copyWith(
+                textScaler: AppScale.textScalerOf(context),
+              ),
+              child: child ?? const SizedBox.shrink(),
+            );
+          },
           home: const SplashWrapper(),
         );
       },

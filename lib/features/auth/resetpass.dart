@@ -137,47 +137,10 @@ class _ResetPasswordState extends State<ResetPassword> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   SizedBox(height: MediaQuery.of(context).size.height * 0.03),
-                  Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      Center(
-                        child: Text(
-                          'Reset Password',
-                          style: GoogleFonts.montserrat(
-                            color: Colors.black,
-                            fontSize: 26,
-                            fontWeight: FontWeight.w300,
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        left: 0,
-                        child: GestureDetector(
-                          onTap: () {
-                            Navigator.of(context).pop();
-                          },
-                          child: Container(
-                            height: 35,
-                            width: 35,
-                            decoration: BoxDecoration(
-                              color: CustColors.mainCol,
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: CustColors.mainCol,
-                                width: 1.5,
-                              ),
-                            ),
-                            child: Center(
-                              child: Icon(
-                                Icons.arrow_back_ios_new,
-                                color: Colors.white,
-                                size: 50 * 0.35,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+                  AuthPageHeader(
+                    title: 'Reset Password',
+                    fontWeight: FontWeight.w300,
+                    onBack: () => Navigator.of(context).pop(),
                   ),
                   SizedBox(height: MediaQuery.of(context).size.height * 0.1),
                   Center(

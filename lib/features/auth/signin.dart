@@ -2,13 +2,19 @@ import 'package:autobus/barrel.dart';
 import 'package:flutter/services.dart';
 
 class Signin extends StatefulWidget {
-  const Signin({super.key});
+  const Signin({super.key, this.initialIdentifier});
+
+  /// Prefills the email / username field (e.g. after subscribe → re-login).
+  final String? initialIdentifier;
+
   @override
   State<Signin> createState() => _SigninState();
 }
 
 class _SigninState extends State<Signin> {
-  final TextEditingController emailController = TextEditingController();
+  late final TextEditingController emailController = TextEditingController(
+    text: widget.initialIdentifier?.trim() ?? '',
+  );
   final List<TextEditingController> _pinControllers = List.generate(
     4,
     (_) => TextEditingController(),
@@ -137,54 +143,21 @@ class _SigninState extends State<Signin> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Positioned(
-                          left: 0,
-                          child: GestureDetector(
-                            onTap: () => Navigator.of(context).pop(),
-                            child: Container(
-                              height: 35,
-                              width: 35,
-                              decoration: BoxDecoration(
-                                color: CustColors.mainCol,
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: CustColors.mainCol,
-                                  width: 1.5,
-                                ),
-                              ),
-                              child: Center(
-                                child: Icon(
-                                  Icons.arrow_back_ios_new,
-                                  color: Colors.white,
-                                  size: 50 * 0.35,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        Center(
-                          child: Text(
-                            'Login',
-                            style: GoogleFonts.montserrat(
-                              color: Colors.black,
-                              fontSize: 26,
-                              fontWeight: FontWeight.w400,
-                            ),
-                          ),
-                        ),
-                      ],
+                    AuthPageHeader(
+                      title: 'Login',
+                      onBack: () => Navigator.of(context).pop(),
                     ),
 
                     const SizedBox(height: 24),
 
                     const Center(
-                      child: AutobusBranding(
-                        wordmarkFontSize: 26,
-                        markCircleSize: 34,
-                        spacing: 14,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: AutobusBranding(
+                          wordmarkFontSize: 26,
+                          markCircleSize: 34,
+                          spacing: 14,
+                        ),
                       ),
                     ),
 
@@ -294,7 +267,7 @@ class _SigninState extends State<Signin> {
                                 ),
                               );
                             },
-                            child: Text(
+                            child: AppFitText(
                               'Sign Up',
                               style: GoogleFonts.montserrat(
                                 color: CustColors.mainCol,

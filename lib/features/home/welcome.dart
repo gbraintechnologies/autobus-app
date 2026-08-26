@@ -19,6 +19,7 @@ class _WelcomeState extends State<Welcome> {
   Widget build(BuildContext context) {
     print('=== WELCOME SCREEN BUILDING ===');
     return Scaffold(
+      backgroundColor: const Color(0xFF130522),
       body: _GradientBackground(
         child: SafeArea(
           child: BlocBuilder<AuthBloc, AuthState>(
@@ -127,6 +128,8 @@ class _GradientBackground extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      width: double.infinity,
+      height: double.infinity,
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [Color(0xFF130522), Color(0xFF2D0C51), Color(0xFF130522)],

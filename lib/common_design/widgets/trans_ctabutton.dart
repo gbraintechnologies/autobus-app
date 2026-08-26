@@ -17,31 +17,28 @@ class TransparentCtaButton extends StatelessWidget {
       child: Container(
         width: MediaQuery.of(context).size.width * 0.6,
         height: 51,
-        padding: const EdgeInsets.symmetric(horizontal: 24),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
           color: Colors.transparent,
           borderRadius: BorderRadius.circular(40),
           border: Border.all(color: Colors.white.withOpacity(0.7)),
         ),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const SizedBox(width: 34),
-            Text(
-              label,
-              style: GoogleFonts.montserrat(
-                color: Colors.white,
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
+            const SizedBox(width: 18),
+            Expanded(
+              child: AppFitText(
+                label,
+                style: GoogleFonts.montserrat(
+                  color: Colors.white,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
-            Row(
-              children: const [
-                Icon(Icons.chevron_right, color: Colors.white, size: 18),
-                Icon(Icons.chevron_right, color: Colors.white54, size: 18),
-                Icon(Icons.chevron_right, color: Colors.white38, size: 18),
-              ],
-            ),
+            const Icon(Icons.chevron_right, color: Colors.white, size: 18),
+            const Icon(Icons.chevron_right, color: Colors.white54, size: 18),
+            const Icon(Icons.chevron_right, color: Colors.white38, size: 18),
           ],
         ),
       ),

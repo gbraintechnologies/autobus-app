@@ -21,10 +21,51 @@ class ProductGalleryPhoto {
   factory ProductGalleryPhoto.fromJson(Map<String, dynamic> json) {
     return ProductGalleryPhoto(
       imageId: (json['image_id'] ?? '').toString(),
-      url: (json['url'] ?? '').toString(),
+      url: (json['url'] ?? json['image_url'] ?? json['file_url'] ?? '')
+          .toString(),
       isPrimary: json['is_primary'] == true,
     );
   }
+}
+
+Widget _remoteProductImage(
+  String url, {
+  required BoxFit fit,
+  double? width,
+  double? height,
+}) {
+  return Image.network(
+    url,
+    fit: fit,
+    width: width,
+    height: height,
+    gaplessPlayback: true,
+    filterQuality: FilterQuality.medium,
+    webHtmlElementStrategy: WebHtmlElementStrategy.prefer,
+    loadingBuilder: (context, child, progress) {
+      if (progress == null) return child;
+      return Container(
+        color: const Color(0xFF1E0A32),
+        alignment: Alignment.center,
+        child: const SizedBox(
+          width: 22,
+          height: 22,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: Color(0xFFA855F7),
+          ),
+        ),
+      );
+    },
+    errorBuilder: (_, __, ___) => Container(
+      color: const Color(0xFF1E0A32),
+      alignment: Alignment.center,
+      child: Icon(
+        Icons.broken_image_outlined,
+        color: Colors.white.withValues(alpha: 0.35),
+      ),
+    ),
+  );
 }
 
 /// Manage uploaded product photos on the edit screen.
@@ -73,7 +114,7 @@ class ProductExistingGallery extends StatelessWidget {
         ),
         const SizedBox(height: 6),
         Text(
-          'Tap a photo to set cover or remove it. Add multiple images at once.',
+          'Tap a photo to view it. Set a cover or remove it from the viewer.',
           style: GoogleFonts.outfit(
             color: Colors.white.withValues(alpha: 0.5),
             fontSize: 12,
@@ -135,18 +176,7 @@ class _ExistingThumb extends StatelessWidget {
               ),
             ),
             clipBehavior: Clip.antiAlias,
-            child: Image.network(
-              photo.url,
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(
-                color: const Color(0xFF1E0A32),
-                alignment: Alignment.center,
-                child: Icon(
-                  Icons.broken_image_outlined,
-                  color: Colors.white.withValues(alpha: 0.35),
-                ),
-              ),
-            ),
+            child: _remoteProductImage(photo.url, fit: BoxFit.cover),
           ),
           if (photo.isPrimary)
             Positioned(
@@ -224,37 +254,85 @@ Future<String?> showProductPhotoActionsSheet(
   ProductGalleryPhoto photo, {
   required bool canDelete,
 }) {
-  return showModalBottomSheet<String>(
+  return showProductPhotoViewer(context, photo, canDelete: canDelete);
+}
+
+Future<String?> showProductPhotoViewer(
+  BuildContext context,
+  ProductGalleryPhoto photo, {
+  required bool canDelete,
+}) {
+  return showGeneralDialog<String>(
     context: context,
-    backgroundColor: const Color(0xFF1E0A32),
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-    ),
-    builder: (ctx) => SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (!photo.isPrimary)
-            ListTile(
-              leading: const Icon(Icons.star_outline, color: Colors.white70),
-              title: Text(
-                'Set as cover',
-                style: GoogleFonts.outfit(color: Colors.white),
-              ),
-              onTap: () => Navigator.pop(ctx, 'primary'),
+    barrierDismissible: true,
+    barrierLabel: 'Close photo',
+    barrierColor: Colors.black.withValues(alpha: 0.94),
+    pageBuilder: (ctx, _, __) {
+      final size = MediaQuery.sizeOf(ctx);
+      return Material(
+        color: Colors.transparent,
+        child: SafeArea(
+          child: SizedBox.expand(
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        icon: const Icon(Icons.close, color: Colors.white),
+                      ),
+                      const Spacer(),
+                      if (!photo.isPrimary)
+                        TextButton.icon(
+                          onPressed: () => Navigator.pop(ctx, 'primary'),
+                          icon: const Icon(
+                            Icons.star_outline,
+                            color: Colors.white70,
+                            size: 18,
+                          ),
+                          label: Text(
+                            'Set as cover',
+                            style: GoogleFonts.outfit(color: Colors.white),
+                          ),
+                        ),
+                      if (canDelete)
+                        TextButton.icon(
+                          onPressed: () => Navigator.pop(ctx, 'delete'),
+                          icon: const Icon(
+                            Icons.delete_outline,
+                            color: Colors.redAccent,
+                            size: 18,
+                          ),
+                          label: Text(
+                            'Remove',
+                            style: GoogleFonts.outfit(color: Colors.redAccent),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: InteractiveViewer(
+                    minScale: 0.6,
+                    maxScale: 4,
+                    child: Center(
+                      child: _remoteProductImage(
+                        photo.url,
+                        fit: BoxFit.contain,
+                        width: size.width,
+                        height: size.height * 0.78,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          if (canDelete)
-            ListTile(
-              leading: const Icon(Icons.delete_outline, color: Colors.redAccent),
-              title: Text(
-                'Remove',
-                style: GoogleFonts.outfit(color: Colors.redAccent),
-              ),
-              onTap: () => Navigator.pop(ctx, 'delete'),
-            ),
-        ],
-      ),
-    ),
+          ),
+        ),
+      );
+    },
   );
 }
 

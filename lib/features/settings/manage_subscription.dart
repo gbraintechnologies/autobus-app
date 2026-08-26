@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:autobus/common_design/app_error.dart';
+import 'package:autobus/common_design/app_scale.dart';
 import 'package:autobus/config/app_config.dart';
 import 'package:autobus/common_design/colors.dart';
 import 'package:autobus/common_design/credit_category.dart';
@@ -387,7 +388,10 @@ class _ManageSubscriptionPageState extends State<ManageSubscriptionPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color.fromARGB(255, 244, 244, 244),
       body: Container(
+        width: double.infinity,
+        height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [
@@ -433,7 +437,7 @@ class _ManageSubscriptionPageState extends State<ManageSubscriptionPage> {
                           ),
                         ),
                         Expanded(
-                          child: Text(
+                          child: AppFitText(
                             'Subscription',
                             textAlign: TextAlign.center,
                             style: GoogleFonts.montserrat(
@@ -516,10 +520,11 @@ class _ManageSubscriptionPageState extends State<ManageSubscriptionPage> {
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                               ),
-                              child: Text(
+                              child: AppFitText(
                                 'Manage Subscriptions',
                                 style: GoogleFonts.montserrat(
                                   fontWeight: FontWeight.w600,
+                                  color: Colors.white,
                                 ),
                               ),
                             ),
@@ -539,14 +544,15 @@ class _ManageSubscriptionPageState extends State<ManageSubscriptionPage> {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                             ),
-                            child: Text(
-                              _hasActive
-                                  ? 'Upgrade or change plan'
-                                  : 'Choose a plan',
-                              style: GoogleFonts.montserrat(
-                                fontWeight: FontWeight.w600,
+                              child: AppFitText(
+                                _hasActive
+                                    ? 'Upgrade or change plan'
+                                    : 'Choose a plan',
+                                style: GoogleFonts.montserrat(
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
                               ),
-                            ),
                           ),
                         ),
                         if (_hasActive) ...[
@@ -565,7 +571,7 @@ class _ManageSubscriptionPageState extends State<ManageSubscriptionPage> {
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                               ),
-                              child: Text(
+                              child: AppFitText(
                                 _isAppleIap
                                     ? 'Manage on Apple ID'
                                     : 'Cancel subscription',
@@ -596,7 +602,7 @@ class _ManageSubscriptionPageState extends State<ManageSubscriptionPage> {
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                               ),
-                              child: Text(
+                              child: AppFitText(
                                 'Restore Purchases',
                                 style: GoogleFonts.montserrat(
                                   fontWeight: FontWeight.w600,

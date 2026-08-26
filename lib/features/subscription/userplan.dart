@@ -68,6 +68,7 @@ class _SelectPlanState extends State<SelectPlan> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF130522),
       body: _GradientBackground(
         child: SafeArea(
           child: Padding(
@@ -76,8 +77,8 @@ class _SelectPlanState extends State<SelectPlan> with TickerProviderStateMixin {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 const SizedBox(height: 10),
-                _HeaderLogo(),
-                const SizedBox(height: 22),
+                const _HeaderLogo(),
+                const SizedBox(height: 12),
                 Expanded(
                   child: _isLoading
                       ? const Center(
@@ -96,61 +97,72 @@ class _SelectPlanState extends State<SelectPlan> with TickerProviderStateMixin {
                             ),
                           ),
                         )
-                      : Center(
-                          child: SingleChildScrollView(
-                            child: Column(
-                              children: [
-                                const SizedBox(height: 34),
-                                Text(
-                                  widget.upgradeFromActivePlan
-                                      ? 'Upgrade plan'
-                                      : 'User Type',
-                                  style: GoogleFonts.montserrat(
-                                    color: Colors.white,
-                                    fontSize: 30,
-                                    fontWeight: FontWeight.w700,
-                                  ),
+                      : LayoutBuilder(
+                          builder: (context, constraints) {
+                            return SingleChildScrollView(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              child: ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  minHeight: constraints.maxHeight,
                                 ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  widget.upgradeFromActivePlan
-                                      ? 'Pick a higher tier to continue'
-                                      : 'Select a user type',
-                                  style: GoogleFonts.montserrat(
-                                    color: Colors.white.withOpacity(0.8),
-                                    fontSize: 13,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                for (final plan in _visiblePlans) ...[
-                                  Center(
-                                    child: ConstrainedBox(
-                                      constraints: const BoxConstraints(
-                                        maxWidth: 400,
-                                      ),
-                                      child: _PlanExpandableTile(
-                                        plan: plan,
-                                        expanded: _expandedPlanId == plan.id,
-                                        selected: _selectedPlanId == plan.id,
-                                        onTap: () {
-                                          setState(() {
-                                            final isExpanding =
-                                                _expandedPlanId != plan.id;
-                                            _expandedPlanId = isExpanding
-                                                ? plan.id
-                                                : null;
-                                            _selectedPlanId = plan.id;
-                                          });
-                                        },
+                                child: Column(
+                                  children: [
+                                    const SizedBox(height: 16),
+                                    AppFitText(
+                                      widget.upgradeFromActivePlan
+                                          ? 'Upgrade plan'
+                                          : 'User Type',
+                                      style: GoogleFonts.montserrat(
+                                        color: Colors.white,
+                                        fontSize: 30,
+                                        fontWeight: FontWeight.w700,
                                       ),
                                     ),
-                                  ),
-                                  const SizedBox(height: 14),
-                                ],
-                                const SizedBox(height: 18),
-                              ],
-                            ),
-                          ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      widget.upgradeFromActivePlan
+                                          ? 'Pick a higher tier to continue'
+                                          : 'Select a user type',
+                                      textAlign: TextAlign.center,
+                                      style: GoogleFonts.montserrat(
+                                        color: Colors.white.withOpacity(0.8),
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    for (final plan in _visiblePlans) ...[
+                                      Center(
+                                        child: ConstrainedBox(
+                                          constraints: const BoxConstraints(
+                                            maxWidth: 400,
+                                          ),
+                                          child: _PlanExpandableTile(
+                                            plan: plan,
+                                            expanded:
+                                                _expandedPlanId == plan.id,
+                                            selected:
+                                                _selectedPlanId == plan.id,
+                                            onTap: () {
+                                              setState(() {
+                                                final isExpanding =
+                                                    _expandedPlanId != plan.id;
+                                                _expandedPlanId = isExpanding
+                                                    ? plan.id
+                                                    : null;
+                                                _selectedPlanId = plan.id;
+                                              });
+                                            },
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 14),
+                                    ],
+                                    const SizedBox(height: 24),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
                         ),
                 ),
                 const SizedBox(height: 8),
@@ -222,7 +234,7 @@ class _PlanExpandableTile extends StatelessWidget {
           child: expanded
               ? _ExpandedPlanContent(plan: plan)
               : Center(
-                  child: Text(
+                  child: AppFitText(
                     plan.name,
                     style: GoogleFonts.montserrat(
                       color: Colors.white,
@@ -283,8 +295,9 @@ class _ExpandedPlanContent extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
+        AppFitText(
           plan.name,
+          alignment: Alignment.centerLeft,
           style: GoogleFonts.montserrat(
             color: col,
             fontSize: 18,
@@ -292,8 +305,9 @@ class _ExpandedPlanContent extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 6),
-        Text(
+        AppFitText(
           plan.priceText,
+          alignment: Alignment.centerLeft,
           style: GoogleFonts.montserrat(
             color: col,
             fontSize: 34,
@@ -359,33 +373,30 @@ class _BottomCta extends StatelessWidget {
         child: GestureDetector(
           onTap: onPressed,
           child: Container(
-            width: MediaQuery.of(context).size.width * 0.6,
+            width: (MediaQuery.sizeOf(context).width * 0.6).clamp(200.0, 280.0),
             height: 60,
-            padding: const EdgeInsets.symmetric(horizontal: 24),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             decoration: BoxDecoration(
               color: Colors.transparent,
               borderRadius: BorderRadius.circular(40),
               border: Border.all(color: Colors.white.withOpacity(0.7)),
             ),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const SizedBox(width: 34),
-                Text(
-                  label,
-                  style: GoogleFonts.montserrat(
-                    color: Colors.white,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
+                const SizedBox(width: 18),
+                Expanded(
+                  child: AppFitText(
+                    label,
+                    style: GoogleFonts.montserrat(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
-                Row(
-                  children: const [
-                    Icon(Icons.chevron_right, color: Colors.white, size: 18),
-                    Icon(Icons.chevron_right, color: Colors.white54, size: 18),
-                    Icon(Icons.chevron_right, color: Colors.white38, size: 18),
-                  ],
-                ),
+                const Icon(Icons.chevron_right, color: Colors.white, size: 18),
+                const Icon(Icons.chevron_right, color: Colors.white54, size: 18),
+                const Icon(Icons.chevron_right, color: Colors.white38, size: 18),
               ],
             ),
           ),
@@ -396,40 +407,47 @@ class _BottomCta extends StatelessWidget {
 }
 
 class _HeaderLogo extends StatelessWidget {
+  const _HeaderLogo();
+
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Container(
-          height: 34,
-          width: 34,
-          decoration: const BoxDecoration(
-            shape: BoxShape.circle,
-            color: Color(0xFF9C27B0),
-          ),
-        ),
-        Transform.translate(
-          offset: const Offset(-12, 0),
-          child: Container(
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
             height: 34,
             width: 34,
             decoration: const BoxDecoration(
               shape: BoxShape.circle,
-              color: Color(0xFF6A1B9A),
+              color: Color(0xFF9C27B0),
             ),
           ),
-        ),
-        const SizedBox(width: 4),
-        Text(
-          'Autobus',
-          style: GoogleFonts.montserrat(
-            color: Colors.white,
-            fontSize: 32,
-            fontWeight: FontWeight.w700,
+          Transform.translate(
+            offset: const Offset(-12, 0),
+            child: Container(
+              height: 34,
+              width: 34,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: Color(0xFF6A1B9A),
+              ),
+            ),
           ),
-        ),
-      ],
+          const SizedBox(width: 4),
+          Text(
+            'Autobus',
+            maxLines: 1,
+            style: GoogleFonts.montserrat(
+              color: Colors.white,
+              fontSize: 32,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -441,6 +459,8 @@ class _GradientBackground extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      width: double.infinity,
+      height: double.infinity,
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [Color(0xFF130522), Color(0xFF2D0C51), Color(0xFF130522)],

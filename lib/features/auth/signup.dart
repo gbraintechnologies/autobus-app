@@ -207,54 +207,19 @@ class _SignupState extends State<Signup> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          Center(
-                            child: Text(
-                              'Sign Up',
-                              style: GoogleFonts.montserrat(
-                                color: Colors.black,
-                                fontSize: 26,
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                          ),
-                          Positioned(
-                            left: 0,
-                            child: GestureDetector(
-                              onTap: () {
-                                Navigator.of(context).pop();
-                              },
-                              child: Container(
-                                height: 35,
-                                width: 35,
-                                decoration: BoxDecoration(
-                                  color: CustColors.mainCol,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: CustColors.mainCol,
-                                    width: 1.5,
-                                  ),
-                                ),
-                                child: Center(
-                                  child: Icon(
-                                    Icons.arrow_back_ios_new,
-                                    color: Colors.white,
-                                    size: 50 * 0.35,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
+                      AuthPageHeader(
+                        title: 'Sign Up',
+                        onBack: () => Navigator.of(context).pop(),
                       ),
                       const SizedBox(height: 28),
                       const Center(
-                        child: AutobusBranding(
-                          wordmarkFontSize: 26,
-                          markCircleSize: 34,
-                          spacing: 14,
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: AutobusBranding(
+                            wordmarkFontSize: 26,
+                            markCircleSize: 34,
+                            spacing: 14,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 48),
@@ -316,7 +281,9 @@ class _SignupState extends State<Signup> {
                               ),
                               Align(
                                 alignment: Alignment.centerLeft,
-                                child: Row(
+                                child: SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   crossAxisAlignment: CrossAxisAlignment.end,
                                   children: [
@@ -441,6 +408,7 @@ class _SignupState extends State<Signup> {
                                       ),
                                     ),
                                   ],
+                                ),
                                 ),
                               ),
                               const SizedBox(height: 20),
