@@ -35,7 +35,7 @@ class PlatformPostDetails {
     this.youtubeTagsCsv = '',
     this.madeForKids = 'no',
     this.tiktokTitle = '',
-    this.tiktokPrivacy = 'PUBLIC_TO_EVERYONE',
+    this.tiktokPrivacy = 'SELF_ONLY',
     this.tiktokDuet = true,
     this.tiktokStitch = true,
     this.tiktokComment = true,

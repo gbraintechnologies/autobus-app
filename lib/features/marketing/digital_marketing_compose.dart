@@ -828,6 +828,43 @@ ${_campaign.conversationTranscript}
             },
           ),
           const SizedBox(height: 10),
+          DropdownButtonFormField<String>(
+            value: const {
+              'SELF_ONLY',
+              'PUBLIC_TO_EVERYONE',
+              'MUTUAL_FOLLOW_FRIENDS',
+              'FOLLOWER_OF_CREATOR',
+            }.contains(d.tiktokPrivacy)
+                ? d.tiktokPrivacy
+                : 'SELF_ONLY',
+            decoration: _fieldDecoration(
+              'Privacy',
+              hint: 'Only me until TikTok audits public posting',
+            ),
+            items: const [
+              DropdownMenuItem(
+                value: 'SELF_ONLY',
+                child: Text('Only me (required until TikTok public audit)'),
+              ),
+              DropdownMenuItem(
+                value: 'PUBLIC_TO_EVERYONE',
+                child: Text('Everyone'),
+              ),
+              DropdownMenuItem(
+                value: 'MUTUAL_FOLLOW_FRIENDS',
+                child: Text('Friends'),
+              ),
+              DropdownMenuItem(
+                value: 'FOLLOWER_OF_CREATOR',
+                child: Text('Followers'),
+              ),
+            ],
+            onChanged: (v) {
+              if (v == null) return;
+              setState(() => d.tiktokPrivacy = v);
+            },
+          ),
+          const SizedBox(height: 10),
           _captionField(d),
         ],
       );

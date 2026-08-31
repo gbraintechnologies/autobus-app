@@ -81,7 +81,7 @@ Map<String, dynamic> postizSettingsForIntegration(
       final rawTitle = details?.tiktokTitle.trim().isNotEmpty == true
           ? details!.tiktokTitle
           : titleFallback;
-      final privacy = details?.tiktokPrivacy ?? 'PUBLIC_TO_EVERYONE';
+      final privacy = details?.tiktokPrivacy ?? 'SELF_ONLY';
       const allowedPrivacy = {
         'PUBLIC_TO_EVERYONE',
         'MUTUAL_FOLLOW_FRIENDS',
@@ -92,7 +92,7 @@ Map<String, dynamic> postizSettingsForIntegration(
         '__type': 'tiktok',
         'title': _clampTitle(rawTitle, 90),
         'privacy_level':
-            allowedPrivacy.contains(privacy) ? privacy : 'PUBLIC_TO_EVERYONE',
+            allowedPrivacy.contains(privacy) ? privacy : 'SELF_ONLY',
         'duet': details?.tiktokDuet ?? true,
         'stitch': details?.tiktokStitch ?? true,
         'comment': details?.tiktokComment ?? true,
