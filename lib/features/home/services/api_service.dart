@@ -325,12 +325,13 @@ class ApiService {
     String? linkedinUrl,
     String? twitterUrl,
     String? instagramUrl,
+    String? currencyCode,
   }) async {
     try {
       final body = <String, dynamic>{};
       if (fullname != null) body['fullname'] = fullname;
       if (email != null) body['email'] = email;
-      if (phone != null) body['phone'] = phone;
+      if (phone != null) body['phone'] = phone.isEmpty ? null : phone;
       if (profilePictureUrl != null) {
         body['profile_picture_url'] = profilePictureUrl;
       }
@@ -358,6 +359,7 @@ class ApiService {
       if (linkedinUrl != null) body['linkedin_url'] = linkedinUrl;
       if (twitterUrl != null) body['twitter_url'] = twitterUrl;
       if (instagramUrl != null) body['instagram_url'] = instagramUrl;
+      if (currencyCode != null) body['currency_code'] = currencyCode;
 
       final response = await httpClient.put(
         Uri.parse('$baseUrl/user/me'),
@@ -756,6 +758,42 @@ class ApiService {
       throw Exception('Session expired');
     }
     _fail(response, 'talking to your AI');
+  }
+
+  /// GET /api/v1/intelligence/onboarding — questions + saved business profile.
+  Future<Map<String, dynamic>> getBusinessOnboarding() async {
+    final response = await httpClient.get(
+      Uri.parse('$baseUrl/intelligence/onboarding'),
+    );
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      if (data is Map<String, dynamic>) return data;
+      if (data is Map) return Map<String, dynamic>.from(data);
+    }
+    if (response.statusCode == 401) {
+      throw Exception('Session expired');
+    }
+    _fail(response, 'loading your business questionnaire');
+  }
+
+  /// POST /api/v1/intelligence/onboarding — save answers and index into Qdrant.
+  Future<Map<String, dynamic>> submitBusinessOnboarding(
+    Map<String, String> answers,
+  ) async {
+    final response = await httpClient.post(
+      Uri.parse('$baseUrl/intelligence/onboarding'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({'answers': answers}),
+    );
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final data = json.decode(response.body);
+      if (data is Map<String, dynamic>) return data;
+      if (data is Map) return Map<String, dynamic>.from(data);
+    }
+    if (response.statusCode == 401) {
+      throw Exception('Session expired');
+    }
+    _fail(response, 'saving your business profile');
   }
 
   /// Download a user's storage file bytes (authenticated).

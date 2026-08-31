@@ -183,6 +183,26 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
       _interventionActive &&
       !_isCompleted;
 
+  String get _headerTitle {
+    final detail = _detail;
+    if (detail != null) {
+      final username = (detail['customer_username'] ?? '').toString().trim();
+      final phone = (detail['customer_phone'] ?? '').toString().trim();
+      final displayName =
+          (detail['customer_display_name'] ?? detail['user_fullname'] ?? '')
+              .toString()
+              .trim();
+      final handle = username.isEmpty
+          ? ''
+          : (username.startsWith('@') ? username : '@$username');
+      if (handle.isNotEmpty && phone.isNotEmpty) return '$handle · $phone';
+      if (handle.isNotEmpty) return handle;
+      if (phone.isNotEmpty) return phone;
+      if (displayName.isNotEmpty) return displayName;
+    }
+    return widget.title;
+  }
+
   Future<void> _completeConversation() async {
     final sid = _resolvedSessionId;
     if (sid == null) return;
@@ -301,7 +321,7 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
                       const SizedBox(width: 18),
                       Expanded(
                         child: Text(
-                          widget.title,
+                          _headerTitle,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: ManageScreenStyle.headerTitleStyle(),

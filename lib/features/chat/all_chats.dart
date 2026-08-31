@@ -18,10 +18,26 @@ String _chatListSubtitleId(Map<String, dynamic> c) {
   return '';
 }
 
-/// Customer phone when provided by API; otherwise conversation / session id.
-String _chatListSubtitlePhoneOrId(Map<String, dynamic> c) {
+/// Username and/or phone so the owner can recognize the customer.
+String _chatCustomerLabel(Map<String, dynamic> c) {
+  final username = (c['customer_username'] ?? '').toString().trim();
   final phone = (c['customer_phone'] ?? '').toString().trim();
+  final displayName = (c['customer_display_name'] ?? c['user_fullname'] ?? '')
+      .toString()
+      .trim();
+  final handle = username.isEmpty
+      ? ''
+      : (username.startsWith('@') ? username : '@$username');
+  if (handle.isNotEmpty && phone.isNotEmpty) return '$handle · $phone';
+  if (handle.isNotEmpty) return handle;
   if (phone.isNotEmpty) return phone;
+  if (displayName.isNotEmpty) return displayName;
+  return '';
+}
+
+String _chatListSubtitlePhoneOrId(Map<String, dynamic> c) {
+  final label = _chatCustomerLabel(c);
+  if (label.isNotEmpty) return label;
   return _chatListSubtitleId(c);
 }
 
@@ -63,7 +79,9 @@ class _AllChatsPageState extends State<AllChatsPage> {
       context,
       MaterialPageRoute(
         builder: (_) => ConversationDetailScreen(
-          title: _chatListTitle(c),
+          title: _chatCustomerLabel(c).isNotEmpty
+              ? _chatCustomerLabel(c)
+              : _chatListTitle(c),
           mode: ConversationScreenMode.historyOnly,
           sessionId: sid,
         ),

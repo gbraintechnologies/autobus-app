@@ -91,8 +91,7 @@ class _ProfileState extends State<Profile> {
           ? ''
           : _formatDate(_dateOfBirth!);
 
-      final g = (user['gender'] ?? '').toString().trim();
-      _gender = g.isEmpty ? null : g;
+      _gender = _normalizeGender(user['gender']);
     } catch (e) {
       if (mounted) setState(() => _error = userFacingError(e));
     } finally {
@@ -268,6 +267,32 @@ class _ProfileState extends State<Profile> {
     );
   }
 
+  String? _normalizeGender(dynamic raw) {
+    final g = (raw ?? '').toString().trim();
+    if (g.isEmpty) return null;
+    switch (g.toLowerCase()) {
+      case 'm':
+      case 'male':
+        return 'Male';
+      case 'f':
+      case 'female':
+        return 'Female';
+      case 'other':
+        return 'Other';
+      case 'prefer not to say':
+      case 'prefer_not_to_say':
+      case 'unspecified':
+        return 'Prefer not to say';
+      default:
+        return null;
+    }
+  }
+
+  String? _emptyToSentinel(String value) {
+    final t = value.trim();
+    return t;
+  }
+
   Future<void> _saveProfile() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() {
@@ -275,65 +300,43 @@ class _ProfileState extends State<Profile> {
       _error = null;
     });
     try {
-      await _apiService.updateUserProfile(
+      final updated = await _apiService.updateUserProfile(
         fullname: fullnameController.text.trim(),
-        phone: phoneController.text.trim(),
-        ghanaCard: ghanaCardController.text.trim().isEmpty
-            ? null
-            : ghanaCardController.text.trim(),
-        nationality: nationalityController.text.trim().isEmpty
-            ? null
-            : nationalityController.text.trim(),
+        phone: _emptyToSentinel(phoneController.text),
+        ghanaCard: _emptyToSentinel(ghanaCardController.text),
+        nationality: _emptyToSentinel(nationalityController.text),
         dateOfBirth: _dateOfBirth,
-        gender: _gender?.trim().isEmpty == true ? null : _gender,
-        staffId: staffIdController.text.trim().isEmpty
-            ? null
-            : staffIdController.text.trim(),
-        company: companyController.text.trim().isEmpty
-            ? null
-            : companyController.text.trim(),
-        currentBranch: currentBranchController.text.trim().isEmpty
-            ? null
-            : currentBranchController.text.trim(),
-        address: addressController.text.trim().isEmpty
-            ? null
-            : addressController.text.trim(),
-        location: locationController.text.trim().isEmpty
-            ? null
-            : locationController.text.trim(),
-        facebookUrl: facebookUrlController.text.trim().isEmpty
-            ? null
-            : facebookUrlController.text.trim(),
-        whatsappNumber: whatsappNumberController.text.trim().isEmpty
-            ? null
-            : whatsappNumberController.text.trim(),
-        linkedinUrl: linkedinUrlController.text.trim().isEmpty
-            ? null
-            : linkedinUrlController.text.trim(),
-        twitterUrl: twitterUrlController.text.trim().isEmpty
-            ? null
-            : twitterUrlController.text.trim(),
-        instagramUrl: instagramUrlController.text.trim().isEmpty
-            ? null
-            : instagramUrlController.text.trim(),
+        gender: _gender,
+        staffId: _emptyToSentinel(staffIdController.text),
+        company: _emptyToSentinel(companyController.text),
+        currentBranch: _emptyToSentinel(currentBranchController.text),
+        address: _emptyToSentinel(addressController.text),
+        location: _emptyToSentinel(locationController.text),
+        facebookUrl: _emptyToSentinel(facebookUrlController.text),
+        whatsappNumber: _emptyToSentinel(whatsappNumberController.text),
+        linkedinUrl: _emptyToSentinel(linkedinUrlController.text),
+        twitterUrl: _emptyToSentinel(twitterUrlController.text),
+        instagramUrl: _emptyToSentinel(instagramUrlController.text),
       );
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Profile updated'),
-          backgroundColor: Colors.green,
-          behavior: SnackBarBehavior.floating,
-        ),
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('user', jsonEncode(updated));
+      } catch (_) {}
+      if (!mounted) return;
+      showAppSnackBar(
+        context,
+        'Profile updated',
+        backgroundColor: const Color(0xFF22C55E),
       );
+      setState(() => _loading = true);
       await _loadProfile();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to save: $e'),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-        ),
+      setState(() => _error = userFacingError(e, action: 'saving profile'));
+      showAppSnackBar(
+        context,
+        userFacingError(e, action: 'saving profile'),
       );
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -906,8 +909,10 @@ class _ProfileState extends State<Profile> {
       ),
     ];
 
+    final selected = items.any((item) => item.value == _gender) ? _gender : null;
+
     return DropdownButtonFormField<String>(
-      value: _gender,
+      value: selected,
       items: items,
       onChanged: (v) => setState(() => _gender = v),
       decoration: _underlineDecoration(label: 'Gender'),

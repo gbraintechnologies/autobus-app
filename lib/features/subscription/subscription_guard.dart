@@ -2,10 +2,19 @@ import 'package:autobus/barrel.dart';
 
 import 'services/subscription_storage.dart';
 
-class SubscriptionGuard extends StatelessWidget {
+class SubscriptionGuard extends StatefulWidget {
   final Map<String, dynamic> user;
 
   const SubscriptionGuard({required this.user, super.key});
+
+  @override
+  State<SubscriptionGuard> createState() => _SubscriptionGuardState();
+}
+
+class _SubscriptionGuardState extends State<SubscriptionGuard> {
+  int _generation = 0;
+
+  Map<String, dynamic> get user => widget.user;
 
   static String _extractEmail(Map<String, dynamic> u) {
     final v = u['email'] ?? u['user_email'] ?? u['userEmail'] ?? '';
@@ -113,12 +122,13 @@ class SubscriptionGuard extends StatelessWidget {
     return false;
   }
 
-  Future<({bool subscribed, String email})> _resolve(
+  Future<({bool subscribed, bool onboarded, String email})> _resolve(
     BuildContext context,
   ) async {
     final api = context.read<ApiService>();
     var resolvedEmail = _extractEmail(user);
     var profile = user;
+    var onboarded = isOnboardingCompleted(user);
 
     // 1) Profile from server (may include subscription-shaped fields).
     try {
@@ -126,9 +136,14 @@ class SubscriptionGuard extends StatelessWidget {
       resolvedEmail = _extractEmail(profile).isNotEmpty
           ? _extractEmail(profile)
           : resolvedEmail;
+      onboarded = isOnboardingCompleted(profile);
 
       if (_isSubscribedFromUser(profile)) {
-        return (subscribed: true, email: resolvedEmail);
+        return (
+          subscribed: true,
+          onboarded: onboarded,
+          email: resolvedEmail,
+        );
       }
     } catch (_) {
       // Keep [user] as profile; fall back to subscription/status + local cache.
@@ -140,7 +155,11 @@ class SubscriptionGuard extends StatelessWidget {
       try {
         final status = await api.getSubscriptionStatusByPhone(phone);
         if (status != null && _truthy(status['has_active_subscription'])) {
-          return (subscribed: true, email: resolvedEmail);
+          return (
+            subscribed: true,
+            onboarded: onboarded,
+            email: resolvedEmail,
+          );
         }
       } catch (_) {}
     }
@@ -151,24 +170,26 @@ class SubscriptionGuard extends StatelessWidget {
       try {
         await api.enrollIosFreePlan();
       } catch (_) {}
-      return (subscribed: true, email: resolvedEmail);
+      return (subscribed: true, onboarded: onboarded, email: resolvedEmail);
     }
 
     // 4) Fallback: if the app previously completed a subscribe flow on this
     // device, it stores the selection.
     final (planId, _) = await SubscriptionStorage().loadSelection();
     final subscribed = planId != null && planId.trim().isNotEmpty;
-    return (subscribed: subscribed, email: resolvedEmail);
+    return (subscribed: subscribed, onboarded: onboarded, email: resolvedEmail);
   }
 
   @override
   Widget build(BuildContext context) {
     print('=== SUBSCRIPTION GUARD BUILDING ===');
-    return FutureBuilder<({bool subscribed, String email})>(
+    return FutureBuilder<({bool subscribed, bool onboarded, String email})>(
+      key: ValueKey(_generation),
       future: _resolve(context).timeout(
         const Duration(seconds: 8),
         onTimeout: () => (
           subscribed: AppleIapIds.isIosApp || _isSubscribedFromUser(user),
+          onboarded: isOnboardingCompleted(user),
           email: _extractEmail(user),
         ),
       ),
@@ -184,7 +205,21 @@ class SubscriptionGuard extends StatelessWidget {
 
         final data = snap.data;
         final subscribed = data?.subscribed == true;
-        print('Subscribed: $subscribed, Email: ${data?.email}');
+        final onboarded = data?.onboarded != false;
+        print(
+          'Subscribed: $subscribed, Onboarded: $onboarded, Email: ${data?.email}',
+        );
+        if (!onboarded) {
+          print('✗ Showing Business Onboarding');
+          return BusinessOnboarding(
+            nextScreen: AppleIapIds.isIosApp ? 'welcome' : 'subscribe',
+            userEmail: data?.email ?? '',
+            onCompleted: () {
+              if (!mounted) return;
+              setState(() => _generation++);
+            },
+          );
+        }
         if (subscribed) {
           print('✓ Showing Home Screen');
           return const Home();

@@ -1,4 +1,5 @@
 import 'package:autobus/barrel.dart';
+import 'package:autobus/features/products/pricing_currency.dart';
 import 'package:autobus/features/products/product_existing_gallery.dart';
 
 class ProductDetailScreen extends StatefulWidget {
@@ -30,6 +31,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   bool _photoBusy = false;
   String? _loadError;
   String? _inventoryId;
+  String _currency = kDefaultPricingCurrency;
   List<ProductGalleryPhoto> _photos = const [];
 
   @override
@@ -131,8 +133,14 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       if (p != null) {
         _populateForm(p);
       }
+      String currency = _currency;
+      if (!photosOnly) {
+        currency = await loadBusinessCurrency(api);
+      }
+      if (!mounted) return;
       setState(() {
         _photos = photos;
+        _currency = currency;
         _loading = false;
         _photoBusy = false;
       });
@@ -460,15 +468,45 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             maxLines: 3,
           ),
           const SizedBox(height: 14),
-          _textField(
-            controller: _priceCtrl,
-            label: 'Price',
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            validator: (v) {
-              if (v == null || v.trim().isEmpty) return 'Price is required';
-              if (double.tryParse(v.trim()) == null) return 'Invalid price';
-              return null;
-            },
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: 128,
+                child: PricingCurrencyDropdown(
+                  value: _currency,
+                  enabled: !_saving,
+                  onChanged: (code) async {
+                    setState(() => _currency = code);
+                    try {
+                      await saveBusinessCurrency(
+                        context.read<ApiService>(),
+                        code,
+                      );
+                    } catch (_) {}
+                  },
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _textField(
+                  controller: _priceCtrl,
+                  label: 'Price',
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) {
+                      return 'Price is required';
+                    }
+                    if (double.tryParse(v.trim()) == null) {
+                      return 'Invalid price';
+                    }
+                    return null;
+                  },
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 14),
           _textField(controller: _categoryCtrl, label: 'Category'),

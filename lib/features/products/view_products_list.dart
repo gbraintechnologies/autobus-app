@@ -1,4 +1,5 @@
 import 'package:autobus/barrel.dart';
+import 'package:autobus/features/products/pricing_currency.dart';
 
 class ViewProductsPage extends StatefulWidget {
   const ViewProductsPage({super.key});
@@ -14,6 +15,7 @@ class _ViewProductsPageState extends State<ViewProductsPage> {
   String? _loadError;
   String? _productsError;
   int? _expandedIndex;
+  String _currency = kDefaultPricingCurrency;
 
   String _fileName(Map<String, dynamic> doc) =>
       (doc['file_name'] ?? '').toString();
@@ -34,16 +36,7 @@ class _ViewProductsPageState extends State<ViewProductsPage> {
   }
 
   String _productPriceLabel(Map<String, dynamic> p) {
-    final raw = p['price'];
-    double? v;
-    if (raw is num) {
-      v = raw.toDouble();
-    } else {
-      v = double.tryParse(raw?.toString() ?? '');
-    }
-    if (v == null) return '—';
-    if (v == v.roundToDouble()) return v.toStringAsFixed(0);
-    return v.toStringAsFixed(2);
+    return formatProductPrice(p['price'], currency: _currency);
   }
 
   String? _stockLabel(Map<String, dynamic> p) {
@@ -86,10 +79,12 @@ class _ViewProductsPageState extends State<ViewProductsPage> {
       docsErr = e;
     }
 
+    final currency = await loadBusinessCurrency(api);
     if (!mounted) return;
     setState(() {
       _products = products;
       _documents = docs;
+      _currency = currency;
       _productsError = productsErr == null ? null : userFacingError(productsErr);
       _loadError = docsErr == null ? null : userFacingError(docsErr);
       _loading = false;

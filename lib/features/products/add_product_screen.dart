@@ -1,6 +1,7 @@
 import 'package:autobus/barrel.dart';
 import 'package:autobus/features/products/product_chat_image_attachments.dart';
 import 'package:autobus/features/products/product_form_images.dart';
+import 'package:autobus/features/products/pricing_currency.dart';
 
 class AddProductScreen extends StatefulWidget {
   const AddProductScreen({super.key});
@@ -21,6 +22,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
   final List<ProductStagingSlot> _imageSlots = [];
   bool _saving = false;
+  String _currency = kDefaultPricingCurrency;
 
   @override
   void dispose() {
@@ -32,6 +34,28 @@ class _AddProductScreenState extends State<AddProductScreen> {
     _stockCtrl.dispose();
     _linkCtrl.dispose();
     super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadCurrency());
+  }
+
+  Future<void> _loadCurrency() async {
+    final api = context.read<ApiService>();
+    final code = await loadBusinessCurrency(api);
+    if (!mounted) return;
+    setState(() => _currency = code);
+  }
+
+  Future<void> _onCurrencyChanged(String code) async {
+    setState(() => _currency = code);
+    try {
+      await saveBusinessCurrency(context.read<ApiService>(), code);
+    } catch (_) {
+      // Preference save is best-effort; product create still proceeds.
+    }
   }
 
   InputDecoration _fieldDecoration(String label, {String? hint}) {
@@ -209,21 +233,38 @@ class _AddProductScreenState extends State<AddProductScreen> {
                           maxLines: 3,
                         ),
                         const SizedBox(height: 14),
-                        _textField(
-                          controller: _priceCtrl,
-                          label: 'Price',
-                          keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true,
-                          ),
-                          validator: (v) {
-                            if (v == null || v.trim().isEmpty) {
-                              return 'Price is required';
-                            }
-                            if (double.tryParse(v.trim()) == null) {
-                              return 'Invalid price';
-                            }
-                            return null;
-                          },
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SizedBox(
+                              width: 128,
+                              child: PricingCurrencyDropdown(
+                                value: _currency,
+                                enabled: !_saving,
+                                onChanged: _onCurrencyChanged,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: _textField(
+                                controller: _priceCtrl,
+                                label: 'Price',
+                                keyboardType:
+                                    const TextInputType.numberWithOptions(
+                                  decimal: true,
+                                ),
+                                validator: (v) {
+                                  if (v == null || v.trim().isEmpty) {
+                                    return 'Price is required';
+                                  }
+                                  if (double.tryParse(v.trim()) == null) {
+                                    return 'Invalid price';
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 14),
                         _textField(

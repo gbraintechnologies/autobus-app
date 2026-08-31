@@ -19,12 +19,11 @@ class _SignupOtpState extends State<SignupOtp> {
         BlocListener<AuthBloc, AuthState>(
           listener: (context, state) async {
             if (state is SignupOtpVerified) {
-              var nextScreen = 'subscribe';
+              var nextScreen = 'onboarding';
               if (AppleIapIds.isIosApp) {
                 try {
                   await context.read<ApiService>().enrollIosFreePlan();
                 } catch (_) {}
-                nextScreen = 'welcome';
                 context.read<AuthBloc>().add(const CheckSessionEvent());
               }
               if (!context.mounted) return;

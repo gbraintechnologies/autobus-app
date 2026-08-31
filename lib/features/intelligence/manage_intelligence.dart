@@ -54,6 +54,30 @@ class _ManageIntelligenceState extends State<ManageIntelligence> {
   bool _hasRagDocuments = false;
   List<Map<String, dynamic>> _ragFiles = const [];
   String? _presenceError;
+  Map<String, String> _onboardingAnswers = const {};
+  bool _onboardingCompleted = false;
+
+  Map<String, String> _answersFromOnboarding(Map<String, dynamic>? data) {
+    if (data == null) return {};
+    final profile = data['profile'];
+    if (profile is! Map) return {};
+    final map = Map<String, dynamic>.from(profile);
+    final raw = map['answers'] is Map
+        ? Map<String, dynamic>.from(map['answers'] as Map)
+        : map;
+    final out = <String, String>{};
+    raw.forEach((key, value) {
+      if (key == 'answers' ||
+          key == 'completed_at' ||
+          key == 'updated_at' ||
+          key == 'version') {
+        return;
+      }
+      final text = value?.toString().trim() ?? '';
+      if (text.isNotEmpty) out[key.toString()] = text;
+    });
+    return out;
+  }
 
   Future<void> _loadRagPresence() async {
     if (!mounted) return;
@@ -63,13 +87,24 @@ class _ManageIntelligenceState extends State<ManageIntelligence> {
     });
     try {
       final api = context.read<ApiService>();
-      final files = await api.listMyStorageFiles(
+      final filesFuture = api.listMyStorageFiles(
         folder: ApiService.chatbotStorageFolder,
       );
+      final onboardingFuture = api.getBusinessOnboarding();
+      final files = await filesFuture;
+      Map<String, dynamic>? onboarding;
+      try {
+        onboarding = await onboardingFuture;
+      } catch (_) {
+        onboarding = null;
+      }
       if (!mounted) return;
+      final answers = _answersFromOnboarding(onboarding);
       setState(() {
         _ragFiles = files;
         _hasRagDocuments = files.isNotEmpty;
+        _onboardingAnswers = answers;
+        _onboardingCompleted = onboarding?['completed'] == true || answers.isNotEmpty;
         _presenceLoading = false;
       });
     } catch (e) {
@@ -80,6 +115,17 @@ class _ManageIntelligenceState extends State<ManageIntelligence> {
         _hasRagDocuments = false;
         _ragFiles = const [];
       });
+    }
+  }
+
+  Future<void> _openOnboardingEditor() async {
+    final updated = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (context) => const BusinessOnboarding(editMode: true),
+      ),
+    );
+    if (updated == true && mounted) {
+      await _loadRagPresence();
     }
   }
 
@@ -429,6 +475,13 @@ class _ManageIntelligenceState extends State<ManageIntelligence> {
                             ),
                           ),
                           const SizedBox(height: 32),
+                          _OnboardingProfileCard(
+                            answers: _onboardingAnswers,
+                            completed: _onboardingCompleted,
+                            loading: _presenceLoading,
+                            onEdit: _openOnboardingEditor,
+                          ),
+                          const SizedBox(height: 24),
                           if (_presenceLoading) ...[
                             const SizedBox(height: 8),
                             const Center(
@@ -519,7 +572,9 @@ class _ManageIntelligenceState extends State<ManageIntelligence> {
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: Text(
-                                      'You have not uploaded any business data',
+                                      _onboardingCompleted
+                                          ? 'No files or websites yet — your chatbot still uses your onboarding answers'
+                                          : 'You have not uploaded any business data',
                                       style: GoogleFonts.montserrat(
                                         color: Colors.white.withValues(
                                           alpha: 0.85,
@@ -1686,6 +1741,115 @@ class _IntelligenceHistoryPageState extends State<IntelligenceHistoryPage> {
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+const _onboardingLabels = <String, String>{
+  'business_name': 'Business name',
+  'business_description': 'About the business',
+  'target_customers': 'Target customers',
+  'products_services': 'Products & services',
+  'industry': 'Industry',
+  'service_area': 'Service area',
+  'differentiator': 'What makes you unique',
+  'chatbot_greeting': 'Chatbot greeting',
+};
+
+class _OnboardingProfileCard extends StatelessWidget {
+  const _OnboardingProfileCard({
+    required this.answers,
+    required this.completed,
+    required this.loading,
+    required this.onEdit,
+  });
+
+  final Map<String, String> answers;
+  final bool completed;
+  final bool loading;
+  final VoidCallback onEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    if (loading && answers.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: const Color(0xFF581C87).withValues(alpha: 0.18),
+        border: Border.all(
+          color: const Color(0xFF9333EA).withValues(alpha: 0.5),
+          width: 1.2,
+        ),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.auto_awesome,
+                color: Colors.white.withValues(alpha: 0.9),
+                size: 20,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  completed
+                      ? 'Indexed from onboarding'
+                      : 'Train your chatbot with a business profile',
+                  style: GoogleFonts.montserrat(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              TextButton(
+                onPressed: onEdit,
+                child: Text(
+                  completed ? 'Update' : 'Add',
+                  style: GoogleFonts.montserrat(
+                    color: const Color(0xFFA855F7),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (answers.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            ...answers.entries.take(4).map((e) {
+              final label = _onboardingLabels[e.key] ?? e.key;
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Text(
+                  '$label: ${e.value}',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.montserrat(
+                    color: Colors.white.withValues(alpha: 0.82),
+                    fontSize: 12,
+                    height: 1.35,
+                  ),
+                ),
+              );
+            }),
+          ] else
+            Text(
+              'These answers are indexed into Intelligence so customers get accurate replies before you upload files. Updating them replaces only this profile — not your documents or websites.',
+              style: GoogleFonts.montserrat(
+                color: Colors.white.withValues(alpha: 0.75),
+                fontSize: 12,
+                height: 1.4,
+              ),
+            ),
         ],
       ),
     );

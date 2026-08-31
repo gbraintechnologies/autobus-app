@@ -40,6 +40,7 @@ export 'package:autobus/features/initial_ui/initial.dart';
 export 'package:autobus/features/home/home.dart';
 export 'package:autobus/features/auth/authinit.dart';
 export 'package:autobus/features/home/welcome.dart';
+export 'package:autobus/features/onboarding/business_onboarding.dart';
 export 'package:autobus/features/email/manage_emails.dart';
 export 'package:autobus/features/email/sent_emails_page.dart';
 export 'package:autobus/features/email/sent_sms_page.dart';

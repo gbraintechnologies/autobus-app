@@ -79,6 +79,17 @@ class _SuccessState extends State<Success> {
                                 SelectPlan(userEmail: userEmail),
                           ),
                         );
+                      } else if (nextScreen == 'onboarding') {
+                        Navigator.of(context).pushReplacement(
+                          MaterialPageRoute(
+                            builder: (context) => BusinessOnboarding(
+                              nextScreen: AppleIapIds.isIosApp
+                                  ? 'welcome'
+                                  : 'subscribe',
+                              userEmail: userEmail,
+                            ),
+                          ),
+                        );
                       } else if (nextScreen == 'welcome') {
                         Navigator.of(context).pushReplacement(
                           MaterialPageRoute(
