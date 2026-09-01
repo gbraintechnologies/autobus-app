@@ -76,16 +76,14 @@ class _SuccessState extends State<Success> {
                         Navigator.of(context).pushReplacement(
                           MaterialPageRoute(
                             builder: (context) =>
-                                SelectPlan(userEmail: userEmail),
+                                BuyCreditsPage(userEmail: userEmail),
                           ),
                         );
                       } else if (nextScreen == 'onboarding') {
                         Navigator.of(context).pushReplacement(
                           MaterialPageRoute(
                             builder: (context) => BusinessOnboarding(
-                              nextScreen: AppleIapIds.isIosApp
-                                  ? 'welcome'
-                                  : 'subscribe',
+                              nextScreen: 'welcome',
                               userEmail: userEmail,
                             ),
                           ),

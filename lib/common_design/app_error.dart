@@ -262,9 +262,9 @@ class AppErrorMapper {
       case AppErrorKind.rateLimited:
         return 'Too many requests. Please wait a moment.';
       case AppErrorKind.insufficientCredits:
-        return 'You don’t have enough credits for this.';
+        return 'You don’t have enough credits for this. Buy more credits to continue.';
       case AppErrorKind.subscriptionRequired:
-        return 'An active subscription is required.';
+        return 'You don’t have enough credits for this. Buy more credits to continue.';
       case AppErrorKind.server:
       case AppErrorKind.unexpected:
         return _withAction(action, fallback: 'Something went wrong. Please try again.');

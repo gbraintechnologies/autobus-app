@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:developer';
 
 import 'package:in_app_purchase/in_app_purchase.dart';
@@ -101,19 +102,19 @@ class AppleIapService {
 
     try {
       final param = PurchaseParam(productDetails: product);
-      final started = await _iap.buyNonConsumable(purchaseParam: param);
+      final started = await _iap.buyConsumable(purchaseParam: param);
       if (!started) {
         _inflight.remove(product.id);
         return const AppleIapPurchaseResult(
           success: false,
-          error: 'Could not start the App Store purchase.',
+          error: 'Could not start the store purchase.',
         );
       }
 
       final purchase = await completer.future.timeout(
         const Duration(minutes: 5),
         onTimeout: () {
-          throw TimeoutException('Timed out waiting for App Store purchase');
+          throw TimeoutException('Timed out waiting for store purchase');
         },
       );
 
@@ -123,14 +124,14 @@ class AppleIapService {
       if (purchase.status == PurchaseStatus.error) {
         return AppleIapPurchaseResult(
           success: false,
-          error: purchase.error?.message ?? 'App Store purchase failed.',
+          error: purchase.error?.message ?? 'Store purchase failed.',
         );
       }
       if (purchase.status != PurchaseStatus.purchased &&
           purchase.status != PurchaseStatus.restored) {
         return const AppleIapPurchaseResult(
           success: false,
-          error: 'App Store purchase was not completed.',
+          error: 'Store purchase was not completed.',
         );
       }
 
@@ -139,7 +140,7 @@ class AppleIapService {
       if (signed.isEmpty) {
         return const AppleIapPurchaseResult(
           success: false,
-          error: 'App Store did not return a signed transaction.',
+          error: 'The store did not return purchase proof.',
         );
       }
       return AppleIapPurchaseResult(
@@ -164,15 +165,15 @@ class AppleIapService {
 
   Future<AppleIapPurchaseResult> purchaseAndActivate({
     required ProductDetails product,
-    required int planId,
-    required String billingId,
+    int? planId,
+    String? billingId,
     String? phone,
   }) async {
     final api = _api;
     if (api == null) {
       return const AppleIapPurchaseResult(
         success: false,
-        error: 'Apple IAP is not initialized.',
+        error: 'In-app purchases are not initialized.',
       );
     }
 
@@ -180,12 +181,7 @@ class AppleIapService {
     if (!purchaseResult.success) return purchaseResult;
 
     try {
-      final verified = await api.verifyAppleIapPurchase(
-        signedTransaction: purchaseResult.signedTransaction!,
-        planId: planId,
-        billingId: billingId,
-        phone: phone,
-      );
+      final verified = await _verifyWithBackend(purchaseResult, product.id);
       final purchase = _lastPurchase[product.id];
       if (verified) {
         if (purchase != null) {
@@ -196,14 +192,49 @@ class AppleIapService {
       }
       return const AppleIapPurchaseResult(
         success: false,
-        error: 'Apple purchase could not be activated. Try Restore Purchases.',
+        error: 'Purchase could not be activated. Please try again.',
       );
     } catch (e) {
       return AppleIapPurchaseResult(
         success: false,
-        error: userFacingError(e, action: 'activating subscription'),
+        error: userFacingError(e, action: 'adding credits'),
       );
     }
+  }
+
+  Future<bool> _verifyWithBackend(
+    AppleIapPurchaseResult purchaseResult,
+    String productId,
+  ) async {
+    final api = _api;
+    if (api == null) return false;
+    final proof = purchaseResult.signedTransaction;
+    if (proof == null || proof.isEmpty) return false;
+
+    if (AppleIapIds.isAndroidApp) {
+      final purchase = _lastPurchase[productId];
+      String? orderId;
+      String packageName = AppleIapIds.androidPackageName;
+      final local = purchase?.verificationData.localVerificationData;
+      if (local != null && local.isNotEmpty) {
+        try {
+          final decoded = jsonDecode(local);
+          if (decoded is Map) {
+            orderId = decoded['orderId']?.toString();
+            final pkg = decoded['packageName']?.toString();
+            if (pkg != null && pkg.isNotEmpty) packageName = pkg;
+          }
+        } catch (_) {}
+      }
+      return api.verifyGooglePlayPurchase(
+        purchaseToken: proof,
+        productId: purchaseResult.productId ?? productId,
+        packageName: packageName,
+        orderId: orderId,
+      );
+    }
+
+    return api.verifyAppleIapPurchase(signedTransaction: proof);
   }
 
   Future<AppleIapPurchaseResult> restoreActiveSubscription({
@@ -214,7 +245,7 @@ class AppleIapService {
     if (api == null) {
       return const AppleIapPurchaseResult(
         success: false,
-        error: 'Apple IAP is not initialized.',
+        error: 'In-app purchases are not initialized.',
       );
     }
     if (!await isAvailable()) {
@@ -330,14 +361,18 @@ class AppleIapService {
     final signed = purchase.verificationData.serverVerificationData;
     if (api == null || signed.isEmpty) return;
     try {
-      final verified = await api.verifyAppleIapPurchase(
+      final stub = AppleIapPurchaseResult(
+        success: true,
         signedTransaction: signed,
+        productId: purchase.productID,
       );
+      _lastPurchase[purchase.productID] = purchase;
+      final verified = await _verifyWithBackend(stub, purchase.productID);
       if (verified) {
         await completeIfNeeded(purchase);
       }
     } catch (e) {
-      log('Apple IAP pending sync failed: $e');
+      log('Store IAP pending sync failed: $e');
     }
   }
 }

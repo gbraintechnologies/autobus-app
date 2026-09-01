@@ -1,18 +1,20 @@
 import 'package:flutter/foundation.dart';
 
-/// App Store Connect product ID helpers.
+/// Store consumable product IDs for App Store and Google Play.
 ///
-/// Create one subscription group in App Store Connect and add auto-renewable
-/// products whose IDs match:
-///   autobus.{planslug}.monthly
-///   autobus.{planslug}.yearly
-///
-/// Example for plans named Basic / Standard / Enterprise:
-///   autobus.basic.monthly, autobus.basic.yearly
-///   autobus.standard.monthly, autobus.standard.yearly
-///   autobus.enterprise.monthly, autobus.enterprise.yearly
+/// Create the same IDs as Consumable products in both stores:
+///   autobus.credits.20
+///   autobus.credits.50
+///   autobus.credits.150
+///   autobus.credits.400
 class AppleIapIds {
   static const String prefix = 'autobus';
+  static const String androidPackageName = 'com.autobus.app';
+
+  static const String credits20 = 'autobus.credits.20';
+  static const String credits50 = 'autobus.credits.50';
+  static const String credits150 = 'autobus.credits.150';
+  static const String credits400 = 'autobus.credits.400';
 
   static String slug(String name) {
     return name.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
@@ -26,15 +28,27 @@ class AppleIapIds {
     };
   }
 
+  static const Set<String> creditProductIds = {
+    credits20,
+    credits50,
+    credits150,
+    credits400,
+  };
+
   static bool get isSupported {
     if (kIsWeb) return false;
     return defaultTargetPlatform == TargetPlatform.iOS ||
-        defaultTargetPlatform == TargetPlatform.macOS;
+        defaultTargetPlatform == TargetPlatform.macOS ||
+        defaultTargetPlatform == TargetPlatform.android;
   }
 
-  /// iPhone / iPad app only. Used to skip in-app IAP until App Store review completes.
   static bool get isIosApp {
     if (kIsWeb) return false;
     return defaultTargetPlatform == TargetPlatform.iOS;
+  }
+
+  static bool get isAndroidApp {
+    if (kIsWeb) return false;
+    return defaultTargetPlatform == TargetPlatform.android;
   }
 }

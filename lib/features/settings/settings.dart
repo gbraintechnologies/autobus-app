@@ -8,64 +8,58 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  Map<String, dynamic>? _subscriptionStatus;
-  bool _subscriptionLoading = true;
+  Map<String, dynamic>? _credits;
+  bool _creditsLoading = true;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _loadSubscriptionSummary());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadCreditsSummary());
   }
 
-  Future<void> _loadSubscriptionSummary() async {
+  Future<void> _loadCreditsSummary() async {
     final auth = context.read<AuthBloc>().state;
     if (auth is! Authenticated) {
       if (mounted) {
         setState(() {
-          _subscriptionLoading = false;
-          _subscriptionStatus = null;
+          _creditsLoading = false;
+          _credits = null;
         });
       }
       return;
     }
     try {
       final api = context.read<ApiService>();
-      final s = await api.getMySubscriptionStatus();
+      final s = await api.getMyCredits();
       if (!mounted) return;
       setState(() {
-        _subscriptionStatus = s;
-        _subscriptionLoading = false;
+        _credits = s;
+        _creditsLoading = false;
       });
     } catch (_) {
       if (!mounted) return;
       setState(() {
-        _subscriptionStatus = null;
-        _subscriptionLoading = false;
+        _credits = null;
+        _creditsLoading = false;
       });
     }
   }
 
-  String _subscriptionTitle() {
-    if (_subscriptionLoading) return 'Loading…';
-    final s = _subscriptionStatus;
-    if (s == null) return 'No active plan';
-    final active = s['has_active_subscription'] == true;
-    if (!active) return 'No active plan';
-    final name = (s['plan_name'] ?? '').toString().trim();
-    return name.isEmpty ? 'Active subscription' : name;
+  String _creditsTitle() {
+    if (_creditsLoading) return 'Loading…';
+    final wallet = _credits?['wallet'];
+    if (wallet is! Map) return 'Credits';
+    final v = wallet['remaining'];
+    final remaining = v is num ? v.toDouble() : double.tryParse(v?.toString() ?? '') ?? 0;
+    final text = remaining == remaining.roundToDouble()
+        ? remaining.toStringAsFixed(0)
+        : remaining.toStringAsFixed(1);
+    return '$text credits';
   }
 
-  String _subscriptionSubtitle() {
-    if (_subscriptionLoading) return ' ';
-    final s = _subscriptionStatus;
-    if (s == null) return 'Tap Subscription below to choose a plan';
-    final active = s['has_active_subscription'] == true;
-    if (!active) return 'Tap Subscription below to choose a plan';
-    final d = s['days_remaining'];
-    final days = d is int ? d : int.tryParse(d?.toString() ?? '0') ?? 0;
-    if (days > 1) return '$days days until renewal';
-    if (days == 1) return '1 day until renewal';
-    return 'Renews today';
+  String _creditsSubtitle() {
+    if (_creditsLoading) return ' ';
+    return 'Tap Credits below to buy more';
   }
 
   @override
@@ -155,7 +149,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
                   const SizedBox(height: 40),
 
-                  /// Subscription summary (under top bar)
+                  /// Credits summary (under top bar)
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
@@ -167,7 +161,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          _subscriptionTitle(),
+                          _creditsTitle(),
                           style: GoogleFonts.montserrat(
                             color: Colors.black87,
                             fontSize: 20,
@@ -177,7 +171,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          _subscriptionSubtitle(),
+                          _creditsSubtitle(),
                           style: GoogleFonts.montserrat(
                             color: Colors.black54,
                             fontSize: 13,
@@ -265,19 +259,15 @@ class _SettingsPageState extends State<SettingsPage> {
           MaterialPageRoute(builder: (_) => const Profile()),
         );
       }),
-      SettingsMenuItem("Subscription", Icons.auto_awesome_rounded, () {
+      SettingsMenuItem("Credits", Icons.toll_rounded, () {
         Navigator.push(
           context,
           MaterialPageRoute(
             settings: const RouteSettings(name: kManageSubscriptionRouteName),
             builder: (_) => const ManageSubscriptionPage(),
           ),
-        ).then((_) => _loadSubscriptionSummary());
+        ).then((_) => _loadCreditsSummary());
       }),
-      if (AppleIapIds.isIosApp)
-        SettingsMenuItem("Manage Subscriptions", Icons.open_in_new, () {
-          openManageSubscriptionsWebsite();
-        }),
       SettingsMenuItem("Notifications", Icons.notifications_none, () {
         Navigator.push(
           context,

@@ -298,7 +298,7 @@ class _BusinessOnboardingState extends State<BusinessOnboarding> {
     }
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
-        builder: (context) => SelectPlan(userEmail: widget.userEmail),
+        builder: (context) => const Welcome(),
       ),
     );
   }

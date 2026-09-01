@@ -70,7 +70,7 @@ class ApiService {
     }
   }
 
-  /// GET /api/v1/credits/me — JWT; per-category credit balances.
+  /// GET /api/v1/credits/me — JWT; wallet + per-feature remaining actions.
   Future<Map<String, dynamic>?> getMyCredits() async {
     try {
       final response = await httpClient.get(Uri.parse('$baseUrl/credits/me'));
@@ -84,6 +84,42 @@ class ApiService {
       debugPrint('getMyCredits: $e');
       return null;
     }
+  }
+
+  Future<List<Map<String, dynamic>>> getCreditPacks() async {
+    final response = await httpClient.get(Uri.parse('$baseUrl/credits/packs'));
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      final packs = data is Map ? data['packs'] : data;
+      if (packs is List) {
+        return packs
+            .whereType<Map>()
+            .map((e) => Map<String, dynamic>.from(e))
+            .toList();
+      }
+    }
+    return [];
+  }
+
+  Future<Map<String, dynamic>?> checkoutCreditPack({
+    required String packId,
+    String? email,
+  }) async {
+    final body = <String, dynamic>{
+      'pack_id': packId,
+      if (email != null && email.trim().isNotEmpty) 'email': email.trim(),
+    };
+    final response = await httpClient.post(
+      Uri.parse('$baseUrl/credits/checkout'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode(body),
+    );
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final data = json.decode(response.body);
+      if (data is Map) return Map<String, dynamic>.from(data);
+    }
+    _fail(response, 'starting credit checkout');
+    return null;
   }
 
   /// GET /api/v1/subscription/me — JWT; current user's subscription snapshot.
@@ -1124,6 +1160,36 @@ class ApiService {
     };
     final response = await httpClient.post(
       Uri.parse('$baseUrl/iap/apple/verify'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode(body),
+    );
+    Map<String, dynamic>? map;
+    try {
+      final data = json.decode(response.body);
+      if (data is Map) map = Map<String, dynamic>.from(data);
+    } catch (_) {}
+    if (response.statusCode == 200 && map?['success'] == true) {
+      return true;
+    }
+    _fail(response, 'verifying purchase');
+  }
+
+  /// POST /api/v1/iap/google/verify — Google Play purchase token.
+  Future<bool> verifyGooglePlayPurchase({
+    required String purchaseToken,
+    required String productId,
+    String? packageName,
+    String? orderId,
+  }) async {
+    final body = <String, dynamic>{
+      'purchase_token': purchaseToken,
+      'product_id': productId,
+      if (packageName != null && packageName.trim().isNotEmpty)
+        'package_name': packageName.trim(),
+      if (orderId != null && orderId.trim().isNotEmpty) 'order_id': orderId.trim(),
+    };
+    final response = await httpClient.post(
+      Uri.parse('$baseUrl/iap/google/verify'),
       headers: {'Content-Type': 'application/json'},
       body: json.encode(body),
     );
