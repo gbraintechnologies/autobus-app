@@ -48,7 +48,7 @@ class _BuyCreditsPageState extends State<BuyCreditsPage> {
           : 0.0;
 
       var store = <String, ProductDetails>{};
-      if (AppleIapIds.isSupported) {
+      if (AppleIapIds.usesAppleIap) {
         final ids = packs
             .map((p) => p.storeProductId)
             .where((id) => id.isNotEmpty)
@@ -83,20 +83,12 @@ class _BuyCreditsPageState extends State<BuyCreditsPage> {
   }
 
   String _priceLabel(CreditPack pack) {
-    if (AppleIapIds.isSupported) {
-      final store = _storeProducts[pack.storeProductId];
-      if (store != null) return store.price;
-    }
-    if (pack.paystackAmount > 0) {
-      return 'GHS ${pack.paystackAmount.toStringAsFixed(0)}';
-    }
     return '\$${pack.priceUsd.toStringAsFixed(2)}';
   }
 
   String _payLabel() {
-    if (AppleIapIds.isAndroidApp) return 'Pay with Google Play';
-    if (AppleIapIds.isSupported) return 'Pay with Apple';
-    return 'Pay';
+    if (AppleIapIds.usesAppleIap) return 'Pay with Apple';
+    return 'Pay now';
   }
 
   Future<void> _returnToApp() async {
@@ -120,9 +112,7 @@ class _BuyCreditsPageState extends State<BuyCreditsPage> {
     if (product == null) {
       showAppSnackBar(
         context,
-        AppleIapIds.isAndroidApp
-            ? 'This credit pack is not available on Google Play yet.'
-            : 'This credit pack is not available in the App Store yet.',
+        'This credit pack is not available in the App Store yet.',
       );
       return;
     }
@@ -169,13 +159,21 @@ class _BuyCreditsPageState extends State<BuyCreditsPage> {
         showAppSnackBar(context, 'Could not start checkout.');
         return;
       }
+      final charged = checkout['amount'];
+      final ghs = charged is num
+          ? charged.toDouble()
+          : double.tryParse('$charged') ?? 0;
+      if (ghs <= 0) {
+        showAppSnackBar(context, 'Could not start checkout.');
+        return;
+      }
 
       await PaystackService().launch(
         context: context,
         email: email,
         reference: reference,
         authorizationUrl: authUrl,
-        amount: pack.paystackAmount.toInt(),
+        amount: ghs,
         callbackUrl: AppConfig.paystackCallbackUrl,
         onSuccess: () async {
           final ok = await api.verifyPaystackTransaction(reference);
@@ -211,11 +209,11 @@ class _BuyCreditsPageState extends State<BuyCreditsPage> {
   Future<void> _pay() async {
     final pack = _selected;
     if (pack == null) return;
-    if (AppleIapIds.isSupported) {
-      await _buyStore(pack);
-    } else {
+    if (AppleIapIds.isAndroidApp || !AppleIapIds.usesAppleIap) {
       await _buyPaystack(pack);
+      return;
     }
+    await _buyStore(pack);
   }
 
   @override

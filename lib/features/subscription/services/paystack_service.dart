@@ -17,7 +17,7 @@ class PaystackService {
     required String reference,
     required String authorizationUrl,
     String? planCode, // pass this for subscriptions
-    int? amount, // pass this for one-time payments
+    num? amount, // major units; converted to subunits for Paystack
     String currency = 'GHS', // change to NGN, USD etc as needed
     required String callbackUrl,
     required Future<void> Function() onSuccess,
@@ -28,7 +28,7 @@ class PaystackService {
         context: context,
         publicKey: AppConfig.paystackPublicKey,
         customerEmail: email,
-        amount: amount != null ? (amount * 100).toString() : '0',
+        amount: amount != null ? (amount * 100).round().toString() : '0',
         reference: reference,
         authorizationUrl: authorizationUrl,
         currency: currency,

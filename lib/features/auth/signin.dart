@@ -1,5 +1,4 @@
 import 'package:autobus/barrel.dart';
-import 'package:flutter/services.dart';
 
 class Signin extends StatefulWidget {
   const Signin({super.key, this.initialIdentifier});
@@ -15,90 +14,12 @@ class _SigninState extends State<Signin> {
   late final TextEditingController emailController = TextEditingController(
     text: widget.initialIdentifier?.trim() ?? '',
   );
-  final List<TextEditingController> _pinControllers = List.generate(
-    4,
-    (_) => TextEditingController(),
-  );
-  final List<FocusNode> _pinFocusNodes = List.generate(4, (_) => FocusNode());
-
-  String get _pin => _pinControllers.map((c) => c.text).join();
+  String _pin = '';
 
   @override
   void dispose() {
     emailController.dispose();
-    for (final c in _pinControllers) {
-      c.dispose();
-    }
-    for (final n in _pinFocusNodes) {
-      n.dispose();
-    }
     super.dispose();
-  }
-
-  Widget _buildPinInput({required bool enabled}) {
-    const gap = SizedBox(width: 16);
-    final children = <Widget>[];
-    for (var index = 0; index < 4; index++) {
-      if (index > 0) {
-        children.add(gap);
-      }
-      children.add(
-        SizedBox(
-          width: 52,
-          child: TextField(
-            onTapOutside: dismissAppKeyboard,
-            controller: _pinControllers[index],
-            focusNode: _pinFocusNodes[index],
-            enabled: enabled,
-            textAlign: TextAlign.center,
-            keyboardType: TextInputType.number,
-            obscureText: true,
-            inputFormatters: [
-              FilteringTextInputFormatter.digitsOnly,
-              LengthLimitingTextInputFormatter(1),
-            ],
-            style: GoogleFonts.montserrat(
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
-            ),
-            decoration: const InputDecoration(
-              border: UnderlineInputBorder(),
-              counterText: '',
-            ),
-            onChanged: (val) {
-              if (val.isNotEmpty) {
-                if (index < 3) {
-                  _pinFocusNodes[index + 1].requestFocus();
-                } else {
-                  _pinFocusNodes[index].unfocus();
-                  // Auto-login when all 4 digits are entered and email is filled
-                  if (emailController.text.isNotEmpty && _pin.length == 4) {
-                    _submitLogin();
-                  }
-                }
-              } else if (val.isEmpty && index > 0) {
-                _pinFocusNodes[index - 1].requestFocus();
-              }
-            },
-            onTap: () {
-              // If user taps a later box, keep caret at end
-              _pinControllers[index].selection = TextSelection.collapsed(
-                offset: _pinControllers[index].text.length,
-              );
-            },
-            onSubmitted: (_) {
-              if (index < 3) _pinFocusNodes[index + 1].requestFocus();
-            },
-            onEditingComplete: () {
-              // no-op; prevents default "done" behavior moving focus oddly
-            },
-          ),
-        ),
-      );
-    }
-    return Center(
-      child: Row(mainAxisSize: MainAxisSize.min, children: children),
-    );
   }
 
   void _submitLogin() {
@@ -208,7 +129,15 @@ class _SigninState extends State<Signin> {
                               ),
                             ),
                             const SizedBox(height: 8),
-                            _buildPinInput(enabled: !isLoading),
+                            PinDigitInput(
+                              enabled: !isLoading,
+                              onChanged: (v) => _pin = v,
+                              onCompleted: (_) {
+                                if (emailController.text.isNotEmpty) {
+                                  _submitLogin();
+                                }
+                              },
+                            ),
                             const SizedBox(height: 32),
                             Align(
                               alignment: Alignment.centerLeft,

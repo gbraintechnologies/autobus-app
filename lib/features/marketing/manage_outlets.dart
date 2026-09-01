@@ -100,55 +100,7 @@ class _ManageOutletsState extends State<ManageOutlets>
     }
   }
 
-  Future<void> _showDeviceShareInfo(OutletOption outlet) async {
-    await showDialog<void>(
-      context: context,
-      builder: (ctx) {
-        return AlertDialog(
-          backgroundColor: const Color(0xFF1A1333),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: const BorderSide(color: Color(0xFF3F1163)),
-          ),
-          title: Text(
-            outlet.label,
-            style: GoogleFonts.montserrat(
-              color: Colors.white,
-              fontWeight: FontWeight.w600,
-              fontSize: 18,
-            ),
-          ),
-          content: Text(
-            outlet.helperText ??
-                'This is shared from the WhatsApp app on this phone. You do not need to link an account.',
-            style: GoogleFonts.montserrat(
-              color: Colors.white.withValues(alpha: 0.75),
-              fontSize: 14,
-              height: 1.45,
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: Text(
-                'Got it',
-                style: GoogleFonts.montserrat(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   Future<void> _linkOutlet(OutletOption outlet) async {
-    if (outlet.shareOnDevice) {
-      await _showDeviceShareInfo(outlet);
-      return;
-    }
     final api = context.read<ApiService>();
     final connectSlug = outlet.connectSlug?.trim();
     // Meta / TikTok / Google block WKWebView; Safari View / Custom Tabs
@@ -455,7 +407,7 @@ class _ManageOutletsState extends State<ManageOutlets>
                                   ),
                                   const SizedBox(height: 12),
                                   Text(
-                                    'Instagram uses Business Login for inbox and posting. Facebook, TikTok, and YouTube open in a lightweight in-app browser — tap X when you are done. WhatsApp Status is shared from the WhatsApp app on this phone — no account link is needed.',
+                                    'Instagram uses Business Login for inbox and posting. TikTok and YouTube open in a lightweight in-app browser — tap X when you are done.',
                                     textAlign: TextAlign.center,
                                     style: GoogleFonts.montserrat(
                                       color: Colors.white.withValues(alpha: 0.65),
@@ -467,19 +419,6 @@ class _ManageOutletsState extends State<ManageOutlets>
                                   const SizedBox(height: 20),
                                   _OutletGrid(
                                     children: [
-                                      for (final outlet
-                                          in OutletCatalog.deviceShareOutlets)
-                                        _OutletCard(
-                                          label: outlet.label,
-                                          subtitle: 'On this phone',
-                                          icon: FaIcon(outlet.icon),
-                                          iconColor: outlet.iconColor,
-                                          isDeviceShare: true,
-                                          onTap: _busy
-                                              ? () {}
-                                              : () =>
-                                                    _showDeviceShareInfo(outlet),
-                                        ),
                                       for (final outlet in _unlinked)
                                         _OutletCard(
                                           label: outlet.label,

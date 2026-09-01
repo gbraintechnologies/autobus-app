@@ -47,6 +47,28 @@ class ApiService {
     }
   }
 
+  /// PUT /api/v1/user/me/sender-email — From address for outbound customer email.
+  Future<Map<String, dynamic>> updateSenderEmail({
+    required String senderEmail,
+  }) async {
+    try {
+      final response = await httpClient.put(
+        Uri.parse('$baseUrl/user/me/sender-email'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'sender_email': senderEmail.trim()}),
+      );
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      }
+      if (response.statusCode == 401) {
+        throw Exception('Session expired');
+      }
+      _fail(response, 'saving your from email');
+    } catch (e) {
+      throw AppException.fromCause(e, action: 'saving your from email');
+    }
+  }
+
   /// GET /api/v1/subscription/status/{phone} — server truth for active subscription.
   Future<Map<String, dynamic>?> getSubscriptionStatusByPhone(
     String phone,

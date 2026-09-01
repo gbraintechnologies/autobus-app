@@ -11,9 +11,9 @@ class _ManageEmailsState extends State<ManageEmails> {
   bool _profileRequested = false;
   bool _loading = true;
   String? _loadError;
-  String _profileEmail = '';
+  String _senderEmail = '';
 
-  bool get _hasSenderEmail => _profileEmail.trim().isNotEmpty;
+  bool get _hasSenderEmail => _senderEmail.trim().isNotEmpty;
 
   String _shortError(String raw, {int max = 160}) {
     final t = raw.trim();
@@ -32,7 +32,7 @@ class _ManageEmailsState extends State<ManageEmails> {
       final user = await api.getUserProfile();
       if (!mounted) return;
       setState(() {
-        _profileEmail = (user['email'] ?? '').toString().trim();
+        _senderEmail = (user['sender_email'] ?? '').toString().trim();
         _loading = false;
       });
     } catch (e) {
@@ -40,7 +40,7 @@ class _ManageEmailsState extends State<ManageEmails> {
       setState(() {
         _loadError = userFacingError(e);
         _loading = false;
-        _profileEmail = '';
+        _senderEmail = '';
       });
     }
   }
@@ -89,7 +89,7 @@ class _ManageEmailsState extends State<ManageEmails> {
                           ),
                           const SizedBox(height: 24),
                           Text(
-                            'Send emails and SMS for customer support, updates, promotions, and notifications — with your AI assistant.',
+                            'Send emails for customer support, updates, promotions, and notifications — with your AI assistant.',
                             textAlign: TextAlign.center,
                             style: GoogleFonts.montserrat(
                               color: Colors.white.withValues(alpha: 0.9),
@@ -127,7 +127,7 @@ class _ManageEmailsState extends State<ManageEmails> {
                                 ),
                               ),
                               child: Text(
-                                'Could not verify your profile email.\n${_shortError(_loadError!)}',
+                                'Could not load your from email.\n${_shortError(_loadError!)}',
                                 style: GoogleFonts.montserrat(
                                   color: Colors.white.withValues(alpha: 0.88),
                                   fontSize: 12,
@@ -152,7 +152,8 @@ class _ManageEmailsState extends State<ManageEmails> {
                                   Navigator.push<void>(
                                     context,
                                     MaterialPageRoute<void>(
-                                      builder: (_) => const Profile(),
+                                      builder: (_) =>
+                                          const ManageSenderEmailPage(),
                                     ),
                                   ).then((_) {
                                     if (mounted) _loadProfileEmail();
@@ -167,7 +168,7 @@ class _ManageEmailsState extends State<ManageEmails> {
                                       MaterialTapTargetSize.shrinkWrap,
                                 ),
                                 child: Text(
-                                  'Profile',
+                                  'Add',
                                   style: GoogleFonts.montserrat(
                                     color: const Color(0xFFA855F7),
                                     fontSize: 12,
@@ -176,7 +177,57 @@ class _ManageEmailsState extends State<ManageEmails> {
                                 ),
                               ),
                               child: Text(
-                                'You have not linked a sender address yet. Add an email on your profile so customers can recognize your messages.',
+                                'Add a from email before sending, for example noreply@useautobus.com. Autobus sends on your behalf using this address.',
+                                style: GoogleFonts.montserrat(
+                                  color: Colors.white.withValues(alpha: 0.85),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w400,
+                                  height: 1.45,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 32),
+                          ] else if (_hasSenderEmail) ...[
+                            _EmailNoticePanel(
+                              backgroundColor: const Color(
+                                0xFF14532D,
+                              ).withValues(alpha: 0.18),
+                              borderColor: const Color(
+                                0xFF22C55E,
+                              ).withValues(alpha: 0.45),
+                              icon: Icons.mark_email_read_outlined,
+                              iconColor: const Color(0xFF4ADE80),
+                              trailing: TextButton(
+                                onPressed: () {
+                                  Navigator.push<void>(
+                                    context,
+                                    MaterialPageRoute<void>(
+                                      builder: (_) =>
+                                          const ManageSenderEmailPage(),
+                                    ),
+                                  ).then((_) {
+                                    if (mounted) _loadProfileEmail();
+                                  });
+                                },
+                                style: TextButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                  ),
+                                  minimumSize: Size.zero,
+                                  tapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                ),
+                                child: Text(
+                                  'Change',
+                                  style: GoogleFonts.montserrat(
+                                    color: const Color(0xFFA855F7),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                              child: Text(
+                                'Sending from $_senderEmail',
                                 style: GoogleFonts.montserrat(
                                   color: Colors.white.withValues(alpha: 0.85),
                                   fontSize: 12,
@@ -222,27 +273,18 @@ class _ManageEmailsState extends State<ManageEmails> {
                                 },
                               ),
                               _EmailHubCard(
-                                icon: Icons.sms_outlined,
-                                title: 'SMS',
+                                icon: Icons.alternate_email,
+                                title: 'From email',
                                 onTap: () {
                                   Navigator.push<void>(
                                     context,
                                     MaterialPageRoute<void>(
-                                      builder: (_) => const SendCustomerSmsPage(),
+                                      builder: (_) =>
+                                          const ManageSenderEmailPage(),
                                     ),
-                                  );
-                                },
-                              ),
-                              _EmailHubCard(
-                                icon: Icons.send_to_mobile_outlined,
-                                title: 'Sent SMS',
-                                onTap: () {
-                                  Navigator.push<void>(
-                                    context,
-                                    MaterialPageRoute<void>(
-                                      builder: (_) => const SentSmsPage(),
-                                    ),
-                                  );
+                                  ).then((_) {
+                                    if (mounted) _loadProfileEmail();
+                                  });
                                 },
                               ),
                             ],

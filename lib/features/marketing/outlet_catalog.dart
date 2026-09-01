@@ -59,21 +59,6 @@ class OutletCatalog {
 
   static const List<OutletOption> all = [
     OutletOption(
-      label: 'Facebook',
-      icon: FontAwesomeIcons.facebookF,
-      iconColor: Color(0xFF1877F2),
-      postizIdentifiers: {'facebook'},
-      connectSlug: 'facebook',
-    ),
-    OutletOption(
-      label: 'WhatsApp Status',
-      icon: FontAwesomeIcons.whatsapp,
-      iconColor: Color(0xFF25D366),
-      shareOnDevice: true,
-      helperText:
-          'Shared directly from the WhatsApp app on this phone. You do not need to link a WhatsApp account.',
-    ),
-    OutletOption(
       label: 'Instagram',
       icon: FontAwesomeIcons.instagram,
       iconColor: Color(0xFFDD2A7B),
@@ -115,7 +100,4 @@ class OutletCatalog {
 
     return (linked: linked, unlinked: unlinked);
   }
-
-  static List<OutletOption> get deviceShareOutlets =>
-      all.where((o) => o.shareOnDevice).toList();
 }

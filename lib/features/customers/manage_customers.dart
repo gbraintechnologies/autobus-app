@@ -36,7 +36,7 @@ class ManageCustomers extends StatelessWidget {
                           ),
                           const SizedBox(height: 24),
                           Text(
-                            'Save contacts for your business — phone, email, and network — so you can message them quickly from SMS and email.',
+                            'Save contacts for your business — phone, email, and network — so you can message them quickly by email.',
                             textAlign: TextAlign.center,
                             style: GoogleFonts.montserrat(
                               color: Colors.white.withValues(alpha: 0.9),

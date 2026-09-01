@@ -60,13 +60,6 @@ class ChannelCatalog {
       iconColor: Color(0xFF25D366),
       chatwootKinds: {'whatsapp'},
     ),
-    ChannelOption(
-      label: 'SMS',
-      apiSlug: 'sms',
-      icon: FontAwesomeIcons.commentSms,
-      iconColor: Color(0xFF0EA5E9),
-      chatwootKinds: {'sms'},
-    ),
   ];
 
   static ({List<LinkedChannel> linked, List<ChannelOption> unlinked}) partition(

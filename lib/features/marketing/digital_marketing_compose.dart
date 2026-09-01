@@ -67,7 +67,10 @@ class _ComposePostPageState extends State<_ComposePostPage> {
     setState(() {
       _postizIntegrations = postiz
           .where(
-            (p) => p.isActive && p.identifier.toLowerCase() != 'whatsapp',
+            (p) =>
+                p.isActive &&
+                p.identifier.toLowerCase() != 'whatsapp' &&
+                p.identifier.toLowerCase() != 'facebook',
           )
           .toList();
       _blotatoAccounts = blotato;
@@ -506,7 +509,6 @@ ${_campaign.conversationTranscript}
 
   List<Widget> _phoneShareTiles() {
     const targets = <List<dynamic>>[
-      [_kShareFacebookId, 'Facebook', FontAwesomeIcons.facebookF, Color(0xFF1877F2)],
       [_kWhatsAppStatusOutletId, 'WhatsApp Status', FontAwesomeIcons.whatsapp, _kWhatsAppStatusGreen],
       [_kShareInstagramId, 'Instagram', FontAwesomeIcons.instagram, Color(0xFFDD2A7B)],
       [_kShareYoutubeId, 'YouTube', FontAwesomeIcons.youtube, Color(0xFFFF0000)],

@@ -1,20 +1,21 @@
 import 'package:flutter/foundation.dart';
 
-/// Store consumable product IDs for App Store and Google Play.
+/// App Store Connect consumable product IDs (iOS / iPadOS).
 ///
-/// Create the same IDs as Consumable products in both stores:
-///   autobus.credits.20
-///   autobus.credits.50
-///   autobus.credits.150
-///   autobus.credits.400
+/// Android and web buy the same packs with Paystack.
+/// iOS product IDs:
+///   autobus.credits.20.v4
+///   autobus.credits.50.v4
+///   autobus.credits.150.v5
+///   autobus.credits.400.v4
 class AppleIapIds {
   static const String prefix = 'autobus';
   static const String androidPackageName = 'com.autobus.app';
 
-  static const String credits20 = 'autobus.credits.20';
-  static const String credits50 = 'autobus.credits.50';
-  static const String credits150 = 'autobus.credits.150';
-  static const String credits400 = 'autobus.credits.400';
+  static const String credits20 = 'autobus.credits.20.v4';
+  static const String credits50 = 'autobus.credits.50.v4';
+  static const String credits150 = 'autobus.credits.150.v5';
+  static const String credits400 = 'autobus.credits.400.v4';
 
   static String slug(String name) {
     return name.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
@@ -35,12 +36,22 @@ class AppleIapIds {
     credits400,
   };
 
-  static bool get isSupported {
+  /// Apple In-App Purchase only. Android always uses Paystack.
+  static bool get usesAppleIap {
     if (kIsWeb) return false;
-    return defaultTargetPlatform == TargetPlatform.iOS ||
-        defaultTargetPlatform == TargetPlatform.macOS ||
-        defaultTargetPlatform == TargetPlatform.android;
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.iOS:
+      case TargetPlatform.macOS:
+        return true;
+      case TargetPlatform.android:
+      case TargetPlatform.fuchsia:
+      case TargetPlatform.linux:
+      case TargetPlatform.windows:
+        return false;
+    }
   }
+
+  static bool get isSupported => usesAppleIap;
 
   static bool get isIosApp {
     if (kIsWeb) return false;

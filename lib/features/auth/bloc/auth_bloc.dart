@@ -7,6 +7,7 @@ import 'package:autobus/common_design/app_error.dart';
 import 'package:autobus/config/app_config.dart';
 import 'package:autobus/common_bloc/success_bloc.dart';
 import '../models/token_model.dart';
+import '../services/pin_lock_service.dart';
 import '../services/token_service.dart';
 
 part 'auth_event.dart';
@@ -15,11 +16,16 @@ part 'auth_state.dart';
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final TokenService tokenService;
   final SuccessBloc successBloc;
+  final PinLockService pinLockService;
 
-  AuthBloc({TokenService? tokenService, SuccessBloc? successBloc})
-    : tokenService = tokenService ?? TokenService(),
-      successBloc = successBloc ?? SuccessBloc(),
-      super(AuthInitial()) {
+  AuthBloc({
+    TokenService? tokenService,
+    SuccessBloc? successBloc,
+    PinLockService? pinLockService,
+  }) : tokenService = tokenService ?? TokenService(),
+       successBloc = successBloc ?? SuccessBloc(),
+       pinLockService = pinLockService ?? PinLockService(),
+       super(AuthInitial()) {
     on<LoginEvent>(_onLogin);
     on<SignupEvent>(_onSignup);
     on<CheckAuthEvent>(_onCheckAuth);
@@ -39,6 +45,16 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     await tokenService.clearTokens();
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('user');
+  }
+
+  Future<void> _markPinActive(dynamic user) async {
+    final key = PinLockService.userKeyFrom(user);
+    if (key == null) return;
+    try {
+      if (await pinLockService.isEnabled(key)) {
+        await pinLockService.markActive(key);
+      }
+    } catch (_) {}
   }
 
   Future<void> _onSessionExpired(
@@ -113,6 +129,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           final userData = json.decode(userResponse.body);
           final prefs = await SharedPreferences.getInstance();
           await prefs.setString('user', json.encode(userData));
+          await _markPinActive(userData);
           emit(Authenticated(user: userData));
         } else {
           print('User fetch error: ${userResponse.body}');
@@ -181,6 +198,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
               final userData = json.decode(userResponse.body);
               final prefs = await SharedPreferences.getInstance();
               await prefs.setString('user', json.encode(userData));
+              await _markPinActive(userData);
             }
           } catch (_) {}
         }

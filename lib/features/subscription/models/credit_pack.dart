@@ -1,5 +1,3 @@
-import 'package:autobus/features/subscription/data/apple_iap_ids.dart';
-
 class CreditPack {
   final String id;
   final String name;
@@ -23,10 +21,7 @@ class CreditPack {
     this.details = '',
   });
 
-  String get storeProductId =>
-      AppleIapIds.isAndroidApp && googlePlayProductId.isNotEmpty
-      ? googlePlayProductId
-      : appleProductId;
+  String get storeProductId => appleProductId;
 
   factory CreditPack.fromJson(Map<String, dynamic> json) {
     final appleId = (json['apple_product_id'] ?? '').toString();

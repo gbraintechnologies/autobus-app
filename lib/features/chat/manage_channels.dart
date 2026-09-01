@@ -97,28 +97,6 @@ class _ManageChannelsState extends State<ManageChannels>
       } catch (_) {
         // Autobus Instagram Business Login accounts are the chat IG source of truth.
       }
-      try {
-        final smsRows = await api.listSmsSenderIds();
-        for (final row in smsRows) {
-          final senderId = (row['sender_id'] ?? '').toString().trim();
-          if (senderId.isEmpty) continue;
-          final status = (row['status'] ?? 'pending').toString().toLowerCase();
-          final statusLabel = switch (status) {
-            'approved' => 'Approved',
-            'rejected' => 'Rejected',
-            _ => 'Pending approval',
-          };
-          inboxes.add(
-            ChatwootInbox(
-              id: (row['id'] ?? senderId).hashCode.abs(),
-              name: '$senderId · $statusLabel',
-              kind: 'sms',
-            ),
-          );
-        }
-      } catch (_) {
-        // SMS registrations are optional for the channel list.
-      }
       if (!mounted) return;
       final split = ChannelCatalog.partition(inboxes);
       setState(() {
@@ -180,22 +158,9 @@ class _ManageChannelsState extends State<ManageChannels>
     );
   }
 
-  Future<void> _openSmsSenderIds() async {
-    await Navigator.push<void>(
-      context,
-      MaterialPageRoute<void>(builder: (_) => const ManageSmsSenderIds()),
-    );
-    if (mounted) await _refreshInboxes();
-  }
-
   Future<void> _linkChannel(ChannelOption channel) async {
     if (channel.comingSoon) {
       await _showComingSoon(channel);
-      return;
-    }
-
-    if (channel.apiSlug == 'sms') {
-      await _openSmsSenderIds();
       return;
     }
 
@@ -230,10 +195,6 @@ class _ManageChannelsState extends State<ManageChannels>
 
   Future<void> _onLinkedTap(LinkedChannel item) async {
     if (_busy) return;
-    if (item.channel.apiSlug == 'sms') {
-      await _openSmsSenderIds();
-      return;
-    }
 
     final action = await showModalBottomSheet<String>(
       context: context,
@@ -532,7 +493,7 @@ class _ManageChannelsState extends State<ManageChannels>
                                   ),
                                   const SizedBox(height: 12),
                   Text(
-                    'Instagram uses Meta Business Login. WhatsApp uses Meta signup. Both open in a lightweight in-app browser — tap X when you are done. SMS opens your Sender ID page.',
+                    'Instagram uses Meta Business Login. WhatsApp uses Meta signup. Both open in a lightweight in-app browser — tap X when you are done.',
                     textAlign: TextAlign.center,
                     style: GoogleFonts.montserrat(
                       color: Colors.white.withValues(alpha: 0.65),
