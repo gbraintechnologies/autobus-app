@@ -39,6 +39,7 @@ export 'package:autobus/features/auth/signup.dart';
 export 'package:autobus/features/auth/signup_otp.dart';
 export 'package:autobus/features/initial_ui/initial.dart';
 export 'package:autobus/features/home/home.dart';
+export 'package:autobus/features/agent/agent_mode.dart';
 export 'package:autobus/features/auth/widgets/pin_digit_input.dart';
 export 'package:autobus/features/auth/logged_out_gate.dart';
 export 'package:autobus/features/auth/authinit.dart';

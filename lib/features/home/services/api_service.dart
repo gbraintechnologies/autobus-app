@@ -818,6 +818,48 @@ class ApiService {
     _fail(response, 'talking to your AI');
   }
 
+  /// POST /api/v1/intelligence/agent — owner agent turn (tools, asks, confirms).
+  Future<Map<String, dynamic>> sendAgentTurn({
+    String? message,
+    List<Map<String, dynamic>> attachments = const [],
+    String? confirmId,
+    bool? confirmed,
+    String? askId,
+  }) async {
+    final body = <String, dynamic>{};
+    final trimmed = message?.trim();
+    if (trimmed != null && trimmed.isNotEmpty) body['message'] = trimmed;
+    if (attachments.isNotEmpty) body['attachments'] = attachments;
+    if (confirmId != null && confirmId.isNotEmpty) {
+      body['confirm_id'] = confirmId;
+    }
+    if (confirmed != null) body['confirmed'] = confirmed;
+    if (askId != null && askId.isNotEmpty) body['ask_id'] = askId;
+
+    if (body.isEmpty) {
+      throw AppException.user('Please type a message or attach a file.');
+    }
+
+    final response = await httpClient.post(
+      Uri.parse('$baseUrl/intelligence/agent'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode(body),
+    );
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      if (data is Map<String, dynamic>) return data;
+      if (data is Map) return Map<String, dynamic>.from(data);
+      throw AppException(
+        kind: AppErrorKind.unexpected,
+        action: 'talking to your AI',
+      );
+    }
+    if (response.statusCode == 401) {
+      throw Exception('Session expired');
+    }
+    _fail(response, 'talking to your AI');
+  }
+
   /// GET /api/v1/intelligence/onboarding — questions + saved business profile.
   Future<Map<String, dynamic>> getBusinessOnboarding() async {
     final response = await httpClient.get(

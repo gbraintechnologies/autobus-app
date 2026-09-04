@@ -1,4 +1,5 @@
 import 'package:autobus/barrel.dart';
+import 'package:autobus/features/agent/agent_mode_store.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -45,6 +46,20 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> {
   Future<int>? _unreadCountFuture;
+  bool _agentMode = false;
+
+  @override
+  void initState() {
+    super.initState();
+    AgentModeStore.load().then((value) {
+      if (mounted) setState(() => _agentMode = value);
+    });
+  }
+
+  void _setAgentMode(bool value) {
+    setState(() => _agentMode = value);
+    AgentModeStore.save(value);
+  }
 
   @override
   void didChangeDependencies() {
@@ -62,6 +77,23 @@ class _HomeState extends State<Home> {
 
   @override
   Widget build(BuildContext context) {
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 420),
+      switchInCurve: Curves.easeOutCubic,
+      switchOutCurve: Curves.easeInCubic,
+      child: _agentMode
+          ? AgentModePage(
+              key: const ValueKey('agent-mode'),
+              onExit: () => _setAgentMode(false),
+            )
+          : KeyedSubtree(
+              key: const ValueKey('dashboard'),
+              child: _buildDashboard(context),
+            ),
+    );
+  }
+
+  Widget _buildDashboard(BuildContext context) {
     final List<HomeMenuItem> menuItems = [
       HomeMenuItem("Intelligence", Fluent.brain_circuit_20_regular, () {
         Navigator.push(
@@ -223,6 +255,12 @@ class _HomeState extends State<Home> {
               ),
             ),
           ),
+          Positioned(
+            left: 20,
+            right: 20,
+            bottom: 16 + MediaQuery.viewPaddingOf(context).bottom,
+            child: _AgentEntryPill(onTap: () => _setAgentMode(true)),
+          ),
         ],
       ),
     );
@@ -374,4 +412,74 @@ class HomeMenuItem {
   final VoidCallback onTap;
 
   HomeMenuItem(this.title, this.icon, this.onTap);
+}
+
+class _AgentEntryPill extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _AgentEntryPill({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 56,
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1A1028),
+          borderRadius: BorderRadius.circular(28),
+          border: Border.all(color: const Color(0xFFA855F7).withValues(alpha: 0.7)),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFA855F7).withValues(alpha: 0.22),
+              blurRadius: 18,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  colors: [Color(0xFF7C3AED), Color(0xFFA855F7)],
+                ),
+              ),
+              child: const Icon(Icons.auto_awesome, color: Colors.white, size: 18),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Agent mode',
+                    style: GoogleFonts.montserrat(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  Text(
+                    'Speak or type — Autobus runs it',
+                    style: GoogleFonts.montserrat(
+                      color: Colors.white60,
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.mic_none, color: Color(0xFFA855F7), size: 22),
+            const SizedBox(width: 8),
+          ],
+        ),
+      ),
+    );
+  }
 }
