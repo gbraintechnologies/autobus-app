@@ -11,12 +11,13 @@ class AuthWrapper extends StatefulWidget {
 class _AuthWrapperState extends State<AuthWrapper> {
   /// Last login/signup landing page. Kept mounted through AuthLoading/AuthError
   /// so form snackbar listeners are not torn down (iOS).
-  Widget _formGate = const LogorSign();
+  Widget _formGate = const LoggedOutGate();
 
   /// Last authenticated shell — kept during in-place token refresh so the app
   /// does not flash LogorSign / a Guest-labeled home.
   Widget? _authedShell;
   Timer? _initialTimeout;
+  String? _shellUserId;
 
   @override
   void initState() {
@@ -65,9 +66,15 @@ class _AuthWrapperState extends State<AuthWrapper> {
     final map = _userMap(user);
     if (!_hasUserIdentity(map)) {
       _authedShell = null;
-      _formGate = const LogorSign();
+      _shellUserId = null;
+      _formGate = const LoggedOutGate();
       return _formGate;
     }
+    final id = (map['id'] ?? map['user_id'] ?? '').toString().trim();
+    if (_authedShell != null && _shellUserId != null && _shellUserId == id) {
+      return _authedShell!;
+    }
+    _shellUserId = id;
     _authedShell = SubscriptionGuard(user: map);
     return _authedShell!;
   }
@@ -80,7 +87,12 @@ class _AuthWrapperState extends State<AuthWrapper> {
             state is SessionExpired ||
             state is TokenRefreshFailed) {
           _authedShell = null;
-          _formGate = const LogorSign();
+          _formGate = const LoggedOutGate();
+          _shellUserId = null;
+          _popToRoot();
+        }
+
+        if (state is Authenticated && state.resetNavigation) {
           _popToRoot();
         }
 
@@ -106,9 +118,9 @@ class _AuthWrapperState extends State<AuthWrapper> {
         if (state is Unauthenticated ||
             state is SessionExpired ||
             state is TokenRefreshFailed) {
-          print('✗ ${state.runtimeType} - showing LogorSign');
+          print('✗ ${state.runtimeType} - showing logged-out gate');
           _authedShell = null;
-          _formGate = const LogorSign();
+          _formGate = const LoggedOutGate();
           return _formGate;
         }
 
@@ -129,7 +141,11 @@ class _AuthWrapperState extends State<AuthWrapper> {
             state is ResetCodeSent ||
             state is ResetCodeVerified ||
             state is PasswordResetSuccess ||
-            state is TokenRefreshing) {
+            state is TokenRefreshing ||
+            state is DetachOtpSent) {
+          if (_authedShell != null) {
+            return _authedShell!;
+          }
           print('✗ Auth gate: ${state.runtimeType} - keeping form');
           return _formGate;
         }

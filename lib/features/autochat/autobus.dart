@@ -82,7 +82,7 @@ class _AutoBusState extends State<AutoBus> {
               ),
             );
             Navigator.of(context).pushAndRemoveUntil(
-              MaterialPageRoute(builder: (_) => const LogorSign()),
+              MaterialPageRoute(builder: (_) => const LoggedOutGate()),
               (route) => false,
             );
           } else if (state is TokenRefreshFailed) {
@@ -93,7 +93,7 @@ class _AutoBusState extends State<AutoBus> {
               ),
             );
             Navigator.of(context).pushAndRemoveUntil(
-              MaterialPageRoute(builder: (_) => const LogorSign()),
+              MaterialPageRoute(builder: (_) => const LoggedOutGate()),
               (route) => false,
             );
           }

@@ -70,7 +70,7 @@ class _SettingsPageState extends State<SettingsPage> {
         if (state is Unauthenticated) {
           // Navigate to signin page and remove all previous routes
           Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (_) => const LogorSign()),
+            MaterialPageRoute(builder: (_) => const LoggedOutGate()),
             (route) => false,
           );
         }
@@ -253,6 +253,12 @@ class _SettingsPageState extends State<SettingsPage> {
 
   List<SettingsMenuItem> _buildMenuItems() {
     return [
+      SettingsMenuItem("Businesses", Icons.swap_horiz, () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const ManageBusinessesPage()),
+        );
+      }),
       SettingsMenuItem("Profile", Icons.person_outline, () {
         Navigator.push(
           context,

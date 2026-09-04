@@ -162,10 +162,13 @@ class _SignupState extends State<Signup> {
                               TextField(
                                 onTapOutside: dismissAppKeyboard,
                                 controller: usernameController,
+                                autocorrect: false,
+                                enableSuggestions: false,
+                                textCapitalization: TextCapitalization.none,
                                 style: _fieldTextStyle(),
                                 decoration: InputDecoration(
                                   border: const UnderlineInputBorder(),
-                                  hintText: 'Enter your full name',
+                                  hintText: 'Enter your username',
                                   hintStyle: _fieldHintStyle(),
                                 ),
                               ),
@@ -372,6 +375,14 @@ class _SignupState extends State<Signup> {
                           onPressed: isLoading
                               ? null
                               : () async {
+                                  final username = usernameController.text.trim();
+                                  if (username.isEmpty) {
+                                    showAppSnackBar(
+                                      context,
+                                      'Please enter a username',
+                                    );
+                                    return;
+                                  }
                                   if (_pin.length != 4) {
                                     showAppSnackBar(
                                       context,
@@ -381,7 +392,7 @@ class _SignupState extends State<Signup> {
                                   }
                                   context.read<AuthBloc>().add(
                                     SignupEvent(
-                                      username: usernameController.text.trim(),
+                                      username: username,
                                       phone: phoneController.text.trim(),
                                       email: emailController.text.trim(),
                                       password: _pin,

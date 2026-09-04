@@ -2,25 +2,35 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:autobus/features/home/services/api_service.dart';
+import 'package:autobus/features/products/product_media.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-/// Staged image for products chat (local path or web bytes until send).
+/// Staged image or video for products chat / add-product forms.
 class ProductStagingSlot {
   String? localPath;
   Uint8List? previewBytes;
   String? pickedName;
+  bool isVideo;
+
+  ProductStagingSlot({this.isVideo = false});
 
   bool get isEmpty =>
       (previewBytes == null || previewBytes!.isEmpty) &&
       (localPath == null || localPath!.trim().isEmpty);
 
+  bool get looksLikeVideo =>
+      isVideo ||
+      productFileLooksLikeVideo(pickedName) ||
+      productFileLooksLikeVideo(localPath);
+
   void clear() {
     localPath = null;
     previewBytes = null;
     pickedName = null;
+    isVideo = false;
   }
 }
 
@@ -29,32 +39,61 @@ Future<List<String>> uploadStagedProductImageUrls(
   ApiService api,
   List<ProductStagingSlot> slots,
 ) async {
-  final urls = <String>[];
+  final uploaded = await uploadStagedProductMedia(api, slots);
+  return [...uploaded.photos, ...uploaded.videos];
+}
+
+class StagedProductMediaUrls {
+  final List<String> photos;
+  final List<String> videos;
+
+  const StagedProductMediaUrls({
+    required this.photos,
+    required this.videos,
+  });
+
+  List<String> get all => [...photos, ...videos];
+  bool get isEmpty => photos.isEmpty && videos.isEmpty;
+}
+
+/// Uploads staged images and videos, keeping them in separate lists.
+Future<StagedProductMediaUrls> uploadStagedProductMedia(
+  ApiService api,
+  List<ProductStagingSlot> slots,
+) async {
+  final photos = <String>[];
+  final videos = <String>[];
   for (final slot in slots) {
     if (slot.isEmpty) continue;
+    String? url;
     if (kIsWeb) {
       final bytes = slot.previewBytes;
       if (bytes == null || bytes.isEmpty) continue;
-      final url = await api.uploadFileBytes(
+      url = await api.uploadFileBytes(
         fileBytes: bytes,
-        filename: slot.pickedName ?? 'product.jpg',
+        filename: slot.pickedName ??
+            (slot.looksLikeVideo ? 'product.mp4' : 'product.jpg'),
         storageFolder: ApiService.productImageStorageFolder,
       );
-      urls.add(url);
     } else {
       final path = slot.localPath;
       if (path == null || path.isEmpty) continue;
       final file = File(path);
       if (!await file.exists()) continue;
-      final url = await api.uploadFile(
+      url = await api.uploadFile(
         file: file,
         filename: slot.pickedName,
         storageFolder: ApiService.productImageStorageFolder,
       );
-      urls.add(url);
+    }
+    if (url.isEmpty) continue;
+    if (slot.looksLikeVideo || productMediaLooksLikeVideo(url)) {
+      videos.add(url);
+    } else {
+      photos.add(url);
     }
   }
-  return urls;
+  return StagedProductMediaUrls(photos: photos, videos: videos);
 }
 
 /// Horizontal image slots for the products AutoBus chat (light background).
@@ -256,7 +295,8 @@ Future<void> pickProductImageForSlot(
       slots[index]
         ..previewBytes = bytes
         ..localPath = null
-        ..pickedName = name;
+        ..pickedName = name
+        ..isVideo = false;
     });
     return;
   }
@@ -281,7 +321,61 @@ Future<void> pickProductImageForSlot(
     slots[index]
       ..localPath = path
       ..previewBytes = (bytes != null && bytes.isNotEmpty) ? bytes : null
-      ..pickedName = name;
+      ..pickedName = name
+      ..isVideo = false;
+  });
+}
+
+/// Replace [slots[index]] with a picked video.
+Future<void> pickProductVideoForSlot(
+  BuildContext context,
+  List<ProductStagingSlot> slots,
+  int index,
+  StateSetter setState,
+) async {
+  final result = await FilePicker.platform.pickFiles(
+    type: FileType.custom,
+    allowedExtensions: kProductVideoExtensions,
+    allowMultiple: false,
+    withData: kIsWeb,
+  );
+  if (!context.mounted || result == null || result.files.isEmpty) return;
+
+  final file = result.files.single;
+  final path = file.path?.trim();
+  final name = file.name.trim().isNotEmpty ? file.name : 'product.mp4';
+
+  if (kIsWeb) {
+    final bytes = file.bytes;
+    if (bytes == null || bytes.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Unable to load selected video.')),
+      );
+      return;
+    }
+    setState(() {
+      slots[index]
+        ..previewBytes = bytes
+        ..localPath = null
+        ..pickedName = name
+        ..isVideo = true;
+    });
+    return;
+  }
+
+  if (path == null || path.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Unable to open selected video.')),
+    );
+    return;
+  }
+
+  setState(() {
+    slots[index]
+      ..localPath = path
+      ..previewBytes = null
+      ..pickedName = name
+      ..isVideo = true;
   });
 }
 

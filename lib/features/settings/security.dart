@@ -3,27 +3,6 @@ import 'package:autobus/barrel.dart';
 class Security extends StatelessWidget {
   const Security({super.key});
 
-  Future<void> _openPinSetup(BuildContext context, PinSetupMode mode) async {
-    final ok = await Navigator.push<bool>(
-      context,
-      MaterialPageRoute(builder: (_) => SetupPinPage(mode: mode)),
-    );
-    if (ok != true || !context.mounted) return;
-    final message = switch (mode) {
-      PinSetupMode.create => 'App PIN enabled',
-      PinSetupMode.change => 'PIN updated',
-      PinSetupMode.disable => 'App PIN turned off',
-    };
-    showAppSnackBar(context, message, backgroundColor: CustColors.mainCol);
-  }
-
-  Future<void> _onTogglePin(BuildContext context, bool enable) async {
-    await _openPinSetup(
-      context,
-      enable ? PinSetupMode.create : PinSetupMode.disable,
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -109,31 +88,6 @@ class Security extends StatelessWidget {
                           },
                         ),
                       ),
-                      BlocBuilder<PinLockCubit, PinLockState>(
-                        builder: (context, pinState) {
-                          final enabled = pinState.isEnabled;
-                          return Column(
-                            children: [
-                              _PinSwitchTile(
-                                enabled: !pinState.busy,
-                                value: enabled,
-                                onChanged: (val) => _onTogglePin(context, val),
-                              ),
-                              if (enabled)
-                                NotificationMenuTile(
-                                  item: SecurityMenuItem(
-                                    "Change PIN",
-                                    Icons.pin_outlined,
-                                    () => _openPinSetup(
-                                      context,
-                                      PinSetupMode.change,
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          );
-                        },
-                      ),
                       NotificationMenuTile(
                         item: SecurityMenuItem(
                           "2FA",
@@ -163,108 +117,6 @@ class Security extends StatelessWidget {
       child: icon is IconData
           ? Icon(icon, color: Colors.white70, size: 18)
           : Iconify(icon, color: Colors.white70, size: 8),
-    );
-  }
-}
-
-class _PinSwitchTile extends StatelessWidget {
-  const _PinSwitchTile({
-    required this.value,
-    required this.enabled,
-    required this.onChanged,
-  });
-
-  final bool value;
-  final bool enabled;
-  final ValueChanged<bool> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: enabled ? () => onChanged(!value) : null,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
-        child: Row(
-          children: [
-            const Icon(Icons.lock_outline, color: Colors.black87),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'App PIN',
-                    style: GoogleFonts.montserrat(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Ask for your PIN after 10 minutes away',
-                    style: GoogleFonts.montserrat(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w400,
-                      color: Colors.black54,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            _PinToggle(value: value, enabled: enabled),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _PinToggle extends StatelessWidget {
-  const _PinToggle({required this.value, required this.enabled});
-
-  final bool value;
-  final bool enabled;
-
-  @override
-  Widget build(BuildContext context) {
-    final trackColor = value
-        ? CustColors.mainCol
-        : Colors.black.withValues(alpha: 0.12);
-
-    return AnimatedOpacity(
-      duration: const Duration(milliseconds: 180),
-      opacity: enabled ? 1 : 0.55,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 220),
-        curve: Curves.easeOutCubic,
-        width: 58,
-        height: 34,
-        padding: const EdgeInsets.all(3),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(999),
-          color: trackColor,
-        ),
-        child: AnimatedAlign(
-          duration: const Duration(milliseconds: 220),
-          curve: Curves.easeOutCubic,
-          alignment: value ? Alignment.centerRight : Alignment.centerLeft,
-          child: Container(
-            width: 28,
-            height: 28,
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              value ? Icons.check_rounded : Icons.remove_rounded,
-              size: 16,
-              color: value ? CustColors.mainCol : Colors.grey.shade500,
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

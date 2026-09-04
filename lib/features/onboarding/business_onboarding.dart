@@ -20,6 +20,7 @@ class _OnboardingQuestion {
     this.placeholder = '',
     this.multiline = true,
     this.required = true,
+    this.options = const [],
   });
 
   final String id;
@@ -28,8 +29,12 @@ class _OnboardingQuestion {
   final String placeholder;
   final bool multiline;
   final bool required;
+  final List<String> options;
+
+  bool get isSelect => options.isNotEmpty;
 
   factory _OnboardingQuestion.fromJson(Map<String, dynamic> json) {
+    final rawOptions = json['options'];
     return _OnboardingQuestion(
       id: (json['id'] ?? '').toString(),
       prompt: (json['prompt'] ?? '').toString(),
@@ -37,9 +42,36 @@ class _OnboardingQuestion {
       placeholder: (json['placeholder'] ?? '').toString(),
       multiline: json['multiline'] != false,
       required: json['required'] != false,
+      options: rawOptions is List
+          ? rawOptions.map((e) => e.toString().trim()).where((e) => e.isNotEmpty).toList()
+          : const [],
     );
   }
 }
+
+const _industryOptions = <String>[
+  'Agriculture & Farming',
+  'Automotive',
+  'Beauty & Personal Care',
+  'Construction & Trades',
+  'Education & Training',
+  'Energy & Utilities',
+  'Fashion & Apparel',
+  'Finance & Insurance',
+  'Food & Beverage',
+  'Government & Public Sector',
+  'Healthcare & Wellness',
+  'Hospitality & Tourism',
+  'Logistics & Transportation',
+  'Manufacturing',
+  'Media & Entertainment',
+  'Nonprofit & Community',
+  'Professional Services',
+  'Real Estate & Property',
+  'Retail & E-commerce',
+  'Technology & Software',
+  'Other',
+];
 
 const _fallbackQuestions = <_OnboardingQuestion>[
   _OnboardingQuestion(
@@ -70,9 +102,10 @@ const _fallbackQuestions = <_OnboardingQuestion>[
   _OnboardingQuestion(
     id: 'industry',
     prompt: 'What industry or category are you in?',
-    hint: 'Helps the chatbot use the right language for your market.',
-    placeholder: 'e.g. Food and bakery, retail fashion, logistics',
+    hint: 'Pick the closest match so we can analyze businesses by sector and use the right language for your market.',
+    placeholder: 'Select an industry',
     multiline: false,
+    options: _industryOptions,
   ),
   _OnboardingQuestion(
     id: 'service_area',
@@ -199,7 +232,15 @@ class _BusinessOnboardingState extends State<BusinessOnboarding> {
         } catch (_) {}
       }
       saved.forEach((id, value) {
-        _controllers.putIfAbsent(id, TextEditingController.new).text = value;
+        _OnboardingQuestion? question;
+        for (final q in questions) {
+          if (q.id == id) {
+            question = q;
+            break;
+          }
+        }
+        final text = _canonicalAnswer(question, value);
+        _controllers.putIfAbsent(id, TextEditingController.new).text = text;
       });
 
       if (!mounted) return;
@@ -232,9 +273,29 @@ class _BusinessOnboardingState extends State<BusinessOnboarding> {
     setState(() => _step -= 1);
   }
 
+  String _canonicalAnswer(_OnboardingQuestion? question, String value) {
+    if (question == null || !question.isSelect) return value;
+    final lowered = value.toLowerCase();
+    for (final option in question.options) {
+      if (option.toLowerCase() == lowered) return option;
+    }
+    return '';
+  }
+
+  bool _isValidAnswer(_OnboardingQuestion question, String text) {
+    if (text.isEmpty) return !question.required;
+    if (question.isSelect) return question.options.any((o) => o.toLowerCase() == text.toLowerCase());
+    return text.length >= 2;
+  }
+
   void _goNext() {
-    if (_current.required && _currentText.length < 2) {
-      showAppSnackBar(context, 'Please answer this question to continue.');
+    if (!_isValidAnswer(_current, _currentText)) {
+      showAppSnackBar(
+        context,
+        _current.isSelect
+            ? 'Please select an option to continue.'
+            : 'Please answer this question to continue.',
+      );
       return;
     }
     if (_isLast) {
@@ -248,15 +309,16 @@ class _BusinessOnboardingState extends State<BusinessOnboarding> {
     if (_submitting) return;
     final answers = <String, String>{};
     for (final q in _questions) {
-      final text = _controllers[q.id]?.text.trim() ?? '';
-      if (text.isEmpty) {
-        if (q.required) {
-          showAppSnackBar(context, 'Please answer: ${q.prompt}');
-          setState(() => _step = _questions.indexOf(q).clamp(0, _questions.length - 1));
-          return;
-        }
-        continue;
+      final text = _canonicalAnswer(q, _controllers[q.id]?.text.trim() ?? '');
+      if (!_isValidAnswer(q, text)) {
+        showAppSnackBar(
+          context,
+          q.isSelect ? 'Please select an option for: ${q.prompt}' : 'Please answer: ${q.prompt}',
+        );
+        setState(() => _step = _questions.indexOf(q).clamp(0, _questions.length - 1));
+        return;
       }
+      if (text.isEmpty) continue;
       answers[q.id] = text;
     }
 
@@ -412,6 +474,7 @@ class _BusinessOnboardingState extends State<BusinessOnboarding> {
 
     final q = _current;
     final controller = _controllers[q.id]!;
+    final selected = _canonicalAnswer(q, controller.text);
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -438,35 +501,77 @@ class _BusinessOnboardingState extends State<BusinessOnboarding> {
             ),
           ],
           const SizedBox(height: 20),
-          TextField(
-            controller: controller,
-            onTapOutside: dismissAppKeyboard,
-            autofocus: true,
-            maxLines: q.multiline ? 5 : 1,
-            minLines: q.multiline ? 3 : 1,
-            textCapitalization: TextCapitalization.sentences,
-            textInputAction: q.multiline ? TextInputAction.newline : TextInputAction.done,
-            onSubmitted: (_) => _goNext(),
-            decoration: InputDecoration(
-              hintText: q.placeholder,
-              hintStyle: GoogleFonts.montserrat(
-                color: Colors.black38,
-                fontSize: 14,
+          if (q.isSelect)
+            DropdownButtonFormField<String>(
+              value: selected.isEmpty ? null : selected,
+              isExpanded: true,
+              menuMaxHeight: 360,
+              hint: Text(
+                q.placeholder.isEmpty ? 'Select an option' : q.placeholder,
+                style: GoogleFonts.montserrat(
+                  color: Colors.black38,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+              icon: const Icon(Icons.keyboard_arrow_down, color: Colors.black54),
+              style: GoogleFonts.montserrat(
+                color: Colors.black,
+                fontSize: 15,
                 fontWeight: FontWeight.w400,
+                height: 1.4,
               ),
-              enabledBorder: const UnderlineInputBorder(
-                borderSide: BorderSide(color: Colors.black26),
+              decoration: const InputDecoration(
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.black26),
+                ),
+                focusedBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: CustColors.mainCol, width: 1.6),
+                ),
               ),
-              focusedBorder: const UnderlineInputBorder(
-                borderSide: BorderSide(color: CustColors.mainCol, width: 1.6),
+              items: [
+                for (final option in q.options)
+                  DropdownMenuItem<String>(
+                    value: option,
+                    child: Text(option),
+                  ),
+              ],
+              onChanged: (value) {
+                setState(() {
+                  controller.text = value ?? '';
+                });
+              },
+            )
+          else
+            TextField(
+              controller: controller,
+              onTapOutside: dismissAppKeyboard,
+              autofocus: true,
+              maxLines: q.multiline ? 5 : 1,
+              minLines: q.multiline ? 3 : 1,
+              textCapitalization: TextCapitalization.sentences,
+              textInputAction: q.multiline ? TextInputAction.newline : TextInputAction.done,
+              onSubmitted: (_) => _goNext(),
+              decoration: InputDecoration(
+                hintText: q.placeholder,
+                hintStyle: GoogleFonts.montserrat(
+                  color: Colors.black38,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w400,
+                ),
+                enabledBorder: const UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.black26),
+                ),
+                focusedBorder: const UnderlineInputBorder(
+                  borderSide: BorderSide(color: CustColors.mainCol, width: 1.6),
+                ),
+              ),
+              style: GoogleFonts.montserrat(
+                fontSize: 15,
+                fontWeight: FontWeight.w400,
+                height: 1.4,
               ),
             ),
-            style: GoogleFonts.montserrat(
-              fontSize: 15,
-              fontWeight: FontWeight.w400,
-              height: 1.4,
-            ),
-          ),
           if (!q.required)
             Padding(
               padding: const EdgeInsets.only(top: 10),

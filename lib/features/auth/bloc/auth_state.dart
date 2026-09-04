@@ -13,11 +13,32 @@ class AuthLoading extends AuthState {}
 
 class Authenticated extends AuthState {
   final dynamic user;
+  final List businesses;
+  final bool resetNavigation;
+  final String? lastBusinessOp;
 
-  const Authenticated({required this.user});
+  const Authenticated({
+    required this.user,
+    this.businesses = const [],
+    this.resetNavigation = false,
+    this.lastBusinessOp,
+  });
+
+  String? get activeBusinessId {
+    if (user is Map) {
+      final id = user['id'];
+      if (id != null) return id.toString();
+    }
+    return null;
+  }
 
   @override
-  List<Object> get props => [user];
+  List<Object> get props => [
+    user,
+    businesses,
+    resetNavigation,
+    lastBusinessOp ?? '',
+  ];
 }
 
 class Registered extends AuthState {
@@ -125,11 +146,12 @@ class TokenRefreshing extends AuthState {
 
 class TokenRefreshed extends AuthState {
   final dynamic user;
+  final List businesses;
 
-  const TokenRefreshed({required this.user});
+  const TokenRefreshed({required this.user, this.businesses = const []});
 
   @override
-  List<Object> get props => [user];
+  List<Object> get props => [user, businesses];
 }
 
 class SessionExpired extends AuthState {
@@ -150,4 +172,19 @@ class TokenRefreshFailed extends AuthState {
 
   @override
   List<Object> get props => [message];
+}
+
+class DetachOtpSent extends AuthState {
+  final String businessId;
+  final String email;
+  final String message;
+
+  const DetachOtpSent({
+    required this.businessId,
+    required this.email,
+    required this.message,
+  });
+
+  @override
+  List<Object> get props => [businessId, email, message];
 }

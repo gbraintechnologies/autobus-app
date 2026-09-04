@@ -17,9 +17,33 @@ class _SigninState extends State<Signin> {
   String _pin = '';
 
   @override
+  void initState() {
+    super.initState();
+    if (emailController.text.isEmpty) {
+      LastLoginStore.read().then((id) {
+        if (!mounted || id == null || emailController.text.isNotEmpty) return;
+        emailController.text = id;
+      });
+    }
+  }
+
+  @override
   void dispose() {
     emailController.dispose();
     super.dispose();
+  }
+
+  void _onBack() {
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+      return;
+    }
+    Navigator.of(context).push(
+      PageTransition(
+        type: PageTransitionType.leftToRightWithFade,
+        child: const LogorSign(),
+      ),
+    );
   }
 
   void _submitLogin() {
@@ -66,7 +90,7 @@ class _SigninState extends State<Signin> {
                   children: [
                     AuthPageHeader(
                       title: 'Login',
-                      onBack: () => Navigator.of(context).pop(),
+                      onBack: _onBack,
                     ),
 
                     const SizedBox(height: 24),

@@ -147,3 +147,55 @@ class CheckSessionEvent extends AuthEvent {
 class SessionExpiredEvent extends AuthEvent {
   const SessionExpiredEvent();
 }
+
+class LoadBusinessesEvent extends AuthEvent {
+  const LoadBusinessesEvent();
+}
+
+class SwitchBusinessEvent extends AuthEvent {
+  final String userId;
+
+  const SwitchBusinessEvent({required this.userId});
+
+  @override
+  List<Object> get props => [userId];
+}
+
+class CreateBusinessEvent extends AuthEvent {
+  final String email;
+  final String username;
+  final String company;
+
+  const CreateBusinessEvent({
+    required this.email,
+    required this.username,
+    this.company = '',
+  });
+
+  @override
+  List<Object> get props => [email, username, company];
+}
+
+class SendDetachOtpEvent extends AuthEvent {
+  final String businessId;
+
+  const SendDetachOtpEvent({required this.businessId});
+
+  @override
+  List<Object> get props => [businessId];
+}
+
+class DetachBusinessEvent extends AuthEvent {
+  final String businessId;
+  final String otp;
+  final String newPassword;
+
+  const DetachBusinessEvent({
+    required this.businessId,
+    required this.otp,
+    required this.newPassword,
+  });
+
+  @override
+  List<Object> get props => [businessId, otp, newPassword];
+}

@@ -2149,7 +2149,7 @@ class ApiService {
 
   /// POST /api/v1/products — create a product (inventory is created on the server).
   ///
-  /// [photos] must contain at least one image URL (see backend `ProductCreateDTO`).
+  /// [photos] and/or [videos] must contain at least one media URL.
   Future<Map<String, dynamic>> createProduct({
     required String name,
     String? description,
@@ -2158,22 +2158,28 @@ class ApiService {
     required String condition,
     int? numberInStock,
     String? link,
-    required List<String> photos,
+    List<String> photos = const [],
+    List<String> videos = const [],
   }) async {
     final urls = photos
         .map((e) => e.trim())
         .where((e) => e.isNotEmpty)
         .toList();
-    if (urls.isEmpty) {
-      throw ArgumentError('At least one product image URL is required');
+    final videoUrls = videos
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .toList();
+    if (urls.isEmpty && videoUrls.isEmpty) {
+      throw ArgumentError('At least one product image or video is required');
     }
 
     final body = <String, dynamic>{
       'name': name.trim(),
       'price': price,
       'condition': condition.trim(),
-      'photos': urls,
     };
+    if (urls.isNotEmpty) body['photos'] = urls;
+    if (videoUrls.isNotEmpty) body['videos'] = videoUrls;
     if (description != null && description.trim().isNotEmpty) {
       body['description'] = description.trim();
     }

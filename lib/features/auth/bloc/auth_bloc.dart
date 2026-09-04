@@ -7,7 +7,7 @@ import 'package:autobus/common_design/app_error.dart';
 import 'package:autobus/config/app_config.dart';
 import 'package:autobus/common_bloc/success_bloc.dart';
 import '../models/token_model.dart';
-import '../services/pin_lock_service.dart';
+import '../services/last_login_store.dart';
 import '../services/token_service.dart';
 
 part 'auth_event.dart';
@@ -16,15 +16,12 @@ part 'auth_state.dart';
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final TokenService tokenService;
   final SuccessBloc successBloc;
-  final PinLockService pinLockService;
 
   AuthBloc({
     TokenService? tokenService,
     SuccessBloc? successBloc,
-    PinLockService? pinLockService,
   }) : tokenService = tokenService ?? TokenService(),
        successBloc = successBloc ?? SuccessBloc(),
-       pinLockService = pinLockService ?? PinLockService(),
        super(AuthInitial()) {
     on<LoginEvent>(_onLogin);
     on<SignupEvent>(_onSignup);
@@ -39,22 +36,23 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<SessionExpiredEvent>(_onSessionExpired);
     on<VerifySignupOtpEvent>(_onVerifySignupOtp);
     on<ResendSignupOtpEvent>(_onResendSignupOtp);
+    on<LoadBusinessesEvent>(_onLoadBusinesses);
+    on<SwitchBusinessEvent>(_onSwitchBusiness);
+    on<CreateBusinessEvent>(_onCreateBusiness);
+    on<SendDetachOtpEvent>(_onSendDetachOtp);
+    on<DetachBusinessEvent>(_onDetachBusiness);
   }
 
   Future<void> _clearLocalSession() async {
     await tokenService.clearTokens();
     final prefs = await SharedPreferences.getInstance();
+    final userString = prefs.getString('user');
+    if (userString != null) {
+      try {
+        await LastLoginStore.saveFromUser(json.decode(userString));
+      } catch (_) {}
+    }
     await prefs.remove('user');
-  }
-
-  Future<void> _markPinActive(dynamic user) async {
-    final key = PinLockService.userKeyFrom(user);
-    if (key == null) return;
-    try {
-      if (await pinLockService.isEnabled(key)) {
-        await pinLockService.markActive(key);
-      }
-    } catch (_) {}
   }
 
   Future<void> _onSessionExpired(
@@ -127,10 +125,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
         if (userResponse.statusCode == 200) {
           final userData = json.decode(userResponse.body);
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setString('user', json.encode(userData));
-          await _markPinActive(userData);
-          emit(Authenticated(user: userData));
+          await LastLoginStore.save(identifier);
+          await _persistUser(userData);
+          final businesses = await _fetchBusinesses();
+          emit(Authenticated(user: userData, businesses: businesses));
         } else {
           print('User fetch error: ${userResponse.body}');
           emit(
@@ -165,7 +163,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         Uri.parse('${AppConfig.backendUrl}/api/v1/auth/signup'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
-          // Backend DTO expects `fullname` (we collect it as username in UI).
+          'username': event.username,
           'fullname': event.username,
           'phone': event.phone,
           'email': event.email,
@@ -176,6 +174,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       );
 
       if (response.statusCode == 200) {
+        await LastLoginStore.save(event.username);
         // Auto-login after signup so a token is available for the
         // subscription/payment flow that follows immediately.
         final loginResponse = await http.post(
@@ -196,9 +195,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
             );
             if (userResponse.statusCode == 200) {
               final userData = json.decode(userResponse.body);
-              final prefs = await SharedPreferences.getInstance();
-              await prefs.setString('user', json.encode(userData));
-              await _markPinActive(userData);
+              await _persistUser(userData);
             }
           } catch (_) {}
         }
@@ -332,7 +329,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
       if (token != null && userString != null) {
         final user = json.decode(userString);
+        await LastLoginStore.saveFromUser(user);
         emit(Authenticated(user: user));
+        add(const LoadBusinessesEvent());
       } else {
         emit(Unauthenticated());
       }
@@ -603,10 +602,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
         if (userResponse.statusCode == 200) {
           final userData = json.decode(userResponse.body);
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setString('user', json.encode(userData));
+          await _persistUser(userData);
+          final businesses = await _fetchBusinesses();
           // Stay Authenticated so UI never falls through to a Guest label.
-          emit(Authenticated(user: userData));
+          emit(Authenticated(user: userData, businesses: businesses));
         } else {
           await _clearLocalSession();
           emit(
@@ -674,12 +673,298 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
       if (userString != null) {
         final user = json.decode(userString);
+        await LastLoginStore.saveFromUser(user);
         emit(Authenticated(user: user));
+        add(const LoadBusinessesEvent());
       } else {
         emit(const Unauthenticated());
       }
     } catch (e) {
       emit(const Unauthenticated());
+    }
+  }
+
+  Future<void> _persistUser(dynamic userData) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('user', json.encode(userData));
+  }
+
+  List<dynamic> _parseBusinessItems(dynamic data) {
+    if (data is List) return data;
+    if (data is Map && data['items'] is List) return data['items'] as List;
+    return const [];
+  }
+
+  Future<List<dynamic>> _fetchBusinesses() async {
+    try {
+      final response = await _timed(
+        http.get(
+          Uri.parse('${AppConfig.backendUrl}/api/v1/auth/businesses'),
+          headers: await _getAuthHeaders(),
+        ),
+      );
+      if (response.statusCode == 200) {
+        return _parseBusinessItems(json.decode(response.body));
+      }
+    } catch (_) {}
+    return const [];
+  }
+
+  Future<Map<String, dynamic>?> _fetchMe() async {
+    final userResponse = await _timed(
+      http.get(
+        Uri.parse('${AppConfig.backendUrl}/api/v1/user/me'),
+        headers: await _getAuthHeaders(),
+      ),
+    );
+    if (userResponse.statusCode == 200) {
+      final decoded = json.decode(userResponse.body);
+      if (decoded is Map<String, dynamic>) return decoded;
+      if (decoded is Map) return Map<String, dynamic>.from(decoded);
+    }
+    return null;
+  }
+
+  Authenticated? _currentAuthenticated() {
+    final s = state;
+    if (s is Authenticated) return s;
+    return null;
+  }
+
+  Future<void> _onLoadBusinesses(
+    LoadBusinessesEvent event,
+    Emitter<AuthState> emit,
+  ) async {
+    final current = _currentAuthenticated();
+    if (current == null) return;
+    final businesses = await _fetchBusinesses();
+    emit(Authenticated(user: current.user, businesses: businesses));
+  }
+
+  Future<void> _onSwitchBusiness(
+    SwitchBusinessEvent event,
+    Emitter<AuthState> emit,
+  ) async {
+    final current = _currentAuthenticated();
+    try {
+      final response = await _timed(
+        http.post(
+          Uri.parse('${AppConfig.backendUrl}/api/v1/auth/switch-business'),
+          headers: await _getAuthHeaders(),
+          body: json.encode({'user_id': event.userId}),
+        ),
+      );
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body) as Map<String, dynamic>;
+        await tokenService.saveToken(TokenModel.fromJson(data));
+        final userData = await _fetchMe();
+        if (userData == null) {
+          emit(
+            const AuthError(
+              message: 'Switched, but could not load the business profile.',
+              source: 'switch_business',
+            ),
+          );
+          if (current != null) {
+            emit(Authenticated(user: current.user, businesses: current.businesses));
+          }
+          return;
+        }
+        await _persistUser(userData);
+        final businesses = await _fetchBusinesses();
+        emit(
+          Authenticated(
+            user: userData,
+            businesses: businesses,
+            resetNavigation: true,
+            lastBusinessOp: 'switched',
+          ),
+        );
+      } else {
+        emit(
+          AuthError(
+            message: _authHttpError(response, action: 'switching business'),
+            source: 'switch_business',
+          ),
+        );
+        if (current != null) {
+          emit(Authenticated(user: current.user, businesses: current.businesses));
+        }
+      }
+    } catch (e) {
+      emit(
+        AuthError(
+          message: _authCaught(e, action: 'switching business'),
+          source: 'switch_business',
+        ),
+      );
+      if (current != null) {
+        emit(Authenticated(user: current.user, businesses: current.businesses));
+      }
+    }
+  }
+
+  Future<void> _onCreateBusiness(
+    CreateBusinessEvent event,
+    Emitter<AuthState> emit,
+  ) async {
+    final current = _currentAuthenticated();
+    try {
+      final response = await _timed(
+        http.post(
+          Uri.parse('${AppConfig.backendUrl}/api/v1/auth/businesses'),
+          headers: await _getAuthHeaders(),
+          body: json.encode({
+            'email': event.email.trim(),
+            'username': event.username.trim(),
+            'fullname': event.username.trim(),
+            if (event.company.trim().isNotEmpty) 'company': event.company.trim(),
+          }),
+        ),
+      );
+      if (response.statusCode == 200) {
+        final businesses = await _fetchBusinesses();
+        emit(
+          Authenticated(
+            user: current?.user ?? {},
+            businesses: businesses,
+            lastBusinessOp: 'created',
+          ),
+        );
+      } else {
+        emit(
+          AuthError(
+            message: _authHttpError(response, action: 'creating business'),
+            source: 'create_business',
+          ),
+        );
+        if (current != null) {
+          emit(Authenticated(user: current.user, businesses: current.businesses));
+        }
+      }
+    } catch (e) {
+      emit(
+        AuthError(
+          message: _authCaught(e, action: 'creating business'),
+          source: 'create_business',
+        ),
+      );
+      if (current != null) {
+        emit(Authenticated(user: current.user, businesses: current.businesses));
+      }
+    }
+  }
+
+  Future<void> _onSendDetachOtp(
+    SendDetachOtpEvent event,
+    Emitter<AuthState> emit,
+  ) async {
+    final current = _currentAuthenticated();
+    try {
+      final response = await _timed(
+        http.post(
+          Uri.parse(
+            '${AppConfig.backendUrl}/api/v1/auth/businesses/${event.businessId}/send-detach-otp',
+          ),
+          headers: await _getAuthHeaders(),
+        ),
+      );
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        emit(
+          DetachOtpSent(
+            businessId: event.businessId,
+            email: (data is Map ? data['email'] : null)?.toString() ?? '',
+            message: (data is Map ? data['message'] : null)?.toString() ??
+                'Detach code sent',
+          ),
+        );
+        if (current != null) {
+          emit(Authenticated(user: current.user, businesses: current.businesses));
+        }
+      } else {
+        emit(
+          AuthError(
+            message: _authHttpError(response, action: 'sending detach code'),
+            source: 'detach_business',
+          ),
+        );
+        if (current != null) {
+          emit(Authenticated(user: current.user, businesses: current.businesses));
+        }
+      }
+    } catch (e) {
+      emit(
+        AuthError(
+          message: _authCaught(e, action: 'sending detach code'),
+          source: 'detach_business',
+        ),
+      );
+      if (current != null) {
+        emit(Authenticated(user: current.user, businesses: current.businesses));
+      }
+    }
+  }
+
+  Future<void> _onDetachBusiness(
+    DetachBusinessEvent event,
+    Emitter<AuthState> emit,
+  ) async {
+    final current = _currentAuthenticated();
+    try {
+      final response = await _timed(
+        http.post(
+          Uri.parse(
+            '${AppConfig.backendUrl}/api/v1/auth/businesses/${event.businessId}/detach',
+          ),
+          headers: await _getAuthHeaders(),
+          body: json.encode({
+            'otp': event.otp,
+            'new_password': event.newPassword,
+          }),
+        ),
+      );
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final map = data is Map ? Map<String, dynamic>.from(data) : <String, dynamic>{};
+        if (map['access_token'] != null) {
+          await tokenService.saveToken(TokenModel.fromJson(map));
+        }
+        final userData = await _fetchMe() ??
+            (current?.user is Map
+                ? Map<String, dynamic>.from(current!.user as Map)
+                : <String, dynamic>{});
+        await _persistUser(userData);
+        final businesses = await _fetchBusinesses();
+        emit(
+          Authenticated(
+            user: userData,
+            businesses: businesses,
+            resetNavigation: map['switched_to_manager'] == true,
+            lastBusinessOp: 'detached',
+          ),
+        );
+      } else {
+        emit(
+          AuthError(
+            message: _authHttpError(response, action: 'detaching business'),
+            source: 'detach_business',
+          ),
+        );
+        if (current != null) {
+          emit(Authenticated(user: current.user, businesses: current.businesses));
+        }
+      }
+    } catch (e) {
+      emit(
+        AuthError(
+          message: _authCaught(e, action: 'detaching business'),
+          source: 'detach_business',
+        ),
+      );
+      if (current != null) {
+        emit(Authenticated(user: current.user, businesses: current.businesses));
+      }
     }
   }
 }

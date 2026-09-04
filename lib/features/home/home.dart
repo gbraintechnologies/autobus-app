@@ -162,7 +162,9 @@ class _HomeState extends State<Home> {
                           );
                         },
                       ),
-                      const UserAvatar(),
+                      UserAvatar(
+                        onTap: () => showBusinessSwitcher(context),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 32),
@@ -170,16 +172,20 @@ class _HomeState extends State<Home> {
                     builder: (context, state) {
                       String displayName = 'User';
                       if (state is Authenticated) {
+                        final u = state.user;
                         displayName =
-                            (state.user['fullname'] ??
-                                    state.user['email'] ??
+                            (u['company'] ??
+                                    u['fullname'] ??
+                                    u['email'] ??
                                     'User')
                                 .toString();
                       }
 
                       final firstName = displayName.trim().split(' ').first;
 
-                      return Column(
+                      return GestureDetector(
+                        onTap: () => showBusinessSwitcher(context),
+                        child: Column(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           Text(
@@ -188,6 +194,15 @@ class _HomeState extends State<Home> {
                               color: Colors.white.withValues(alpha: 0.8),
                               fontSize: 20,
                               fontWeight: FontWeight.w300,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Tap to switch business',
+                            style: GoogleFonts.montserrat(
+                              color: Colors.white.withValues(alpha: 0.45),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w400,
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -199,6 +214,7 @@ class _HomeState extends State<Home> {
                             ),
                           ),
                         ],
+                      ),
                       );
                     },
                   ),

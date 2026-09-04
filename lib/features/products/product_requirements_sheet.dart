@@ -27,9 +27,9 @@ class ProductRequirementsSheet extends StatelessWidget {
       detail: 'e.g. New, Used, Refurbished (up to 100 characters).',
     ),
     _ProductFieldInfo(
-      label: 'Images',
+      label: 'Media',
       detail:
-          'Add thumbnails above the message bar before you send, or paste image URLs in your message.',
+          'Add photos, video, or both. Video-only products are allowed. You can also paste image or video URLs in your message.',
     ),
   ];
 

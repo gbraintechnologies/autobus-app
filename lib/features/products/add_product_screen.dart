@@ -1,7 +1,9 @@
 import 'package:autobus/barrel.dart';
+import 'package:autobus/features/marketing/models/postiz_integration.dart';
 import 'package:autobus/features/products/product_chat_image_attachments.dart';
 import 'package:autobus/features/products/product_form_images.dart';
 import 'package:autobus/features/products/pricing_currency.dart';
+import 'package:autobus/features/products/product_social_post.dart';
 
 class AddProductScreen extends StatefulWidget {
   const AddProductScreen({super.key});
@@ -23,6 +25,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
   final List<ProductStagingSlot> _imageSlots = [];
   bool _saving = false;
   String _currency = kDefaultPricingCurrency;
+  List<PostizIntegration> _linkedChannels = [];
+  final Set<String> _selectedChannelIds = {};
 
   @override
   void dispose() {
@@ -39,7 +43,10 @@ class _AddProductScreenState extends State<AddProductScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _loadCurrency());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadCurrency();
+      _loadLinkedChannels();
+    });
   }
 
   Future<void> _loadCurrency() async {
@@ -47,6 +54,26 @@ class _AddProductScreenState extends State<AddProductScreen> {
     final code = await loadBusinessCurrency(api);
     if (!mounted) return;
     setState(() => _currency = code);
+  }
+
+  Future<void> _loadLinkedChannels() async {
+    try {
+      final channels = await loadLinkedMarketingIntegrations(
+        context.read<ApiService>(),
+      );
+      if (!mounted) return;
+      setState(() => _linkedChannels = channels);
+    } catch (_) {}
+  }
+
+  void _toggleChannel(String id) {
+    setState(() {
+      if (_selectedChannelIds.contains(id)) {
+        _selectedChannelIds.remove(id);
+      } else {
+        _selectedChannelIds.add(id);
+      }
+    });
   }
 
   Future<void> _onCurrencyChanged(String code) async {
@@ -99,7 +126,13 @@ class _AddProductScreenState extends State<AddProductScreen> {
     }
     await showProductSlotActionsSheet(
       context,
-      () => pickProductImageForSlot(context, _imageSlots, index, setState),
+      () {
+        if (slot.looksLikeVideo) {
+          pickProductVideoForSlot(context, _imageSlots, index, setState);
+        } else {
+          pickProductImageForSlot(context, _imageSlots, index, setState);
+        }
+      },
       () => removeProductStagingSlot(_imageSlots, index, setState),
     );
   }
@@ -107,10 +140,10 @@ class _AddProductScreenState extends State<AddProductScreen> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final hasImages = _imageSlots.any((s) => !s.isEmpty);
-    if (!hasImages) {
+    final hasMedia = _imageSlots.any((s) => !s.isEmpty);
+    if (!hasMedia) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Add at least one product photo')),
+        const SnackBar(content: Text('Add at least one photo or video')),
       );
       return;
     }
@@ -138,9 +171,9 @@ class _AddProductScreenState extends State<AddProductScreen> {
     setState(() => _saving = true);
     try {
       final api = context.read<ApiService>();
-      final photoUrls = await uploadStagedProductImageUrls(api, _imageSlots);
-      if (photoUrls.isEmpty) {
-        throw Exception('Could not upload product images');
+      final media = await uploadStagedProductMedia(api, _imageSlots);
+      if (media.isEmpty) {
+        throw Exception('Could not upload product media');
       }
 
       await api.createProduct(
@@ -151,13 +184,41 @@ class _AddProductScreenState extends State<AddProductScreen> {
         condition: _conditionCtrl.text.trim(),
         numberInStock: stock,
         link: _linkCtrl.text,
-        photos: photoUrls,
+        photos: media.photos,
+        videos: media.videos,
       );
+
+      var createdMsg = 'Product created';
+      if (_selectedChannelIds.isNotEmpty) {
+        final caption = buildProductSocialCaption(
+          name: _nameCtrl.text.trim(),
+          description: _descriptionCtrl.text,
+          priceLabel: formatProductPrice(price, currency: _currency),
+          link: _linkCtrl.text,
+        );
+        final posted = await publishProductToSocialChannels(
+          api: api,
+          allIntegrations: _linkedChannels,
+          selectedIds: _selectedChannelIds,
+          caption: caption,
+          mediaUrls: media.all,
+        );
+        if (posted.publishedCount > 0 && posted.errors.isEmpty) {
+          createdMsg =
+              'Product created and posted to ${posted.publishedCount} channel(s)';
+        } else if (posted.publishedCount > 0) {
+          createdMsg =
+              'Product created. Posted to ${posted.publishedCount} channel(s). Some failed: ${posted.errors.join('; ')}';
+        } else if (posted.errors.isNotEmpty) {
+          createdMsg =
+              'Product created, but social posting failed: ${posted.errors.join('; ')}';
+        }
+      }
 
       if (!mounted) return;
       setState(() => _saving = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Product created', style: GoogleFonts.outfit())),
+        SnackBar(content: Text(createdMsg, style: GoogleFonts.outfit())),
       );
       Navigator.pop(context, true);
     } catch (e) {
@@ -213,6 +274,11 @@ class _AddProductScreenState extends State<AddProductScreen> {
                           busy: _saving,
                           onSlotTap: _onImageSlotTap,
                           onAddImages: () => pickMultipleProductImages(
+                            context,
+                            _imageSlots,
+                            setState,
+                          ),
+                          onAddVideos: () => pickMultipleProductVideos(
                             context,
                             _imageSlots,
                             setState,
@@ -290,6 +356,16 @@ class _AddProductScreenState extends State<AddProductScreen> {
                           controller: _linkCtrl,
                           label: 'Product link',
                         ),
+                        const SizedBox(height: 24),
+                        ProductSocialChannelPicker(
+                          integrations: _linkedChannels,
+                          selectedIds: _selectedChannelIds,
+                          hasVideo: _imageSlots.any(
+                            (s) => !s.isEmpty && s.looksLikeVideo,
+                          ),
+                          busy: _saving,
+                          onToggle: _toggleChannel,
+                        ),
                       ],
                     ),
                   ),
@@ -309,7 +385,9 @@ class _AddProductScreenState extends State<AddProductScreen> {
                     child: _saving
                         ? const AutobusLoadingIndicator(size: 22)
                         : Text(
-                            'Create product',
+                            _selectedChannelIds.isEmpty
+                                ? 'Create product'
+                                : 'Create and post',
                             style: GoogleFonts.outfit(
                               fontSize: 15,
                               fontWeight: FontWeight.w500,

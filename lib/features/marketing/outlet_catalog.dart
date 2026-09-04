@@ -2,6 +2,9 @@ import 'package:autobus/features/marketing/models/postiz_integration.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
+/// Prefix for Autobus Instagram Business Login accounts (not Postiz).
+const kAutobusIgPrefix = 'autobus-ig-';
+
 /// Marketing outlet shown on Link Social Media; matched to Postiz `identifier` values.
 class OutletOption {
   final String label;

@@ -1,6 +1,7 @@
 import 'package:autobus/barrel.dart';
 import 'package:autobus/features/products/pricing_currency.dart';
 import 'package:autobus/features/products/product_existing_gallery.dart';
+import 'package:autobus/features/products/product_media.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final String productId;
@@ -92,6 +93,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               imageId: 'legacy-${entry.key}',
               url: entry.value,
               isPrimary: entry.key == 0,
+              isVideo: productMediaLooksLikeVideo(entry.value),
             ),
           )
           .toList();
@@ -99,7 +101,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     final single = (p['photo'] ?? '').toString().trim();
     if (single.isNotEmpty) {
       return [
-        ProductGalleryPhoto(imageId: 'legacy-0', url: single, isPrimary: true),
+        ProductGalleryPhoto(
+          imageId: 'legacy-0',
+          url: single,
+          isPrimary: true,
+          isVideo: productMediaLooksLikeVideo(single),
+        ),
       ];
     }
     return const [];
@@ -252,7 +259,31 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         context: context,
         api: api,
         productId: widget.productId,
-        currentCount: _photos.length,
+        currentCount: _photos.where((p) => !p.isVideo).length,
+      );
+      if (!mounted) return;
+      await _load(photosOnly: true);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(userFacingError(e)),
+        ),
+      );
+      setState(() => _photoBusy = false);
+    }
+  }
+
+  Future<void> _addVideos() async {
+    if (_photoBusy) return;
+    setState(() => _photoBusy = true);
+    try {
+      final api = context.read<ApiService>();
+      await pickAndUploadProductVideos(
+        context: context,
+        api: api,
+        productId: widget.productId,
+        currentVideoCount: _photos.where((p) => p.isVideo).length,
       );
       if (!mounted) return;
       await _load(photosOnly: true);
@@ -452,6 +483,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             photos: _photos,
             busy: _photoBusy,
             onAddPhotos: _addPhotos,
+            onAddVideos: _addVideos,
             onPhotoTap: _onPhotoTap,
           ),
           const SizedBox(height: 20),

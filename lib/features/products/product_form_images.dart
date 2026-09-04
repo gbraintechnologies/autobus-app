@@ -2,19 +2,22 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:autobus/features/products/product_chat_image_attachments.dart';
+import 'package:autobus/features/products/product_media.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-/// Image gallery section for product create/edit forms (dark theme).
+/// Image / video gallery section for product create/edit forms (dark theme).
 class ProductFormImageSection extends StatelessWidget {
   static const double thumbSize = 96;
   static const int maxImages = 12;
+  static const int maxVideos = kMaxProductVideos;
 
   final List<ProductStagingSlot> slots;
   final ValueChanged<int> onSlotTap;
   final VoidCallback onAddImages;
+  final VoidCallback? onAddVideos;
   final VoidCallback? onRemoveSlot;
   final bool busy;
 
@@ -23,11 +26,16 @@ class ProductFormImageSection extends StatelessWidget {
     required this.slots,
     required this.onSlotTap,
     required this.onAddImages,
+    this.onAddVideos,
     this.onRemoveSlot,
     this.busy = false,
   });
 
   int get _filledCount => slots.where((s) => !s.isEmpty).length;
+  int get _imageCount =>
+      slots.where((s) => !s.isEmpty && !s.looksLikeVideo).length;
+  int get _videoCount =>
+      slots.where((s) => !s.isEmpty && s.looksLikeVideo).length;
 
   @override
   Widget build(BuildContext context) {
@@ -38,7 +46,7 @@ class ProductFormImageSection extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                'Product photos',
+                'Product media',
                 style: GoogleFonts.outfit(
                   color: Colors.white.withValues(alpha: 0.9),
                   fontSize: 14,
@@ -48,7 +56,10 @@ class ProductFormImageSection extends StatelessWidget {
             ),
             if (_filledCount > 0)
               Text(
-                '$_filledCount selected',
+                [
+                  if (_imageCount > 0) '$_imageCount photo${_imageCount == 1 ? '' : 's'}',
+                  if (_videoCount > 0) '$_videoCount video${_videoCount == 1 ? '' : 's'}',
+                ].join(' · '),
                 style: GoogleFonts.outfit(
                   color: Colors.white.withValues(alpha: 0.45),
                   fontSize: 12,
@@ -58,7 +69,7 @@ class ProductFormImageSection extends StatelessWidget {
         ),
         const SizedBox(height: 6),
         Text(
-          'Add one or more images. The first photo is used as the cover.',
+          'Add photos, video, or both. You can post with video only. The first photo is the cover when present.',
           style: GoogleFonts.outfit(
             color: Colors.white.withValues(alpha: 0.5),
             fontSize: 12,
@@ -87,13 +98,17 @@ class ProductFormImageSection extends StatelessWidget {
                       onTap: () => onSlotTap(filledIndexes[j]),
                     ),
                   ],
-                  if (_filledCount < maxImages) ...[
+                  if (_imageCount < maxImages) ...[
                     if (filledIndexes.isNotEmpty) const SizedBox(width: 10),
                     _AddPhotosButton(
                       busy: busy,
                       onTap: onAddImages,
-                      showPlusOnly: filledIndexes.isNotEmpty,
+                      showPlusOnly: filledIndexes.isNotEmpty && onAddVideos == null,
                     ),
+                  ],
+                  if (onAddVideos != null && _videoCount < maxVideos) ...[
+                    const SizedBox(width: 10),
+                    _AddVideosButton(busy: busy, onTap: onAddVideos!),
                   ],
                 ],
               );
@@ -150,6 +165,23 @@ class _FormThumb extends StatelessWidget {
                   )
                 : _preview(),
           ),
+          if (slot.looksLikeVideo)
+            Positioned.fill(
+              child: IgnorePointer(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.35),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  alignment: Alignment.center,
+                  child: const Icon(
+                    Icons.play_circle_fill,
+                    color: Colors.white,
+                    size: 32,
+                  ),
+                ),
+              ),
+            ),
           if (isCover)
             Positioned(
               left: 6,
@@ -176,6 +208,18 @@ class _FormThumb extends StatelessWidget {
   }
 
   Widget _preview() {
+    if (slot.looksLikeVideo) {
+      return ColoredBox(
+        color: const Color(0xFF1E0A32),
+        child: Center(
+          child: Icon(
+            Icons.videocam_outlined,
+            color: Colors.white.withValues(alpha: 0.55),
+            size: 32,
+          ),
+        ),
+      );
+    }
     final bytes = slot.previewBytes;
     if (bytes != null && bytes.isNotEmpty) {
       return Image.memory(bytes, fit: BoxFit.cover, gaplessPlayback: true);
@@ -248,6 +292,51 @@ class _AddPhotosButton extends StatelessWidget {
   }
 }
 
+class _AddVideosButton extends StatelessWidget {
+  final bool busy;
+  final VoidCallback onTap;
+
+  const _AddVideosButton({required this.busy, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: busy ? null : onTap,
+      child: Container(
+        width: ProductFormImageSection.thumbSize,
+        height: ProductFormImageSection.thumbSize,
+        decoration: BoxDecoration(
+          color: const Color(0xFF22C55E).withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: const Color(0xFF22C55E).withValues(alpha: 0.55),
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.videocam_outlined,
+              color: const Color(0xFF22C55E).withValues(alpha: 0.95),
+              size: 26,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Add video',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.outfit(
+                color: const Color(0xFF22C55E).withValues(alpha: 0.9),
+                fontSize: 10,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 /// Pick multiple images and append them to [slots] (up to [maxSlots]).
 Future<void> pickMultipleProductImages(
   BuildContext context,
@@ -255,7 +344,8 @@ Future<void> pickMultipleProductImages(
   StateSetter setState, {
   int maxSlots = ProductFormImageSection.maxImages,
 }) async {
-  final remaining = maxSlots - slots.where((s) => !s.isEmpty).length;
+  final remaining =
+      maxSlots - slots.where((s) => !s.isEmpty && !s.looksLikeVideo).length;
   if (remaining <= 0) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('You can add up to $maxSlots images.')),
@@ -265,7 +355,7 @@ Future<void> pickMultipleProductImages(
 
   final result = await FilePicker.platform.pickFiles(
     type: FileType.custom,
-    allowedExtensions: const ['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp'],
+    allowedExtensions: kProductImageExtensions,
     allowMultiple: true,
     withData: kIsWeb,
   );
@@ -276,7 +366,7 @@ Future<void> pickMultipleProductImages(
 
   for (final file in picked) {
     final name = file.name.trim().isNotEmpty ? file.name : 'image.jpg';
-    final slot = ProductStagingSlot()..pickedName = name;
+    final slot = ProductStagingSlot(isVideo: false)..pickedName = name;
 
     if (kIsWeb) {
       final bytes = file.bytes;
@@ -305,6 +395,63 @@ Future<void> pickMultipleProductImages(
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Unable to load selected images.')),
+    );
+    return;
+  }
+
+  setState(() {
+    slots.removeWhere((s) => s.isEmpty);
+    slots.addAll(newSlots);
+  });
+}
+
+/// Pick videos and append them to [slots] (up to [maxSlots]).
+Future<void> pickMultipleProductVideos(
+  BuildContext context,
+  List<ProductStagingSlot> slots,
+  StateSetter setState, {
+  int maxSlots = ProductFormImageSection.maxVideos,
+}) async {
+  final remaining =
+      maxSlots - slots.where((s) => !s.isEmpty && s.looksLikeVideo).length;
+  if (remaining <= 0) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('You can add up to $maxSlots videos.')),
+    );
+    return;
+  }
+
+  final result = await FilePicker.platform.pickFiles(
+    type: FileType.custom,
+    allowedExtensions: kProductVideoExtensions,
+    allowMultiple: true,
+    withData: kIsWeb,
+  );
+  if (!context.mounted || result == null || result.files.isEmpty) return;
+
+  final picked = result.files.take(remaining).toList();
+  final newSlots = <ProductStagingSlot>[];
+
+  for (final file in picked) {
+    final name = file.name.trim().isNotEmpty ? file.name : 'product.mp4';
+    final slot = ProductStagingSlot(isVideo: true)..pickedName = name;
+
+    if (kIsWeb) {
+      final bytes = file.bytes;
+      if (bytes == null || bytes.isEmpty) continue;
+      slot.previewBytes = bytes;
+    } else {
+      final path = file.path?.trim();
+      if (path == null || path.isEmpty) continue;
+      slot.localPath = path;
+    }
+    newSlots.add(slot);
+  }
+
+  if (newSlots.isEmpty) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Unable to load selected videos.')),
     );
     return;
   }

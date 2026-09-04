@@ -27,7 +27,6 @@ void main() async {
 
   // Initialize session handling services
   _tokenService = TokenService();
-  final pinLockService = PinLockService();
   _httpClient = SessionAwareHttpClient(
     tokenService: _tokenService,
     baseUrl: AppConfig.backendUrl,
@@ -42,7 +41,6 @@ void main() async {
   final authBloc = AuthBloc(
     tokenService: _tokenService,
     successBloc: successBloc,
-    pinLockService: pinLockService,
   );
   _httpClient.onSessionExpired = () {
     final state = authBloc.state;
@@ -66,9 +64,6 @@ void main() async {
         providers: [
           BlocProvider.value(value: authBloc..add(CheckSessionEvent())),
           BlocProvider.value(value: successBloc),
-          BlocProvider(
-            create: (context) => PinLockCubit(service: pinLockService),
-          ),
           BlocProvider(create: (context) => AssistantBloc()),
           BlocProvider(create: (context) => ThemeBloc()),
         ],
@@ -108,7 +103,7 @@ class MyApp extends StatelessWidget {
               data: MediaQuery.of(context).copyWith(
                 textScaler: AppScale.textScalerOf(context),
               ),
-              child: PinLockGuard(child: child ?? const SizedBox.shrink()),
+              child: child ?? const SizedBox.shrink(),
             );
           },
           home: const SplashWrapper(),
