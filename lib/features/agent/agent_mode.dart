@@ -8,8 +8,10 @@ import 'package:autobus/features/agent/agent_state.dart';
 import 'package:autobus/features/agent/models/agent_models.dart';
 import 'package:autobus/features/products/product_media.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:speech_to_text/speech_to_text.dart';
+import 'package:video_player/video_player.dart';
 
 class AgentModePage extends StatelessWidget {
   final VoidCallback onExit;
@@ -48,6 +50,7 @@ class _AgentModeViewState extends State<_AgentModeView> {
 
   bool _speechReady = false;
   bool _listening = false;
+  bool _holdingMic = false;
   bool _uploading = false;
   String _partialSpeech = '';
   final List<AgentAttachment> _staged = [];
@@ -99,7 +102,9 @@ class _AgentModeViewState extends State<_AgentModeView> {
     });
   }
 
-  Future<void> _toggleListen() async {
+  Future<void> _startHoldRecord() async {
+    if (_holdingMic || _uploading) return;
+    if (context.read<AgentBloc>().state.working) return;
     if (!_speechReady) {
       showAppSnackBar(
         context,
@@ -107,39 +112,53 @@ class _AgentModeViewState extends State<_AgentModeView> {
       );
       return;
     }
-    if (_listening) {
-      await _speech.stop();
-      setState(() => _listening = false);
-      return;
-    }
+    _holdingMic = true;
+    HapticFeedback.mediumImpact();
     setState(() {
       _listening = true;
       _partialSpeech = '';
     });
-    await _speech.listen(
-      listenOptions: SpeechListenOptions(
-        listenFor: const Duration(seconds: 20),
-        pauseFor: const Duration(seconds: 3),
-        partialResults: true,
-        cancelOnError: true,
-        listenMode: ListenMode.confirmation,
-      ),
-      onResult: (result) {
-        if (!mounted) return;
-        setState(() {
-          _partialSpeech = result.recognizedWords;
-          if (result.recognizedWords.trim().isNotEmpty) {
-            _input.text = result.recognizedWords;
-            _input.selection = TextSelection.collapsed(
-              offset: _input.text.length,
-            );
-          }
-        });
-        if (result.finalResult && result.recognizedWords.trim().isNotEmpty) {
-          _send();
-        }
-      },
-    );
+    try {
+      await _speech.listen(
+        listenOptions: SpeechListenOptions(
+          listenFor: const Duration(seconds: 60),
+          pauseFor: const Duration(seconds: 60),
+          partialResults: true,
+          cancelOnError: true,
+          listenMode: ListenMode.dictation,
+        ),
+        onResult: (result) {
+          if (!mounted) return;
+          if (!_holdingMic && !_listening) return;
+          setState(() {
+            _partialSpeech = result.recognizedWords;
+            if (result.recognizedWords.trim().isNotEmpty) {
+              _input.text = result.recognizedWords;
+              _input.selection = TextSelection.collapsed(
+                offset: _input.text.length,
+              );
+            }
+          });
+        },
+      );
+      if (!_holdingMic) {
+        await _speech.stop();
+      }
+    } catch (_) {
+      if (!mounted) return;
+      _holdingMic = false;
+      setState(() => _listening = false);
+    }
+  }
+
+  Future<void> _finishHoldRecord({required bool send}) async {
+    if (!_holdingMic) return;
+    _holdingMic = false;
+    await _speech.stop();
+    await Future<void>.delayed(const Duration(milliseconds: 180));
+    if (!mounted) return;
+    setState(() => _listening = false);
+    if (send) await _send();
   }
 
   Future<void> _send({String? choiceText, String? askId}) async {
@@ -361,32 +380,44 @@ class _AgentModeViewState extends State<_AgentModeView> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
-      behavior: HitTestBehavior.translucent,
-      child: Scaffold(
-        backgroundColor: Colors.black,
-        body: DecoratedBox(
-          decoration: ManageScreenStyle.homeDashboardBodyDecoration,
-          child: SafeArea(
-            child: Column(
-              children: [
-                _header(),
-                Expanded(
-                  child: BlocConsumer<AgentBloc, AgentViewState>(
-                    listener: (context, state) => _scrollToEnd(),
-                    builder: (context, state) {
-                      return Stack(
-                        children: [
-                          _messageList(state),
-                          if (_listening) _listeningOverlay(),
-                        ],
-                      );
-                    },
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        widget.onExit();
+      },
+      child: GestureDetector(
+        onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+        behavior: HitTestBehavior.translucent,
+        child: Scaffold(
+          backgroundColor: Colors.black,
+          body: DecoratedBox(
+            decoration: ManageScreenStyle.homeDashboardBodyDecoration,
+            child: SafeArea(
+              child: Column(
+                children: [
+                  _header(),
+                  Expanded(
+                    child: BlocConsumer<AgentBloc, AgentViewState>(
+                      listener: (context, state) => _scrollToEnd(),
+                      builder: (context, state) {
+                        return Stack(
+                          children: [
+                            _messageList(state),
+                            if (_listening) _listeningOverlay(),
+                            Positioned(
+                              right: 16,
+                              bottom: 16,
+                              child: _holdMicButton(),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
                   ),
-                ),
-                _inputBar(),
-              ],
+                  _inputBar(),
+                ],
+              ),
             ),
           ),
         ),
@@ -399,38 +430,27 @@ class _AgentModeViewState extends State<_AgentModeView> {
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
       child: SizedBox(
         height: 54,
-        child: Row(
+        child: Stack(
+          alignment: Alignment.center,
           children: [
-            _modeChip(
-              label: 'Dashboard',
-              icon: Icons.grid_view_rounded,
-              onTap: widget.onExit,
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'Autobus',
-                    style: GoogleFonts.montserrat(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  Text(
-                    'Agent mode',
-                    style: GoogleFonts.montserrat(
-                      color: _purple.withValues(alpha: 0.9),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-                ],
+            Align(
+              alignment: Alignment.centerLeft,
+              child: _modeChip(
+                label: 'Dashboard',
+                icon: Icons.grid_view_rounded,
+                onTap: widget.onExit,
               ),
             ),
-            const CreditAvatar(creditCategory: CreditCategory.llm),
+            IgnorePointer(
+              child: Text(
+                'Agentic mode',
+                style: GoogleFonts.montserrat(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -476,7 +496,7 @@ class _AgentModeViewState extends State<_AgentModeView> {
     }
     return ListView.builder(
       controller: _scroll,
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 88),
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       itemCount: state.bubbles.length + (state.working ? 1 : 0),
       itemBuilder: (context, index) {
@@ -488,7 +508,7 @@ class _AgentModeViewState extends State<_AgentModeView> {
                 _botAvatar(),
                 const SizedBox(width: 10),
                 Text(
-                  _listening ? 'Listening…' : 'Working…',
+                  _listening ? 'Listening…' : 'Working… this can take a minute',
                   style: GoogleFonts.montserrat(
                     color: Colors.white54,
                     fontSize: 13,
@@ -544,14 +564,26 @@ class _AgentModeViewState extends State<_AgentModeView> {
                   color: const Color(0xFF3F1163).withValues(alpha: 0.7),
                 ),
               ),
-              child: Text(
-                stripAiMarkdown(bubble.text),
-                style: GoogleFonts.montserrat(
-                  color: Colors.white.withValues(alpha: bubble.failed ? 0.75 : 1),
-                  fontSize: 14,
-                  height: 1.35,
-                ),
-              ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (bubble.attachments.isNotEmpty) ...[
+                        _mediaPreviews(bubble.attachments),
+                        if (bubble.text.trim().isNotEmpty) const SizedBox(height: 10),
+                      ],
+                      if (bubble.text.trim().isNotEmpty)
+                        Text(
+                          stripAiMarkdown(bubble.text),
+                          style: GoogleFonts.montserrat(
+                            color: Colors.white.withValues(
+                              alpha: bubble.failed ? 0.75 : 1,
+                            ),
+                            fontSize: 14,
+                            height: 1.35,
+                          ),
+                        ),
+                    ],
+                  ),
             ),
           ),
         ],
@@ -598,6 +630,10 @@ class _AgentModeViewState extends State<_AgentModeView> {
                         height: 1.35,
                       ),
                     ),
+                    if (bubble.attachments.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      _mediaPreviews(bubble.attachments),
+                    ],
                     if (!bubble.resolved) ...[
                       const SizedBox(height: 14),
                       Row(
@@ -784,45 +820,133 @@ class _AgentModeViewState extends State<_AgentModeView> {
     );
   }
 
+  Widget _mediaPreviews(List<AgentAttachment> items) {
+    final media = items
+        .where(
+          (item) =>
+              (item.url ?? '').trim().isNotEmpty &&
+              (item.kind == 'image' || item.kind == 'video'),
+        )
+        .toList();
+    if (media.isEmpty) return const SizedBox.shrink();
+    return Column(
+      children: [
+        for (var i = 0; i < media.length; i++) ...[
+          if (i > 0) const SizedBox(height: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: media[i].kind == 'video'
+                ? _AgentInlineVideo(url: media[i].url!.trim())
+                : AspectRatio(
+                    aspectRatio: 1,
+                    child: Image.network(
+                      media[i].url!.trim(),
+                      fit: BoxFit.cover,
+                      loadingBuilder: (context, child, progress) {
+                        if (progress == null) return child;
+                        return const ColoredBox(
+                          color: Color(0xFF2A1447),
+                          child: Center(
+                            child: AutobusLoadingIndicator(size: 28),
+                          ),
+                        );
+                      },
+                      errorBuilder: (_, __, ___) => ColoredBox(
+                        color: const Color(0xFF2A1447),
+                        child: Center(
+                          child: Text(
+                            'Could not load image',
+                            style: GoogleFonts.montserrat(
+                              color: Colors.white54,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+          ),
+        ],
+      ],
+    );
+  }
+
   Widget _listeningOverlay() {
     return IgnorePointer(
       child: Align(
-        alignment: Alignment.bottomCenter,
+        alignment: Alignment.bottomRight,
         child: Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 72,
-                height: 72,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: _purple.withValues(alpha: 0.18),
-                  border: Border.all(color: _purple, width: 1.4),
-                  boxShadow: [
-                    BoxShadow(
-                      color: _purple.withValues(alpha: 0.35),
-                      blurRadius: 24,
-                    ),
-                  ],
-                ),
-                child: const Icon(Icons.mic, color: Colors.white, size: 28),
+          padding: const EdgeInsets.fromLTRB(16, 0, 88, 88),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 220),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: _panel.withValues(alpha: 0.94),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: _purple.withValues(alpha: 0.55)),
               ),
-              const SizedBox(height: 8),
-              Text(
-                _partialSpeech.trim().isEmpty
-                    ? 'Listening…'
-                    : _partialSpeech,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-                style: GoogleFonts.montserrat(
-                  color: Colors.white70,
-                  fontSize: 12,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                child: Text(
+                  _partialSpeech.trim().isEmpty
+                      ? 'Listening… release to send'
+                      : _partialSpeech,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.right,
+                  style: GoogleFonts.montserrat(
+                    color: Colors.white70,
+                    fontSize: 12,
+                  ),
                 ),
               ),
-            ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _holdMicButton() {
+    return Semantics(
+      button: true,
+      label: 'Hold to talk',
+      child: Listener(
+        behavior: HitTestBehavior.opaque,
+        onPointerDown: (_) => _startHoldRecord(),
+        onPointerUp: (_) => _finishHoldRecord(send: true),
+        onPointerCancel: (_) => _finishHoldRecord(send: true),
+        child: AnimatedScale(
+          scale: _listening ? 1.08 : 1,
+          duration: const Duration(milliseconds: 160),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 160),
+            width: 58,
+            height: 58,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF7C3AED), Color(0xFFA855F7)],
+              ),
+              border: Border.all(
+                color: _listening ? Colors.white : Colors.white24,
+                width: _listening ? 2 : 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: _purple.withValues(alpha: _listening ? 0.55 : 0.28),
+                  blurRadius: _listening ? 22 : 14,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: Icon(
+              _listening ? Icons.mic : Icons.mic_none,
+              color: Colors.white,
+              size: 26,
+            ),
           ),
         ),
       ),
@@ -938,18 +1062,6 @@ class _AgentModeViewState extends State<_AgentModeView> {
                   onPressed: _uploading ? null : _openAttachSheet,
                   icon: const Icon(Icons.add_rounded, color: _purple, size: 26),
                 ),
-                const SizedBox(width: 8),
-                IconButton(
-                  visualDensity: VisualDensity.compact,
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                  onPressed: _uploading ? null : _toggleListen,
-                  icon: Icon(
-                    _listening ? Icons.stop_circle_outlined : Icons.mic_none,
-                    color: _listening ? _purple : Colors.white70,
-                    size: 24,
-                  ),
-                ),
                 const Spacer(),
                 GestureDetector(
                   onTap: canSend ? () { _send(); } : null,
@@ -966,6 +1078,84 @@ class _AgentModeViewState extends State<_AgentModeView> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _AgentInlineVideo extends StatefulWidget {
+  const _AgentInlineVideo({required this.url});
+
+  final String url;
+
+  @override
+  State<_AgentInlineVideo> createState() => _AgentInlineVideoState();
+}
+
+class _AgentInlineVideoState extends State<_AgentInlineVideo> {
+  VideoPlayerController? _controller;
+  bool _failed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final controller = VideoPlayerController.networkUrl(
+      Uri.parse(widget.url),
+      httpHeaders: const {'User-Agent': 'Autobus/1.0'},
+    );
+    controller
+        .initialize()
+        .then((_) {
+          if (!mounted) {
+            controller.dispose();
+            return;
+          }
+          setState(() => _controller = controller);
+          controller.setLooping(true);
+          controller.play();
+        })
+        .catchError((_) {
+          controller.dispose();
+          if (mounted) setState(() => _failed = true);
+        });
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_failed) {
+      return ColoredBox(
+        color: const Color(0xFF2A1447),
+        child: SizedBox(
+          height: 180,
+          child: Center(
+            child: Text(
+              'Could not load video',
+              style: GoogleFonts.montserrat(color: Colors.white54, fontSize: 12),
+            ),
+          ),
+        ),
+      );
+    }
+    final controller = _controller;
+    if (controller == null || !controller.value.isInitialized) {
+      return const ColoredBox(
+        color: Color(0xFF2A1447),
+        child: SizedBox(
+          height: 180,
+          child: Center(child: AutobusLoadingIndicator(size: 28)),
+        ),
+      );
+    }
+    return AspectRatio(
+      aspectRatio: controller.value.aspectRatio == 0
+          ? 16 / 9
+          : controller.value.aspectRatio,
+      child: VideoPlayer(controller),
     );
   }
 }

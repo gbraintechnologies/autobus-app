@@ -1,6 +1,7 @@
 import 'package:autobus/barrel.dart';
 
-/// After logout, skip the welcome screen when we already know who signed in.
+/// After session loss, skip the welcome/login form when this device already
+/// has a remembered account. Explicit sign-out clears that and shows LogorSign.
 class LoggedOutGate extends StatefulWidget {
   const LoggedOutGate({super.key});
 
@@ -9,22 +10,28 @@ class LoggedOutGate extends StatefulWidget {
 }
 
 class _LoggedOutGateState extends State<LoggedOutGate> {
-  String? _identifier;
+  LastLoginIdentity? _identity;
   var _ready = false;
 
   @override
   void initState() {
     super.initState();
-    final cached = LastLoginStore.peek();
+    final cached = LastLoginStore.peekIdentity();
     if (cached != null) {
-      _identifier = cached;
+      _identity = cached;
       _ready = true;
+      LastLoginStore.readIdentity().then((id) {
+        if (!mounted || id == null) return;
+        if (id.displayName != _identity?.displayName) {
+          setState(() => _identity = id);
+        }
+      });
       return;
     }
-    LastLoginStore.read().then((id) {
+    LastLoginStore.readIdentity().then((id) {
       if (!mounted) return;
       setState(() {
-        _identifier = id;
+        _identity = id;
         _ready = true;
       });
     });
@@ -38,8 +45,15 @@ class _LoggedOutGateState extends State<LoggedOutGate> {
         body: Center(child: AutobusLoadingIndicator()),
       );
     }
-    if (_identifier != null && _identifier!.isNotEmpty) {
-      return Signin(initialIdentifier: _identifier);
+    final identity = _identity;
+    if (identity != null && identity.identifier.isNotEmpty) {
+      return PinUnlockPage(
+        identifier: identity.identifier,
+        displayName: identity.displayName,
+        onUseAnotherAccount: () {
+          setState(() => _identity = null);
+        },
+      );
     }
     return const LogorSign();
   }

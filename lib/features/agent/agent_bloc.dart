@@ -131,13 +131,15 @@ class AgentBloc extends Bloc<AgentEvent, AgentViewState> {
 
   AgentViewState _applyTurn(AgentViewState current, AgentTurn turn) {
     final bubbles = [...current.bubbles];
-    if (turn.message.trim().isNotEmpty) {
+    if (turn.message.trim().isNotEmpty ||
+        (turn.attachments.isNotEmpty && turn.confirm == null)) {
       bubbles.add(
         AgentBubble(
           id: DateTime.now().microsecondsSinceEpoch.toString(),
           kind: AgentBubbleKind.assistant,
           text: turn.message.trim(),
           timestamp: DateTime.now(),
+          attachments: turn.confirm == null ? turn.attachments : const [],
         ),
       );
     }
@@ -164,6 +166,7 @@ class AgentBloc extends Bloc<AgentEvent, AgentViewState> {
           text: turn.confirm!.summary,
           timestamp: DateTime.now(),
           confirm: turn.confirm,
+          attachments: turn.attachments,
         ),
       );
     }

@@ -167,7 +167,7 @@ class _HomeState extends State<Home> {
                 20,
                 16,
                 20,
-                32 + MediaQuery.viewPaddingOf(context).bottom + 56,
+                32 + MediaQuery.viewPaddingOf(context).bottom + 72,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -256,10 +256,9 @@ class _HomeState extends State<Home> {
             ),
           ),
           Positioned(
-            left: 20,
-            right: 20,
+            right: 16,
             bottom: 16 + MediaQuery.viewPaddingOf(context).bottom,
-            child: _AgentEntryPill(onTap: () => _setAgentMode(true)),
+            child: _AgentEntryButton(onTap: () => _setAgentMode(true)),
           ),
         ],
       ),
@@ -414,70 +413,38 @@ class HomeMenuItem {
   HomeMenuItem(this.title, this.icon, this.onTap);
 }
 
-class _AgentEntryPill extends StatelessWidget {
+class _AgentEntryButton extends StatelessWidget {
   final VoidCallback onTap;
 
-  const _AgentEntryPill({required this.onTap});
+  const _AgentEntryButton({required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 56,
-        padding: const EdgeInsets.symmetric(horizontal: 10),
-        decoration: BoxDecoration(
-          color: const Color(0xFF1A1028),
-          borderRadius: BorderRadius.circular(28),
-          border: Border.all(color: const Color(0xFFA855F7).withValues(alpha: 0.7)),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFFA855F7).withValues(alpha: 0.22),
-              blurRadius: 18,
-              offset: const Offset(0, 6),
+    return Semantics(
+      button: true,
+      label: 'Agent mode',
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          width: 58,
+          height: 58,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF7C3AED), Color(0xFFA855F7)],
             ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  colors: [Color(0xFF7C3AED), Color(0xFFA855F7)],
-                ),
+            border: Border.all(color: Colors.white24, width: 1),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFFA855F7).withValues(alpha: 0.35),
+                blurRadius: 18,
+                offset: const Offset(0, 6),
               ),
-              child: const Icon(Icons.auto_awesome, color: Colors.white, size: 18),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Agent mode',
-                    style: GoogleFonts.montserrat(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  Text(
-                    'Speak or type — Autobus runs it',
-                    style: GoogleFonts.montserrat(
-                      color: Colors.white60,
-                      fontSize: 11,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const Icon(Icons.mic_none, color: Color(0xFFA855F7), size: 22),
-            const SizedBox(width: 8),
-          ],
+            ],
+          ),
+          child: const Icon(Icons.auto_awesome, color: Colors.white, size: 24),
         ),
       ),
     );

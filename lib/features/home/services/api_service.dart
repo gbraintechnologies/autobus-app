@@ -840,11 +840,19 @@ class ApiService {
       throw AppException.user('Please type a message or attach a file.');
     }
 
-    final response = await httpClient.post(
-      Uri.parse('$baseUrl/intelligence/agent'),
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode(body),
-    );
+    final response = await httpClient
+        .post(
+          Uri.parse('$baseUrl/intelligence/agent'),
+          headers: {'Content-Type': 'application/json'},
+          body: json.encode(body),
+        )
+        .timeout(
+          const Duration(minutes: 11),
+          onTimeout: () => throw AppException(
+            kind: AppErrorKind.timeout,
+            action: 'talking to your AI',
+          ),
+        );
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       if (data is Map<String, dynamic>) return data;

@@ -27,6 +27,13 @@ class AgentAttachment {
     mime: mime,
     localPath: localPath,
   );
+
+  factory AgentAttachment.fromJson(Map<String, dynamic> json) => AgentAttachment(
+    kind: (json['kind'] ?? 'file').toString(),
+    url: json['url']?.toString(),
+    name: json['name']?.toString(),
+    mime: json['mime']?.toString(),
+  );
 }
 
 class AgentAskChoice {
@@ -83,21 +90,26 @@ class AgentConfirmSpec {
   final String title;
   final String summary;
   final String tool;
+  final Map<String, dynamic> payload;
 
   const AgentConfirmSpec({
     required this.id,
     required this.title,
     required this.summary,
     required this.tool,
+    this.payload = const {},
   });
 
-  factory AgentConfirmSpec.fromJson(Map<String, dynamic> json) =>
-      AgentConfirmSpec(
-        id: (json['id'] ?? '').toString(),
-        title: (json['title'] ?? 'Go ahead?').toString(),
-        summary: (json['summary'] ?? '').toString(),
-        tool: (json['tool'] ?? '').toString(),
-      );
+  factory AgentConfirmSpec.fromJson(Map<String, dynamic> json) {
+    final raw = json['payload'];
+    return AgentConfirmSpec(
+      id: (json['id'] ?? '').toString(),
+      title: (json['title'] ?? 'Go ahead?').toString(),
+      summary: (json['summary'] ?? '').toString(),
+      tool: (json['tool'] ?? '').toString(),
+      payload: raw is Map ? Map<String, dynamic>.from(raw) : const {},
+    );
+  }
 }
 
 class AgentTurn {
@@ -106,6 +118,7 @@ class AgentTurn {
   final bool usedLlm;
   final AgentAskSpec? ask;
   final AgentConfirmSpec? confirm;
+  final List<AgentAttachment> attachments;
 
   const AgentTurn({
     required this.message,
@@ -113,11 +126,13 @@ class AgentTurn {
     this.usedLlm = false,
     this.ask,
     this.confirm,
+    this.attachments = const [],
   });
 
   factory AgentTurn.fromJson(Map<String, dynamic> json) {
     final askRaw = json['ask'];
     final confirmRaw = json['confirm'];
+    final attachRaw = json['attachments'];
     return AgentTurn(
       message: (json['message'] ?? json['reply'] ?? json['text'] ?? '')
           .toString(),
@@ -129,6 +144,12 @@ class AgentTurn {
       confirm: confirmRaw is Map
           ? AgentConfirmSpec.fromJson(Map<String, dynamic>.from(confirmRaw))
           : null,
+      attachments: [
+        if (attachRaw is List)
+          for (final item in attachRaw)
+            if (item is Map)
+              AgentAttachment.fromJson(Map<String, dynamic>.from(item)),
+      ],
     );
   }
 }

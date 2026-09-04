@@ -43,14 +43,17 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<DetachBusinessEvent>(_onDetachBusiness);
   }
 
-  Future<void> _clearLocalSession() async {
+  Future<void> _clearLocalSession({bool rememberUser = true}) async {
     await tokenService.clearTokens();
     final prefs = await SharedPreferences.getInstance();
     final userString = prefs.getString('user');
-    if (userString != null) {
+    if (rememberUser && userString != null) {
       try {
         await LastLoginStore.saveFromUser(json.decode(userString));
       } catch (_) {}
+    }
+    if (!rememberUser) {
+      await LastLoginStore.clear();
     }
     await prefs.remove('user');
   }
@@ -125,7 +128,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
         if (userResponse.statusCode == 200) {
           final userData = json.decode(userResponse.body);
-          await LastLoginStore.save(identifier);
+          await LastLoginStore.save(
+            identifier,
+            displayName: LastLoginStore.displayNameFromUser(userData),
+          );
           await _persistUser(userData);
           final businesses = await _fetchBusinesses();
           emit(Authenticated(user: userData, businesses: businesses));
@@ -361,7 +367,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           // Best-effort server logout; always clear local session.
         }
       }
-      await _clearLocalSession();
+      await _clearLocalSession(rememberUser: false);
       emit(const Unauthenticated());
     } catch (e) {
       emit(
@@ -687,6 +693,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   Future<void> _persistUser(dynamic userData) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('user', json.encode(userData));
+    await LastLoginStore.saveFromUser(userData);
   }
 
   List<dynamic> _parseBusinessItems(dynamic data) {
