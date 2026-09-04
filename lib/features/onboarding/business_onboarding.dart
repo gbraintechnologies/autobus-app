@@ -288,6 +288,92 @@ class _BusinessOnboardingState extends State<BusinessOnboarding> {
     return text.length >= 2;
   }
 
+  Future<void> _openOptionPicker(
+    _OnboardingQuestion question,
+    TextEditingController controller,
+  ) async {
+    final current = _canonicalAnswer(question, controller.text);
+    final picked = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 10, 20, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.black12,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  question.placeholder.isEmpty ? 'Choose a category' : question.placeholder,
+                  style: GoogleFonts.montserrat(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Pick the closest match for your business.',
+                  style: GoogleFonts.montserrat(
+                    fontSize: 12,
+                    color: Colors.black54,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.sizeOf(ctx).height * 0.55,
+                  ),
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    itemCount: question.options.length,
+                    separatorBuilder: (_, __) => const Divider(height: 1),
+                    itemBuilder: (context, index) {
+                      final option = question.options[index];
+                      final isSelected = option == current;
+                      return ListTile(
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                        title: Text(
+                          option,
+                          style: GoogleFonts.montserrat(
+                            fontSize: 14,
+                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                            color: isSelected ? CustColors.mainCol : Colors.black87,
+                          ),
+                        ),
+                        trailing: isSelected
+                            ? const Icon(Icons.check_circle, color: CustColors.mainCol, size: 20)
+                            : null,
+                        onTap: () => Navigator.pop(ctx, option),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+    if (!mounted || picked == null) return;
+    setState(() => controller.text = picked);
+  }
+
   void _goNext() {
     if (!_isValidAnswer(_current, _currentText)) {
       showAppSnackBar(
@@ -502,45 +588,10 @@ class _BusinessOnboardingState extends State<BusinessOnboarding> {
           ],
           const SizedBox(height: 20),
           if (q.isSelect)
-            DropdownButtonFormField<String>(
-              value: selected.isEmpty ? null : selected,
-              isExpanded: true,
-              menuMaxHeight: 360,
-              hint: Text(
-                q.placeholder.isEmpty ? 'Select an option' : q.placeholder,
-                style: GoogleFonts.montserrat(
-                  color: Colors.black38,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
-              icon: const Icon(Icons.keyboard_arrow_down, color: Colors.black54),
-              style: GoogleFonts.montserrat(
-                color: Colors.black,
-                fontSize: 15,
-                fontWeight: FontWeight.w400,
-                height: 1.4,
-              ),
-              decoration: const InputDecoration(
-                enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.black26),
-                ),
-                focusedBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: CustColors.mainCol, width: 1.6),
-                ),
-              ),
-              items: [
-                for (final option in q.options)
-                  DropdownMenuItem<String>(
-                    value: option,
-                    child: Text(option),
-                  ),
-              ],
-              onChanged: (value) {
-                setState(() {
-                  controller.text = value ?? '';
-                });
-              },
+            _IndustrySelectField(
+              placeholder: q.placeholder.isEmpty ? 'Select an option' : q.placeholder,
+              value: selected,
+              onTap: () => _openOptionPicker(q, controller),
             )
           else
             TextField(
@@ -584,6 +635,62 @@ class _BusinessOnboardingState extends State<BusinessOnboarding> {
               ),
             ),
         ],
+      ),
+    );
+  }
+}
+
+class _IndustrySelectField extends StatelessWidget {
+  const _IndustrySelectField({
+    required this.placeholder,
+    required this.value,
+    required this.onTap,
+  });
+
+  final String placeholder;
+  final String value;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasValue = value.isNotEmpty;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Ink(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF6F4F8),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: hasValue
+                  ? CustColors.mainCol.withValues(alpha: 0.35)
+                  : const Color(0x1A000000),
+            ),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  hasValue ? value : placeholder,
+                  style: GoogleFonts.montserrat(
+                    color: hasValue ? Colors.black87 : Colors.black38,
+                    fontSize: 15,
+                    fontWeight: hasValue ? FontWeight.w500 : FontWeight.w400,
+                    height: 1.35,
+                  ),
+                ),
+              ),
+              Icon(
+                Icons.keyboard_arrow_down_rounded,
+                color: hasValue ? CustColors.mainCol : Colors.black45,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

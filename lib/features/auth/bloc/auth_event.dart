@@ -154,11 +154,12 @@ class LoadBusinessesEvent extends AuthEvent {
 
 class SwitchBusinessEvent extends AuthEvent {
   final String userId;
+  final String displayName;
 
-  const SwitchBusinessEvent({required this.userId});
+  const SwitchBusinessEvent({required this.userId, this.displayName = ''});
 
   @override
-  List<Object> get props => [userId];
+  List<Object> get props => [userId, displayName];
 }
 
 class CreateBusinessEvent extends AuthEvent {

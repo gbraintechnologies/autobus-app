@@ -46,9 +46,6 @@ class BusinessSwitcherSheet extends StatelessWidget {
                 ),
               );
             }
-            if (state is Authenticated && state.lastBusinessOp == 'switched') {
-              Navigator.of(context).pop();
-            }
           },
           builder: (context, state) {
             final authed = state is Authenticated ? state : null;
@@ -130,9 +127,17 @@ class BusinessSwitcherSheet extends StatelessWidget {
                             : const Icon(Icons.chevron_right, color: Colors.black38),
                         onTap: isActive || id.isEmpty
                             ? null
-                            : () => context.read<AuthBloc>().add(
-                                SwitchBusinessEvent(userId: id),
-                              ),
+                            : () {
+                                final bloc = context.read<AuthBloc>();
+                                final name = businessDisplayName(item);
+                                Navigator.pop(context);
+                                bloc.add(
+                                  SwitchBusinessEvent(
+                                    userId: id,
+                                    displayName: name,
+                                  ),
+                                );
+                              },
                       );
                     },
                   ),
@@ -191,6 +196,58 @@ class BusinessSwitcherSheet extends StatelessWidget {
               ],
             );
           },
+        ),
+      ),
+    );
+  }
+}
+
+class BusinessSwitchScrim extends StatelessWidget {
+  const BusinessSwitchScrim({super.key, this.displayName = ''});
+
+  final String displayName;
+
+  @override
+  Widget build(BuildContext context) {
+    final name = displayName.trim();
+    return AbsorbPointer(
+      child: Material(
+        color: Colors.black.withValues(alpha: 0.55),
+        child: Center(
+          child: Container(
+            width: 260,
+            padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const AutobusLoadingIndicator(size: 56),
+                const SizedBox(height: 18),
+                Text(
+                  'Switching business',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.montserrat(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  name.isEmpty ? 'Loading this account…' : 'Opening $name',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.montserrat(
+                    fontSize: 12,
+                    height: 1.35,
+                    color: Colors.black54,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

@@ -746,6 +746,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     Emitter<AuthState> emit,
   ) async {
     final current = _currentAuthenticated();
+    emit(BusinessSwitching(displayName: event.displayName.trim()));
     try {
       final response = await _timed(
         http.post(

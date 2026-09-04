@@ -49,8 +49,10 @@ class _SubscriptionGuardState extends State<SubscriptionGuard> {
       ),
       builder: (context, snap) {
         if (snap.connectionState != ConnectionState.done) {
-          return const Scaffold(
-            body: Center(child: AutobusLoadingIndicator()),
+          final likelyOnboarded = isOnboardingCompleted(user);
+          return Scaffold(
+            backgroundColor: likelyOnboarded ? const Color(0xFF130522) : Colors.white,
+            body: const Center(child: AutobusLoadingIndicator()),
           );
         }
 

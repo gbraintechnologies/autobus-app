@@ -118,9 +118,20 @@ class _ManageBusinessesPageState extends State<ManageBusinessesPage> {
                                   ),
                             onTap: isActive || id.isEmpty
                                 ? null
-                                : () => context.read<AuthBloc>().add(
-                                    SwitchBusinessEvent(userId: id),
-                                  ),
+                                : () {
+                                    final bloc = context.read<AuthBloc>();
+                                    final name = businessDisplayName(item);
+                                    Navigator.of(
+                                      context,
+                                      rootNavigator: true,
+                                    ).popUntil((route) => route.isFirst);
+                                    bloc.add(
+                                      SwitchBusinessEvent(
+                                        userId: id,
+                                        displayName: name,
+                                      ),
+                                    );
+                                  },
                           );
                         },
                       );

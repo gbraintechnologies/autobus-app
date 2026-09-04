@@ -59,6 +59,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
 
   void _popToRoot() {
     final nav = Navigator.of(context, rootNavigator: true);
+    if (!nav.canPop()) return;
     nav.popUntil((route) => route.isFirst);
   }
 
@@ -92,6 +93,10 @@ class _AuthWrapperState extends State<AuthWrapper> {
           _popToRoot();
         }
 
+        if (state is BusinessSwitching) {
+          _popToRoot();
+        }
+
         if (state is Authenticated && state.resetNavigation) {
           _popToRoot();
         }
@@ -99,6 +104,8 @@ class _AuthWrapperState extends State<AuthWrapper> {
         if (state is SessionExpired) {
           showAppSnackBar(context, userFacingError(state.message));
         } else if (state is TokenRefreshFailed) {
+          showAppSnackBar(context, userFacingError(state.message));
+        } else if (state is AuthError && state.source == 'switch_business') {
           showAppSnackBar(context, userFacingError(state.message));
         }
       },
@@ -129,6 +136,19 @@ class _AuthWrapperState extends State<AuthWrapper> {
           return _authedShell!;
         }
 
+        if (state is BusinessSwitching && _authedShell != null) {
+          return PopScope(
+            canPop: false,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                _authedShell!,
+                BusinessSwitchScrim(displayName: state.displayName),
+              ],
+            ),
+          );
+        }
+
         // Keep Signin/LogorSign mounted through login/signup load and error so
         // the form (and its snackbar listener) is not torn down. Replacing the
         // Scaffold here is what hid error snackbars on iOS.
@@ -142,7 +162,8 @@ class _AuthWrapperState extends State<AuthWrapper> {
             state is ResetCodeVerified ||
             state is PasswordResetSuccess ||
             state is TokenRefreshing ||
-            state is DetachOtpSent) {
+            state is DetachOtpSent ||
+            state is BusinessSwitching) {
           if (_authedShell != null) {
             return _authedShell!;
           }

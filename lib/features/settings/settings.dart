@@ -142,9 +142,65 @@ class _SettingsPageState extends State<SettingsPage> {
                         },
                       ),
 
-                      /// Share Icon
-                      _circleIcon(Icons.share_outlined),
+                      /// Keeps the title centered against the back button.
+                      const SizedBox(width: 48),
                     ],
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  GestureDetector(
+                    onTap: () => showBusinessSwitcher(context),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
+                      decoration: BoxDecoration(
+                        color: CustColors.mainCol,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.swap_horiz,
+                            color: Colors.white,
+                            size: 22,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Switch business',
+                                  style: GoogleFonts.montserrat(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'Add, switch, or detach businesses on this login',
+                                  style: GoogleFonts.montserrat(
+                                    color: Colors.white.withValues(alpha: 0.8),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Icon(
+                            Icons.chevron_right,
+                            color: Colors.white,
+                            size: 22,
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
 
                   const SizedBox(height: 40),
@@ -253,12 +309,6 @@ class _SettingsPageState extends State<SettingsPage> {
 
   List<SettingsMenuItem> _buildMenuItems() {
     return [
-      SettingsMenuItem("Businesses", Icons.swap_horiz, () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const ManageBusinessesPage()),
-        );
-      }),
       SettingsMenuItem("Profile", Icons.person_outline, () {
         Navigator.push(
           context,
@@ -416,18 +466,6 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
         );
       },
-    );
-  }
-
-  Widget _circleIcon(IconData icon) {
-    return Container(
-      width: 54,
-      height: 54,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(color: Colors.white24),
-      ),
-      child: Icon(icon, color: Colors.white70, size: 18),
     );
   }
 }

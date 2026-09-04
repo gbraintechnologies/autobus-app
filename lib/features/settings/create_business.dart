@@ -73,72 +73,82 @@ class _CreateBusinessPageState extends State<CreateBusinessPage> {
           );
         }
       },
-      child: Scaffold(
-        backgroundColor: Colors.white,
-        body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                AuthPageHeader(
-                  title: 'Add business',
-                  fontWeight: FontWeight.w300,
-                  onBack: () => Navigator.of(context).pop(),
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  'This business gets its own email. You can switch to it from this login until you detach it with a password reset.',
-                  style: GoogleFonts.montserrat(
-                    fontSize: 13,
-                    height: 1.4,
-                    color: Colors.black54,
+      child: GestureDetector(
+        onTap: dismissAppKeyboard,
+        behavior: HitTestBehavior.opaque,
+        child: Scaffold(
+          backgroundColor: Colors.white,
+          resizeToAvoidBottomInset: true,
+          body: SafeArea(
+            child: SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  AuthPageHeader(
+                    title: 'Add business',
+                    fontWeight: FontWeight.w300,
+                    onBack: () => Navigator.of(context).pop(),
                   ),
-                ),
-                const SizedBox(height: 28),
-                _label('Business email*'),
-                TextField(
-                  onTapOutside: dismissAppKeyboard,
-                  controller: emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: InputDecoration(
-                    hintText: 'business@example.com',
-                    hintStyle: GoogleFonts.montserrat(color: Colors.black38, fontSize: 14),
-                    border: const UnderlineInputBorder(),
+                  const SizedBox(height: 24),
+                  Text(
+                    'This business gets its own email. You can switch to it from this login until you detach it with a password reset.',
+                    style: GoogleFonts.montserrat(
+                      fontSize: 13,
+                      height: 1.4,
+                      color: Colors.black54,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 20),
-                _label('Username*'),
-                TextField(
-                  onTapOutside: dismissAppKeyboard,
-                  controller: usernameController,
-                  decoration: InputDecoration(
-                    hintText: 'Unique username',
-                    hintStyle: GoogleFonts.montserrat(color: Colors.black38, fontSize: 14),
-                    border: const UnderlineInputBorder(),
+                  const SizedBox(height: 28),
+                  _label('Business email*'),
+                  TextField(
+                    onTapOutside: dismissAppKeyboard,
+                    controller: emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    textInputAction: TextInputAction.next,
+                    decoration: InputDecoration(
+                      hintText: 'business@example.com',
+                      hintStyle: GoogleFonts.montserrat(color: Colors.black38, fontSize: 14),
+                      border: const UnderlineInputBorder(),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 20),
-                _label('Company name'),
-                TextField(
-                  onTapOutside: dismissAppKeyboard,
-                  controller: companyController,
-                  decoration: InputDecoration(
-                    hintText: 'Optional display name',
-                    hintStyle: GoogleFonts.montserrat(color: Colors.black38, fontSize: 14),
-                    border: const UnderlineInputBorder(),
+                  const SizedBox(height: 20),
+                  _label('Username*'),
+                  TextField(
+                    onTapOutside: dismissAppKeyboard,
+                    controller: usernameController,
+                    textInputAction: TextInputAction.next,
+                    decoration: InputDecoration(
+                      hintText: 'Unique username',
+                      hintStyle: GoogleFonts.montserrat(color: Colors.black38, fontSize: 14),
+                      border: const UnderlineInputBorder(),
+                    ),
                   ),
-                ),
-                const Spacer(),
-                Center(
-                  child: _submitting
-                      ? const AutobusLoadingIndicator()
-                      : AppButton(
-                          buttonText: 'Create business',
-                          onPressed: _submit,
-                        ),
-                ),
-              ],
+                  const SizedBox(height: 20),
+                  _label('Company name'),
+                  TextField(
+                    onTapOutside: dismissAppKeyboard,
+                    controller: companyController,
+                    textInputAction: TextInputAction.done,
+                    onSubmitted: (_) => dismissAppKeyboard(),
+                    decoration: InputDecoration(
+                      hintText: 'Optional display name',
+                      hintStyle: GoogleFonts.montserrat(color: Colors.black38, fontSize: 14),
+                      border: const UnderlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+                  Center(
+                    child: _submitting
+                        ? const AutobusLoadingIndicator()
+                        : AppButton(
+                            buttonText: 'Create business',
+                            onPressed: _submit,
+                          ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

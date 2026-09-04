@@ -188,3 +188,12 @@ class DetachOtpSent extends AuthState {
   @override
   List<Object> get props => [businessId, email, message];
 }
+
+class BusinessSwitching extends AuthState {
+  final String displayName;
+
+  const BusinessSwitching({this.displayName = ''});
+
+  @override
+  List<Object> get props => [displayName];
+}
