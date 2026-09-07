@@ -1,5 +1,4 @@
 import 'package:autobus/barrel.dart';
-import 'package:flutter/services.dart';
 
 class ResetPassword extends StatefulWidget {
   final String email;
@@ -17,93 +16,8 @@ class ResetPassword extends StatefulWidget {
 }
 
 class _ResetPasswordState extends State<ResetPassword> {
-  final List<TextEditingController> _newPinControllers = List.generate(
-    4,
-    (_) => TextEditingController(),
-  );
-  final List<FocusNode> _newPinFocusNodes = List.generate(
-    4,
-    (_) => FocusNode(),
-  );
-
-  final List<TextEditingController> _confirmPinControllers = List.generate(
-    4,
-    (_) => TextEditingController(),
-  );
-  final List<FocusNode> _confirmPinFocusNodes = List.generate(
-    4,
-    (_) => FocusNode(),
-  );
-
-  String get _newPin => _newPinControllers.map((c) => c.text).join();
-  String get _confirmPin => _confirmPinControllers.map((c) => c.text).join();
-
-  @override
-  void dispose() {
-    for (final c in _newPinControllers) {
-      c.dispose();
-    }
-    for (final n in _newPinFocusNodes) {
-      n.dispose();
-    }
-    for (final c in _confirmPinControllers) {
-      c.dispose();
-    }
-    for (final n in _confirmPinFocusNodes) {
-      n.dispose();
-    }
-    super.dispose();
-  }
-
-  Widget _buildPinInput({
-    required List<TextEditingController> controllers,
-    required List<FocusNode> focusNodes,
-  }) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: List.generate(4, (index) {
-        return SizedBox(
-          width: 52,
-          child: TextField(
-            onTapOutside: dismissAppKeyboard,
-            controller: controllers[index],
-            focusNode: focusNodes[index],
-            textAlign: TextAlign.center,
-            keyboardType: TextInputType.number,
-            obscureText: true,
-            inputFormatters: [
-              FilteringTextInputFormatter.digitsOnly,
-              LengthLimitingTextInputFormatter(1),
-            ],
-            decoration: const InputDecoration(
-              border: OutlineInputBorder(),
-              counterText: '',
-            ),
-            onChanged: (val) {
-              if (val.isNotEmpty) {
-                if (index < 3) {
-                  focusNodes[index + 1].requestFocus();
-                } else {
-                  focusNodes[index].unfocus();
-                }
-              } else if (val.isEmpty && index > 0) {
-                focusNodes[index - 1].requestFocus();
-              }
-            },
-            onTap: () {
-              controllers[index].selection = TextSelection.collapsed(
-                offset: controllers[index].text.length,
-              );
-            },
-            onSubmitted: (_) {
-              if (index < 3) focusNodes[index + 1].requestFocus();
-            },
-            onEditingComplete: () {},
-          ),
-        );
-      }),
-    );
-  }
+  String _newPin = '';
+  String _confirmPin = '';
 
   @override
   Widget build(BuildContext context) {
@@ -164,9 +78,8 @@ class _ResetPasswordState extends State<ResetPassword> {
                   ),
                   Padding(
                     padding: const EdgeInsets.only(left: 20.0, right: 20.0),
-                    child: _buildPinInput(
-                      controllers: _newPinControllers,
-                      focusNodes: _newPinFocusNodes,
+                    child: PinDigitInput(
+                      onChanged: (v) => _newPin = v,
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -183,9 +96,8 @@ class _ResetPasswordState extends State<ResetPassword> {
                   ),
                   Padding(
                     padding: const EdgeInsets.only(left: 20.0, right: 20.0),
-                    child: _buildPinInput(
-                      controllers: _confirmPinControllers,
-                      focusNodes: _confirmPinFocusNodes,
+                    child: PinDigitInput(
+                      onChanged: (v) => _confirmPin = v,
                     ),
                   ),
                   const SizedBox(height: 15),
