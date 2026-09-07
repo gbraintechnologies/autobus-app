@@ -1,9 +1,9 @@
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:autobus/common_design/device_media_picker.dart';
 import 'package:autobus/features/home/services/api_service.dart';
 import 'package:autobus/features/products/product_media.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -271,15 +271,10 @@ Future<void> pickProductImageForSlot(
   int index,
   StateSetter setState,
 ) async {
-  final result = await FilePicker.platform.pickFiles(
-    type: FileType.custom,
-    allowedExtensions: const ['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp'],
-    allowMultiple: false,
-    withData: kIsWeb,
-  );
-  if (!context.mounted || result == null || result.files.isEmpty) return;
+  final picked = await pickDeviceImages(context, maxCount: 1);
+  if (!context.mounted || picked.isEmpty) return;
 
-  final file = result.files.single;
+  final file = picked.first;
   final path = file.path?.trim();
   final name = file.name.trim().isNotEmpty ? file.name : 'image.jpg';
 
@@ -333,15 +328,10 @@ Future<void> pickProductVideoForSlot(
   int index,
   StateSetter setState,
 ) async {
-  final result = await FilePicker.platform.pickFiles(
-    type: FileType.custom,
-    allowedExtensions: kProductVideoExtensions,
-    allowMultiple: false,
-    withData: kIsWeb,
-  );
-  if (!context.mounted || result == null || result.files.isEmpty) return;
+  final picked = await pickDeviceVideos(context, maxCount: 1);
+  if (!context.mounted || picked.isEmpty) return;
 
-  final file = result.files.single;
+  final file = picked.first;
   final path = file.path?.trim();
   final name = file.name.trim().isNotEmpty ? file.name : 'product.mp4';
 

@@ -30,6 +30,23 @@ class ApiService {
     throw AppException.fromResponse(response, action: action);
   }
 
+  /// FastAPI Decimal values often arrive as JSON strings like `"12.50"`.
+  static double _decodeJsonDouble(dynamic data) {
+    final direct = parseJsonDouble(data);
+    if (direct != null) return direct;
+    if (data is Map) {
+      return parseJsonDouble(
+            data['revenue'] ??
+                data['total'] ??
+                data['amount'] ??
+                data['value'] ??
+                data['total_revenue'],
+          ) ??
+          0.0;
+    }
+    return 0.0;
+  }
+
   /// Get current user profile
   Future<Map<String, dynamic>> getUserProfile() async {
     try {
@@ -1298,8 +1315,7 @@ class ApiService {
       Uri.parse('$baseUrl/payment/revenue'),
     );
     if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      return (data as num).toDouble();
+      return _decodeJsonDouble(jsonDecode(response.body));
     }
     return 0.0;
   }
@@ -1312,8 +1328,7 @@ class ApiService {
       Uri.parse('$baseUrl/payment/revenue/$key'),
     );
     if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      return (data as num).toDouble();
+      return _decodeJsonDouble(jsonDecode(response.body));
     }
     return 0.0;
   }
@@ -1684,11 +1699,16 @@ class ApiService {
       } else {
         return [];
       }
-      return raw
-          .whereType<Map>()
-          .map((e) => PostizIntegration.fromJson(Map<String, dynamic>.from(e)))
-          .where((i) => i.isActive)
-          .toList();
+      final parsed = <PostizIntegration>[];
+      for (final row in raw) {
+        if (row is! Map) continue;
+        try {
+          parsed.add(
+            PostizIntegration.fromJson(Map<String, dynamic>.from(row)),
+          );
+        } catch (_) {}
+      }
+      return parsed.where((i) => i.isActive).toList();
     }
     if (response.statusCode == 401) {
       throw Exception('Session expired');

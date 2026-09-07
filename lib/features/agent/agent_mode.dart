@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:autobus/barrel.dart';
+import 'package:autobus/common_design/device_media_picker.dart';
 import 'package:autobus/features/agent/agent_bloc.dart';
 import 'package:autobus/features/agent/agent_event.dart';
 import 'package:autobus/features/agent/agent_repository.dart';
@@ -46,7 +47,6 @@ class _AgentModeViewState extends State<_AgentModeView> {
   final _input = TextEditingController();
   final _scroll = ScrollController();
   final _speech = SpeechToText();
-  final _picker = ImagePicker();
 
   bool _speechReady = false;
   bool _listening = false;
@@ -311,11 +311,13 @@ class _AgentModeViewState extends State<_AgentModeView> {
 
   Future<void> _pickImage({ImageSource? source}) async {
     try {
-      final file = await _picker.pickImage(
-        source: source ?? ImageSource.gallery,
-        imageQuality: 88,
+      final picked = await pickDeviceImages(
+        context,
+        maxCount: 1,
+        source: source,
       );
-      if (file == null) return;
+      if (picked.isEmpty) return;
+      final file = picked.first;
       setState(() {
         _staged.add(
           AgentAttachment(
@@ -334,10 +336,13 @@ class _AgentModeViewState extends State<_AgentModeView> {
 
   Future<void> _pickVideo({ImageSource? source}) async {
     try {
-      final file = await _picker.pickVideo(
-        source: source ?? ImageSource.gallery,
+      final picked = await pickDeviceVideos(
+        context,
+        maxCount: 1,
+        source: source,
       );
-      if (file == null) return;
+      if (picked.isEmpty) return;
+      final file = picked.first;
       setState(() {
         _staged.add(
           AgentAttachment(

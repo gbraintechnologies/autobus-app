@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:autobus/barrel.dart';
+import 'package:autobus/common_design/device_media_picker.dart';
 import 'package:autobus/features/marketing/marketing_media_download.dart';
 import 'package:autobus/features/marketing/platform_post_details.dart';
 import 'package:file_picker/file_picker.dart';

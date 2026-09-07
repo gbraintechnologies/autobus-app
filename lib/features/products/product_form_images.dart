@@ -1,9 +1,9 @@
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:autobus/common_design/device_media_picker.dart';
 import 'package:autobus/features/products/product_chat_image_attachments.dart';
 import 'package:autobus/features/products/product_media.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -353,15 +353,9 @@ Future<void> pickMultipleProductImages(
     return;
   }
 
-  final result = await FilePicker.platform.pickFiles(
-    type: FileType.custom,
-    allowedExtensions: kProductImageExtensions,
-    allowMultiple: true,
-    withData: kIsWeb,
-  );
-  if (!context.mounted || result == null || result.files.isEmpty) return;
+  final picked = await pickDeviceImages(context, maxCount: remaining);
+  if (!context.mounted || picked.isEmpty) return;
 
-  final picked = result.files.take(remaining).toList();
   final newSlots = <ProductStagingSlot>[];
 
   for (final file in picked) {
@@ -421,15 +415,9 @@ Future<void> pickMultipleProductVideos(
     return;
   }
 
-  final result = await FilePicker.platform.pickFiles(
-    type: FileType.custom,
-    allowedExtensions: kProductVideoExtensions,
-    allowMultiple: true,
-    withData: kIsWeb,
-  );
-  if (!context.mounted || result == null || result.files.isEmpty) return;
+  final picked = await pickDeviceVideos(context, maxCount: remaining);
+  if (!context.mounted || picked.isEmpty) return;
 
-  final picked = result.files.take(remaining).toList();
   final newSlots = <ProductStagingSlot>[];
 
   for (final file in picked) {

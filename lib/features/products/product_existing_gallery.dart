@@ -1,9 +1,9 @@
 import 'dart:io';
 
+import 'package:autobus/common_design/device_media_picker.dart';
 import 'package:autobus/features/home/services/api_service.dart';
 import 'package:autobus/features/products/product_form_images.dart';
 import 'package:autobus/features/products/product_media.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:video_player/video_player.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
@@ -423,15 +423,9 @@ Future<void> pickAndUploadProductPhotos({
     return;
   }
 
-  final result = await FilePicker.platform.pickFiles(
-    type: FileType.custom,
-    allowedExtensions: const ['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp'],
-    allowMultiple: true,
-    withData: kIsWeb,
-  );
-  if (!context.mounted || result == null || result.files.isEmpty) return;
+  final picked = await pickDeviceImages(context, maxCount: remaining);
+  if (!context.mounted || picked.isEmpty) return;
 
-  final picked = result.files.take(remaining).toList();
   if (kIsWeb) {
     final bytesList = <({List<int> bytes, String filename})>[];
     for (final file in picked) {
@@ -476,15 +470,9 @@ Future<void> pickAndUploadProductVideos({
     return;
   }
 
-  final result = await FilePicker.platform.pickFiles(
-    type: FileType.custom,
-    allowedExtensions: kProductVideoExtensions,
-    allowMultiple: true,
-    withData: kIsWeb,
-  );
-  if (!context.mounted || result == null || result.files.isEmpty) return;
+  final picked = await pickDeviceVideos(context, maxCount: remaining);
+  if (!context.mounted || picked.isEmpty) return;
 
-  final picked = result.files.take(remaining).toList();
   if (kIsWeb) {
     final bytesList = <({List<int> bytes, String filename})>[];
     for (final file in picked) {

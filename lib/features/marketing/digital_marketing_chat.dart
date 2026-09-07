@@ -352,87 +352,6 @@ class _MarketingChatPageState extends State<_MarketingChatPage> {
     }
   }
 
-  Future<({bool isPicture, ImageSource source})?> _chooseAttachTarget() {
-    return showModalBottomSheet<({bool isPicture, ImageSource source})>(
-      context: context,
-      showDragHandle: true,
-      backgroundColor: Colors.white,
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.photo_camera_outlined),
-              title: const Text('Take photo'),
-              onTap: () => Navigator.pop(context, (
-                isPicture: true,
-                source: ImageSource.camera,
-              )),
-            ),
-            ListTile(
-              leading: const Icon(Icons.photo_library_outlined),
-              title: const Text('Choose photo from gallery'),
-              onTap: () => Navigator.pop(context, (
-                isPicture: true,
-                source: ImageSource.gallery,
-              )),
-            ),
-            ListTile(
-              leading: const Icon(Icons.videocam_outlined),
-              title: const Text('Record video'),
-              onTap: () => Navigator.pop(context, (
-                isPicture: false,
-                source: ImageSource.camera,
-              )),
-            ),
-            ListTile(
-              leading: const Icon(Icons.video_library_outlined),
-              title: const Text('Choose video from gallery'),
-              onTap: () => Navigator.pop(context, (
-                isPicture: false,
-                source: ImageSource.gallery,
-              )),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  String _mediaExtension(String nameOrPath, {required String fallback}) {
-    final dot = nameOrPath.lastIndexOf('.');
-    if (dot <= 0 || dot == nameOrPath.length - 1) return fallback;
-    final ext = nameOrPath.substring(dot).toLowerCase();
-    if (ext.length > 5) return fallback;
-    return ext;
-  }
-
-  Future<String?> _ensureLocalMediaFile(
-    String path, {
-    required String preferredName,
-    required String fallbackExt,
-  }) async {
-    final file = File(path);
-    for (var i = 0; i < 40; i++) {
-      try {
-        if (await file.exists() && await file.length() > 0) return path;
-      } catch (_) {}
-      await Future<void>.delayed(const Duration(milliseconds: 125));
-    }
-    try {
-      final bytes = await XFile(path).readAsBytes();
-      if (bytes.isEmpty) return null;
-      final ext = _mediaExtension(preferredName, fallback: fallbackExt);
-      final dest = File(
-        '${Directory.systemTemp.path}/autobus_media_'
-        '${DateTime.now().millisecondsSinceEpoch}$ext',
-      );
-      await dest.writeAsBytes(bytes, flush: true);
-      if (await dest.exists() && await dest.length() > 0) return dest.path;
-    } catch (_) {}
-    return null;
-  }
-
   Future<void> _attachMedia() async {
     if (_sending) return;
 
@@ -464,49 +383,41 @@ class _MarketingChatPageState extends State<_MarketingChatPage> {
       return;
     }
 
-    final target = await _chooseAttachTarget();
+    final target = await choosePhotoOrVideoSource(context);
     if (target == null || !mounted) return;
     final isPicture = target.isPicture;
     final source = target.source;
 
     try {
-      final picker = ImagePicker();
       if (isPicture) {
-        final picked = await picker.pickImage(
+        final picked = await pickDeviceImages(
+          context,
+          maxCount: 1,
           source: source,
-          imageQuality: 85,
-          maxWidth: 2000,
         );
-        if (picked == null) return;
-        final bytes = await picked.readAsBytes();
-        if (bytes.isEmpty) throw Exception('Selected image was empty.');
-        final stablePath = await _ensureLocalMediaFile(
-          picked.path,
-          preferredName: picked.name,
-          fallbackExt: '.jpg',
-        );
+        if (!mounted || picked.isEmpty) return;
+        final media = picked.first;
         _addUploadedContent(
           MarketingContentType.pictures,
-          bytes: bytes,
-          path: stablePath ?? picked.path,
-          name: picked.name,
+          bytes: media.bytes,
+          path: media.path,
+          name: media.name,
         );
         return;
       }
 
-      final picked = await picker.pickVideo(source: source);
-      if (picked == null) return;
-      String? stablePath;
-      if (picked.path.trim().isNotEmpty) {
-        stablePath = await _ensureLocalMediaFile(
-          picked.path,
-          preferredName: picked.name,
-          fallbackExt: '.mp4',
-        );
-      }
+      final picked = await pickDeviceVideos(
+        context,
+        maxCount: 1,
+        source: source,
+      );
+      if (!mounted || picked.isEmpty) return;
+      final media = picked.first;
       _addUploadedContent(
         MarketingContentType.videos,
-        path: stablePath ?? picked.path,
+        bytes: media.bytes,
+        path: media.path,
+        name: media.name,
       );
     } catch (_) {
       if (!mounted) return;

@@ -377,6 +377,7 @@ class _ProfileState extends State<Profile> {
       source: source,
       imageQuality: 85,
       maxWidth: 1400,
+      requestFullMetadata: false,
     );
     if (picked == null) return;
 

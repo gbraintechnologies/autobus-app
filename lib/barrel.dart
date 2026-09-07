@@ -147,5 +147,6 @@ export 'package:autobus/common_design/app_scale.dart';
 export 'package:autobus/common_design/colors.dart';
 export 'package:autobus/common_design/widgets/appbutton.dart';
 export 'package:autobus/common_design/app_error.dart';
+export 'package:autobus/common_design/json_numbers.dart';
 export 'package:autobus/common_design/widgets/app_snackbar.dart';
 export 'package:page_transition/page_transition.dart';
