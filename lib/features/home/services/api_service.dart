@@ -3,6 +3,7 @@ import 'package:autobus/common_design/plain_ai_text.dart';
 import 'dart:developer';
 import 'package:autobus/features/chat/models/chatwoot_inbox.dart';
 import 'package:autobus/features/marketing/models/postiz_integration.dart';
+import 'package:autobus/features/marketing/tiktok_creator_info.dart';
 import 'package:autobus/features/notifications/models/app_notification.dart';
 import 'dart:io';
 import 'package:http/http.dart' as http;
@@ -1837,6 +1838,55 @@ class ApiService {
       throw Exception('Session expired');
     }
     _fail(response, 'publishing post');
+  }
+
+  /// GET /api/v1/social/postiz/tiktok/creator-info
+  Future<TikTokCreatorInfo> getTikTokCreatorInfo(String integrationId) async {
+    final id = integrationId.trim();
+    final response = await httpClient.get(
+      Uri.parse('$baseUrl/social/postiz/tiktok/creator-info').replace(
+        queryParameters: {'integration_id': id},
+      ),
+    );
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data is Map<String, dynamic>) return TikTokCreatorInfo.fromJson(data);
+      if (data is Map) {
+        return TikTokCreatorInfo.fromJson(Map<String, dynamic>.from(data));
+      }
+      throw AppException(kind: AppErrorKind.unexpected, action: 'loading TikTok account');
+    }
+    if (response.statusCode == 401) {
+      throw Exception('Session expired');
+    }
+    _fail(response, 'loading TikTok account');
+  }
+
+  /// GET /api/v1/social/postiz/tiktok/publish-status
+  Future<TikTokPublishStatus> getTikTokPublishStatus({
+    required String integrationId,
+    String? publishId,
+  }) async {
+    final params = <String, String>{'integration_id': integrationId.trim()};
+    final pid = publishId?.trim() ?? '';
+    if (pid.isNotEmpty) params['publish_id'] = pid;
+    final response = await httpClient.get(
+      Uri.parse('$baseUrl/social/postiz/tiktok/publish-status').replace(
+        queryParameters: params,
+      ),
+    );
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data is Map<String, dynamic>) return TikTokPublishStatus.fromJson(data);
+      if (data is Map) {
+        return TikTokPublishStatus.fromJson(Map<String, dynamic>.from(data));
+      }
+      throw AppException(kind: AppErrorKind.unexpected, action: 'checking TikTok post');
+    }
+    if (response.statusCode == 401) {
+      throw Exception('Session expired');
+    }
+    _fail(response, 'checking TikTok post');
   }
 
   /// GET /api/v1/social/connect/{platform} — OAuth or Postiz embed for Facebook, etc.

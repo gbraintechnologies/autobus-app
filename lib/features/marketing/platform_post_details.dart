@@ -14,10 +14,12 @@ class PlatformPostDetails {
 
   // —— TikTok ——
   String tiktokTitle;
+  /// Empty until the user picks from `privacy_level_options` (TikTok UX rule).
   String tiktokPrivacy;
   bool tiktokDuet;
   bool tiktokStitch;
   bool tiktokComment;
+  bool tiktokDiscloseCommercial;
   bool tiktokBrandContent;
   bool tiktokBrandOrganic;
   bool tiktokMadeWithAi;
@@ -35,10 +37,11 @@ class PlatformPostDetails {
     this.youtubeTagsCsv = '',
     this.madeForKids = 'no',
     this.tiktokTitle = '',
-    this.tiktokPrivacy = 'SELF_ONLY',
-    this.tiktokDuet = true,
-    this.tiktokStitch = true,
-    this.tiktokComment = true,
+    this.tiktokPrivacy = '',
+    this.tiktokDuet = false,
+    this.tiktokStitch = false,
+    this.tiktokComment = false,
+    this.tiktokDiscloseCommercial = false,
     this.tiktokBrandContent = false,
     this.tiktokBrandOrganic = false,
     this.tiktokMadeWithAi = false,

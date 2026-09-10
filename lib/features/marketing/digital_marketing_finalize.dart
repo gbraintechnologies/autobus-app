@@ -438,6 +438,23 @@ class _FinalizePostPageState extends State<_FinalizePostPage> {
     if (_publishing) return;
 
     for (final p in _selectedPostiz) {
+      if (p.identifier.toLowerCase() != 'tiktok') continue;
+      if (!postizNow && !postizSchedule) continue;
+      final d = _campaign.outletDetails[p.id];
+      if (d == null || d.tiktokPrivacy.trim().isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Complete the Post to TikTok settings first.',
+              style: GoogleFonts.montserrat(fontSize: 13),
+            ),
+          ),
+        );
+        return;
+      }
+    }
+
+    for (final p in _selectedPostiz) {
       if (p.identifier.toLowerCase() != 'youtube') continue;
       if (p.id.startsWith(_kAutobusIgPrefix)) continue;
       if (!postizNow && !postizSchedule) continue;
@@ -607,6 +624,11 @@ class _FinalizePostPageState extends State<_FinalizePostPage> {
             throw Exception('No matching Postiz channels for the selection.');
           }
           _setStatus(postizSchedule ? 'Scheduling via Postiz…' : 'Publishing via Postiz…');
+          final tiktokSelected =
+              selected.where((p) => p.identifier.toLowerCase() == 'tiktok');
+          if (tiktokSelected.isNotEmpty) {
+            _setStatus(kTikTokProcessingNotice);
+          }
           final payload = buildPostizCreatePostPayload(
             selectedIntegrations: selected,
             content: textContent,
@@ -615,11 +637,14 @@ class _FinalizePostPageState extends State<_FinalizePostPage> {
             scheduledUtc: _campaign.scheduledDate,
             outletDetails: _campaign.outletDetails,
           );
-          await _apiService.createPostizPost(
+          final created = await _apiService.createPostizPost(
             payload,
             agentName: 'digital_marketing',
           );
           publishedCount += selected.length;
+          for (final p in tiktokSelected) {
+            await _waitForTikTok(p.id, created);
+          }
         } else if (postizIds.isNotEmpty && widget.useBlotato) {
           _setStatus('Publishing…');
           var blotatoContent = textContent;
@@ -676,7 +701,35 @@ class _FinalizePostPageState extends State<_FinalizePostPage> {
       );
 
       if (errors.isEmpty && mounted) {
-        Navigator.of(context).popUntil((route) => route.isFirst);
+        final postedTikTok = (postizNow || postizSchedule) &&
+            _selectedPostiz.any((p) => p.identifier.toLowerCase() == 'tiktok');
+        if (postedTikTok) {
+          await showDialog<void>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: Text(
+                'Sent to TikTok',
+                style: GoogleFonts.montserrat(fontWeight: FontWeight.w700),
+              ),
+              content: Text(
+                '$kTikTokProcessingNotice\n\nOpen the TikTok app and check this account’s profile to confirm the post.',
+                style: GoogleFonts.montserrat(fontSize: 13, height: 1.4),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: Text(
+                    'Done',
+                    style: GoogleFonts.montserrat(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+        if (mounted) {
+          Navigator.of(context).popUntil((route) => route.isFirst);
+        }
       }
     } catch (e) {
       if (!mounted) return;
@@ -699,5 +752,39 @@ class _FinalizePostPageState extends State<_FinalizePostPage> {
         });
       }
     }
+  }
+
+  String? _publishIdFrom(Map<String, dynamic> created) {
+    final direct = created['tiktok_publish_ids'];
+    if (direct is List && direct.isNotEmpty) {
+      return direct.first.toString();
+    }
+    final nested = created['value'];
+    if (nested is Map) {
+      final ids = nested['tiktok_publish_ids'];
+      if (ids is List && ids.isNotEmpty) return ids.first.toString();
+    }
+    return null;
+  }
+
+  Future<void> _waitForTikTok(
+    String integrationId,
+    Map<String, dynamic> created,
+  ) async {
+    final publishId = _publishIdFrom(created);
+    _setStatus(kTikTokProcessingNotice);
+    final deadline = DateTime.now().add(const Duration(minutes: 2));
+    while (mounted && DateTime.now().isBefore(deadline)) {
+      try {
+        final status = await _apiService.getTikTokPublishStatus(
+          integrationId: integrationId,
+          publishId: publishId,
+        );
+        _setStatus(status.message);
+        if (status.complete || status.failed) return;
+      } catch (_) {}
+      await Future.delayed(const Duration(seconds: 4));
+    }
+    _setStatus(kTikTokProcessingNotice);
   }
 }

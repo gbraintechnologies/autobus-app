@@ -81,24 +81,25 @@ Map<String, dynamic> postizSettingsForIntegration(
       final rawTitle = details?.tiktokTitle.trim().isNotEmpty == true
           ? details!.tiktokTitle
           : titleFallback;
-      final privacy = details?.tiktokPrivacy ?? 'SELF_ONLY';
+      final privacy = details?.tiktokPrivacy ?? '';
       const allowedPrivacy = {
         'PUBLIC_TO_EVERYONE',
         'MUTUAL_FOLLOW_FRIENDS',
         'FOLLOWER_OF_CREATOR',
         'SELF_ONLY',
       };
+      final disclose = details?.tiktokDiscloseCommercial == true;
       return {
         '__type': 'tiktok',
         'title': _clampTitle(rawTitle, 90),
         'privacy_level':
             allowedPrivacy.contains(privacy) ? privacy : 'SELF_ONLY',
-        'duet': details?.tiktokDuet ?? true,
-        'stitch': details?.tiktokStitch ?? true,
-        'comment': details?.tiktokComment ?? true,
+        'duet': details?.tiktokDuet ?? false,
+        'stitch': details?.tiktokStitch ?? false,
+        'comment': details?.tiktokComment ?? false,
         'autoAddMusic': 'no',
-        'brand_content_toggle': details?.tiktokBrandContent ?? false,
-        'brand_organic_toggle': details?.tiktokBrandOrganic ?? false,
+        'brand_content_toggle': disclose && (details?.tiktokBrandContent ?? false),
+        'brand_organic_toggle': disclose && (details?.tiktokBrandOrganic ?? false),
         'video_made_with_ai': details?.tiktokMadeWithAi ?? false,
         'content_posting_method': 'DIRECT_POST',
       };
