@@ -64,11 +64,26 @@ class PinDigitInputState extends State<PinDigitInput> {
 
   /// Keep the caret after the last digit so backspace always deletes
   /// from the end, even if the user tapped a box in the middle.
+  ///
+  /// iOS `deleteBackward` first selects the last character, then deletes
+  /// that range. Collapsing that selection immediately makes further
+  /// backspaces no-ops (only the first digit is removed).
   void _keepCursorAtEnd() {
     final end = _controller.text.length;
     final sel = _controller.selection;
     if (!sel.isValid) return;
-    if (sel.baseOffset == end && sel.extentOffset == end) return;
+    if (sel.isCollapsed && sel.baseOffset == end) return;
+
+    // Let the IME select the last digit so backspace can delete it.
+    if (end > 0 && !sel.isCollapsed && sel.start == end - 1 && sel.end == end) {
+      return;
+    }
+
+    // Paste / autofill may select the whole value before replacing it.
+    if (!sel.isCollapsed && sel.start == 0 && sel.end == end) {
+      return;
+    }
+
     _controller.selection = TextSelection.collapsed(offset: end);
   }
 
@@ -117,6 +132,7 @@ class PinDigitInputState extends State<PinDigitInput> {
       child: SizedBox(
         width: 52 * _length + 16 * (_length - 1),
         child: Stack(
+          clipBehavior: Clip.hardEdge,
           children: [
             IgnorePointer(
               child: Row(
@@ -125,39 +141,53 @@ class PinDigitInputState extends State<PinDigitInput> {
               ),
             ),
             Positioned.fill(
-              child: TextField(
-                controller: _controller,
-                focusNode: _focusNode,
-                enabled: widget.enabled,
-                autofocus: widget.autofocus,
-                keyboardType: TextInputType.number,
-                obscureText: true,
-                autocorrect: false,
-                enableSuggestions: false,
-                showCursor: false,
-                cursorColor: Colors.transparent,
-                style: const TextStyle(
-                  color: Colors.transparent,
-                  fontSize: 1,
+              child: Opacity(
+                opacity: 0,
+                child: TextField(
+                  controller: _controller,
+                  focusNode: _focusNode,
+                  enabled: widget.enabled,
+                  autofocus: widget.autofocus,
+                  keyboardType: TextInputType.number,
+                  // Do not use obscureText: iOS secureTextEntry makes repeated
+                  // backspaces fail. Digits are already hidden by the overlay.
+                  obscureText: false,
+                  autocorrect: false,
+                  enableSuggestions: false,
+                  enableIMEPersonalizedLearning: false,
+                  smartDashesType: SmartDashesType.disabled,
+                  smartQuotesType: SmartQuotesType.disabled,
+                  spellCheckConfiguration:
+                      const SpellCheckConfiguration.disabled(),
+                  autofillHints: const <String>[],
+                  showCursor: false,
+                  cursorColor: Colors.transparent,
+                  // Real font metrics are required on iOS; fontSize: 1 leaves
+                  // the caret at offset 0 after the first delete, so further
+                  // backspaces are ignored.
+                  style: const TextStyle(fontSize: 16),
+                  decoration: const InputDecoration(
+                    border: InputBorder.none,
+                    counterText: '',
+                    isCollapsed: true,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(
+                      _length,
+                      maxLengthEnforcement: MaxLengthEnforcement.enforced,
+                    ),
+                  ],
+                  onChanged: _onChanged,
+                  onTap: () {
+                    _controller.selection = TextSelection.collapsed(
+                      offset: _controller.text.length,
+                    );
+                  },
+                  onTapOutside: dismissAppKeyboard,
+                  onEditingComplete: () {},
                 ),
-                decoration: const InputDecoration(
-                  border: InputBorder.none,
-                  counterText: '',
-                  isCollapsed: true,
-                  contentPadding: EdgeInsets.zero,
-                ),
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
-                  LengthLimitingTextInputFormatter(_length),
-                ],
-                onChanged: _onChanged,
-                onTap: () {
-                  _controller.selection = TextSelection.collapsed(
-                    offset: _controller.text.length,
-                  );
-                },
-                onTapOutside: dismissAppKeyboard,
-                onEditingComplete: () {},
               ),
             ),
           ],
