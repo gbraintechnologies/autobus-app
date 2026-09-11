@@ -1528,6 +1528,9 @@ class ApiService {
   Future<Map<String, dynamic>> generateImageMedia({
     required String prompt,
     String? userId,
+    String? referenceBase64,
+    String? referenceMimeType,
+    String? referenceUrl,
     Duration timeout = const Duration(minutes: 11),
   }) async {
     final response = await httpClient
@@ -1537,6 +1540,12 @@ class ApiService {
           body: jsonEncode({
             'prompt': prompt,
             if (userId != null && userId.trim().isNotEmpty) 'user_id': userId,
+            if (referenceBase64 != null && referenceBase64.trim().isNotEmpty)
+              'reference_base64': referenceBase64,
+            if (referenceMimeType != null && referenceMimeType.trim().isNotEmpty)
+              'reference_mime_type': referenceMimeType,
+            if (referenceUrl != null && referenceUrl.trim().isNotEmpty)
+              'reference_url': referenceUrl,
           }),
         )
         .timeout(
@@ -1560,6 +1569,9 @@ class ApiService {
     required String prompt,
     String? userId,
     bool store = false,
+    String? referenceBase64,
+    String? referenceMimeType,
+    String? referenceUrl,
     Duration timeout = const Duration(minutes: 11),
   }) async {
     final uri = Uri.parse(
@@ -1572,6 +1584,12 @@ class ApiService {
           body: jsonEncode({
             'prompt': prompt,
             if (userId != null && userId.trim().isNotEmpty) 'user_id': userId,
+            if (referenceBase64 != null && referenceBase64.trim().isNotEmpty)
+              'reference_base64': referenceBase64,
+            if (referenceMimeType != null && referenceMimeType.trim().isNotEmpty)
+              'reference_mime_type': referenceMimeType,
+            if (referenceUrl != null && referenceUrl.trim().isNotEmpty)
+              'reference_url': referenceUrl,
           }),
         )
         .timeout(

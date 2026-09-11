@@ -157,6 +157,9 @@ class MarketingChatMessage {
   final DateTime createdAt;
   final bool isGenerating;
   final String? error;
+  final Uint8List? referenceBytes;
+  final String? referencePath;
+  final bool referenceIsVideo;
 
   MarketingChatMessage({
     required this.id,
@@ -166,6 +169,9 @@ class MarketingChatMessage {
     DateTime? createdAt,
     this.isGenerating = false,
     this.error,
+    this.referenceBytes,
+    this.referencePath,
+    this.referenceIsVideo = false,
   }) : createdAt = createdAt ?? DateTime.now();
 
   bool get isUser => role == MarketingChatRole.user;
@@ -184,6 +190,9 @@ class MarketingChatMessage {
       createdAt: createdAt,
       isGenerating: isGenerating ?? this.isGenerating,
       error: error,
+      referenceBytes: referenceBytes,
+      referencePath: referencePath,
+      referenceIsVideo: referenceIsVideo,
     );
   }
 
