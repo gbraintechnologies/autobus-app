@@ -70,7 +70,8 @@ class _MarketingChatPageState extends State<_MarketingChatPage> {
   MarketingContentType _mode = MarketingContentType.pictures;
   bool _sending = false;
   bool _archiving = false;
-  _GenerationReference? _reference;
+  final List<_GenerationReference> _references = [];
+  static const int _maxReferences = 3;
 
   DigitalMarketingCampaign get _campaign => widget.campaign;
 
@@ -228,14 +229,15 @@ class _MarketingChatPageState extends State<_MarketingChatPage> {
     final text = _input.text.trim();
     if (text.isEmpty || _sending) return;
 
-    final usedRef = _reference;
+    final usedRefs = List<_GenerationReference>.from(_references);
+    final firstRef = usedRefs.isEmpty ? null : usedRefs.first;
     final userMsg = MarketingChatMessage(
       id: _newMsgId(),
       role: MarketingChatRole.user,
       text: text,
-      referenceBytes: usedRef?.bytes,
-      referencePath: usedRef?.path,
-      referenceIsVideo: usedRef?.isVideo ?? false,
+      referenceBytes: firstRef?.bytes,
+      referencePath: firstRef?.path,
+      referenceIsVideo: firstRef?.isVideo ?? false,
     );
     final pending = MarketingChatMessage(
       id: _newMsgId(),
@@ -246,7 +248,7 @@ class _MarketingChatPageState extends State<_MarketingChatPage> {
 
     setState(() {
       _sending = true;
-      _reference = null;
+      _references.clear();
       _campaign.messages.add(userMsg);
       _campaign.messages.add(pending);
       _input.clear();
@@ -269,23 +271,24 @@ class _MarketingChatPageState extends State<_MarketingChatPage> {
       final prompt = _followUpPrompt(text, detectedType);
       final userId = await _userId();
       String assistantText = '';
-      String? refBase64;
-      String? refUrl;
-      String? refMime;
-      if (usedRef != null && detectedType != MarketingContentType.text) {
-        final packed = await _referencePayload(usedRef);
-        refBase64 = packed.base64;
-        refUrl = packed.url;
-        refMime = packed.mime;
+      List<Map<String, String>>? packedRefs;
+      if (usedRefs.isNotEmpty && detectedType != MarketingContentType.text) {
+        packedRefs = [];
+        for (final ref in usedRefs) {
+          final packed = await _referencePayload(ref);
+          packedRefs.add({
+            if (packed.base64 != null) 'base64': packed.base64!,
+            if (packed.url != null) 'url': packed.url!,
+            'mime_type': packed.mime,
+          });
+        }
       }
 
       if (detectedType == MarketingContentType.pictures) {
         final response = await _apiService.generateImageMedia(
           userId: userId,
           prompt: prompt,
-          referenceBase64: refBase64,
-          referenceMimeType: refMime,
-          referenceUrl: refUrl,
+          references: packedRefs,
         );
         final rawBase64 = (response['image_base64'] ?? '').toString().trim();
         if (rawBase64.isEmpty) {
@@ -297,7 +300,7 @@ class _MarketingChatPageState extends State<_MarketingChatPage> {
         content.generatedBytes = await compute(base64Decode, cleanedBase64);
         content.generatedResult = response['mime_type']?.toString();
         await _persistBytesToFile(content, '.jpg');
-        assistantText = usedRef == null
+        assistantText = usedRefs.isEmpty
             ? 'Generated an image from your prompt.'
             : 'Generated an image using your reference.';
       } else if (detectedType == MarketingContentType.videos) {
@@ -305,9 +308,7 @@ class _MarketingChatPageState extends State<_MarketingChatPage> {
           userId: userId,
           prompt: prompt,
           store: true,
-          referenceBase64: refBase64,
-          referenceMimeType: refMime,
-          referenceUrl: refUrl,
+          references: packedRefs,
         );
         final result = (response['stored_url'] ?? response['video_url'] ?? '')
             .toString()
@@ -316,7 +317,7 @@ class _MarketingChatPageState extends State<_MarketingChatPage> {
           throw Exception('Video generation returned no video URL');
         }
         content.generatedResult = result;
-        assistantText = usedRef == null
+        assistantText = usedRefs.isEmpty
             ? 'Generated a video from your prompt.'
             : 'Generated a video using your reference.';
       } else {
@@ -460,16 +461,24 @@ class _MarketingChatPageState extends State<_MarketingChatPage> {
 
   Future<void> _attachReference() async {
     if (_sending) return;
+    if (_references.length >= _maxReferences) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('You can attach up to 3 references.')),
+      );
+      return;
+    }
     try {
       final picked = await _pickMediaForComposer();
       if (picked == null || !mounted) return;
       setState(() {
-        _reference = _GenerationReference(
-          name: picked.name,
-          path: picked.path,
-          bytes: picked.bytes,
-          isVideo: picked.isVideo,
-          mimeType: _referenceMimeType(picked.name, isVideo: picked.isVideo),
+        _references.add(
+          _GenerationReference(
+            name: picked.name,
+            path: picked.path,
+            bytes: picked.bytes,
+            isVideo: picked.isVideo,
+            mimeType: _referenceMimeType(picked.name, isVideo: picked.isVideo),
+          ),
         );
       });
     } catch (_) {
@@ -794,7 +803,7 @@ class _MarketingChatPageState extends State<_MarketingChatPage> {
                 Text(
                   widget.readOnly
                       ? 'Generated images, videos, and captions will show here when they are part of the saved conversation.'
-                      : 'Describe an image, video, or caption. Optionally attach a reference so the AI can follow it.',
+                      : 'Describe an image, video, or caption. Attach up to 3 references if you want the AI to follow them. Each reference uses extra credits.',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.montserrat(
                     fontSize: 13,
@@ -1026,48 +1035,63 @@ class _MarketingChatPageState extends State<_MarketingChatPage> {
     );
   }
 
-  Widget _referenceChip() {
-    final ref = _reference;
-    if (ref == null) return const SizedBox.shrink();
-    Widget thumb;
+  Widget _referenceThumb(_GenerationReference ref) {
     if (!ref.isVideo && ref.bytes != null && ref.bytes!.isNotEmpty) {
-      thumb = Image.memory(ref.bytes!, fit: BoxFit.cover);
-    } else if (!ref.isVideo &&
+      return Image.memory(ref.bytes!, fit: BoxFit.cover);
+    }
+    if (!ref.isVideo &&
         !kIsWeb &&
         (ref.path ?? '').isNotEmpty &&
         File(ref.path!).existsSync()) {
-      thumb = Image.file(File(ref.path!), fit: BoxFit.cover);
-    } else {
-      thumb = ColoredBox(
-        color: const Color(0xFFF3EEF8),
-        child: Icon(
-          ref.isVideo ? Icons.videocam_outlined : Icons.image_outlined,
-          color: _kHeaderPurple,
-          size: 18,
-        ),
-      );
+      return Image.file(File(ref.path!), fit: BoxFit.cover);
     }
+    return ColoredBox(
+      color: const Color(0xFFF3EEF8),
+      child: Icon(
+        ref.isVideo ? Icons.videocam_outlined : Icons.image_outlined,
+        color: _kHeaderPurple,
+        size: 18,
+      ),
+    );
+  }
+
+  Widget _referenceChip() {
+    if (_references.isEmpty) return const SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
-      child: Row(
+      child: Column(
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: SizedBox(width: 40, height: 40, child: thumb),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              'Reference: ${ref.name}',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.montserrat(fontSize: 12, color: Colors.black54),
+          for (var i = 0; i < _references.length; i++)
+            Padding(
+              padding: EdgeInsets.only(bottom: i == _references.length - 1 ? 0 : 8),
+              child: Row(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: SizedBox(
+                      width: 40,
+                      height: 40,
+                      child: _referenceThumb(_references[i]),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Reference: ${_references[i].name}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.montserrat(fontSize: 12, color: Colors.black54),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: _sending
+                        ? null
+                        : () => setState(() => _references.removeAt(i)),
+                    child: const Icon(Icons.close_rounded, size: 18, color: Colors.black45),
+                  ),
+                ],
+              ),
             ),
-          ),
-          GestureDetector(
-            onTap: _sending ? null : () => setState(() => _reference = null),
-            child: const Icon(Icons.close_rounded, size: 18, color: Colors.black45),
-          ),
         ],
       ),
     );

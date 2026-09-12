@@ -1569,6 +1569,7 @@ class ApiService {
     String? referenceBase64,
     String? referenceMimeType,
     String? referenceUrl,
+    List<Map<String, String>>? references,
     Duration timeout = const Duration(minutes: 11),
   }) async {
     final response = await httpClient
@@ -1584,6 +1585,7 @@ class ApiService {
               'reference_mime_type': referenceMimeType,
             if (referenceUrl != null && referenceUrl.trim().isNotEmpty)
               'reference_url': referenceUrl,
+            if (references != null && references.isNotEmpty) 'references': references,
           }),
         )
         .timeout(
@@ -1610,6 +1612,7 @@ class ApiService {
     String? referenceBase64,
     String? referenceMimeType,
     String? referenceUrl,
+    List<Map<String, String>>? references,
     Duration timeout = const Duration(minutes: 11),
   }) async {
     final uri = Uri.parse(
@@ -1628,6 +1631,7 @@ class ApiService {
               'reference_mime_type': referenceMimeType,
             if (referenceUrl != null && referenceUrl.trim().isNotEmpty)
               'reference_url': referenceUrl,
+            if (references != null && references.isNotEmpty) 'references': references,
           }),
         )
         .timeout(
