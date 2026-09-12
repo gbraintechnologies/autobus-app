@@ -86,6 +86,7 @@ export 'package:autobus/features/autochat/autobus.dart';
 export 'package:autobus/features/interactions/manage_interactions.dart';
 export 'package:autobus/features/intelligence/manage_intelligence.dart';
 export 'package:autobus/features/settings/settings.dart';
+export 'package:autobus/features/settings/delete_account.dart';
 export 'package:autobus/features/settings/profile.dart';
 export 'package:autobus/features/settings/notification.dart';
 export 'package:autobus/features/settings/security.dart';

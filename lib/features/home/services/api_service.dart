@@ -48,6 +48,44 @@ class ApiService {
     return 0.0;
   }
 
+  /// GET /api/v1/auth/account-deletion-preview
+  Future<Map<String, dynamic>> getAccountDeletionPreview() async {
+    final response = await httpClient.get(
+      Uri.parse('$baseUrl/auth/account-deletion-preview'),
+    );
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      if (data is Map<String, dynamic>) return data;
+      if (data is Map) return Map<String, dynamic>.from(data);
+    }
+    _fail(response, 'loading account deletion details');
+  }
+
+  /// POST /api/v1/auth/delete-account — permanently delete this login and linked businesses.
+  Future<Map<String, dynamic>> deleteMyAccount({required String password}) async {
+    final response = await httpClient.post(
+      Uri.parse('$baseUrl/auth/delete-account'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({'password': password}),
+    );
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      if (data is Map<String, dynamic>) return data;
+      if (data is Map) return Map<String, dynamic>.from(data);
+      return {'status': 'ok'};
+    }
+    if (response.statusCode == 403) {
+      throw AppException.user(
+        'Incorrect PIN. Try again.',
+        kind: AppErrorKind.forbidden,
+        action: 'deleting your account',
+        statusCode: response.statusCode,
+        debugDetail: response.body,
+      );
+    }
+    _fail(response, 'deleting your account');
+  }
+
   /// Get current user profile
   Future<Map<String, dynamic>> getUserProfile() async {
     try {

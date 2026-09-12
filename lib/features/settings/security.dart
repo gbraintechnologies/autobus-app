@@ -95,6 +95,20 @@ class Security extends StatelessWidget {
                           () {},
                         ),
                       ),
+                      NotificationMenuTile(
+                        item: SecurityMenuItem(
+                          "Delete Account",
+                          Icons.delete_outline,
+                          () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const DeleteAccountPage(),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
                     ],
                   ),
                 ),

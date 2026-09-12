@@ -256,6 +256,47 @@ class _SettingsPageState extends State<SettingsPage> {
 
                   const SizedBox(height: 26),
 
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const DeleteAccountPage(),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 18,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.6),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Delete account',
+                            style: GoogleFonts.montserrat(
+                              color: Colors.red,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                          const Icon(
+                            Icons.delete_outline,
+                            color: Colors.red,
+                            size: 20,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
                   /// 🚪 Logout Card with loading state
                   BlocBuilder<AuthBloc, AuthState>(
                     builder: (context, state) {
