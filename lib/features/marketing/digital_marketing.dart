@@ -20,6 +20,7 @@ part 'digital_marketing_chat.dart';
 part 'digital_marketing_compose.dart';
 part 'digital_marketing_tiktok_consent.dart';
 part 'digital_marketing_finalize.dart';
+part 'digital_marketing_publish_status.dart';
 
 const _kPrimary = Color(0xFF1A1A2E);
 const _kHeaderPurple = Color(0xFF2A1447);

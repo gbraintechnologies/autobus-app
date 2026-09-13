@@ -110,6 +110,7 @@ export 'package:autobus/features/subscription/models/subscription_plan.dart';
 export 'package:autobus/features/marketing/digital_marketing.dart';
 export 'package:autobus/features/marketing/digital_marketing_selection.dart';
 export 'package:autobus/features/marketing/recent_campaigns_page.dart';
+export 'package:autobus/features/marketing/recent_posts_page.dart';
 export 'package:autobus/features/marketing/manage_outlets.dart';
 export 'package:autobus/features/marketing/models/postiz_integration.dart';
 export 'package:autobus/features/marketing/postiz_create_post_payload.dart';

@@ -1949,6 +1949,56 @@ class ApiService {
     _fail(response, 'checking TikTok post');
   }
 
+  /// GET /api/v1/social/postiz/posts — recent Postiz posts for publish status.
+  Future<List<Map<String, dynamic>>> listPostizPosts({
+    String? startDate,
+    String? endDate,
+  }) async {
+    final params = <String, String>{};
+    if (startDate != null && startDate.trim().isNotEmpty) {
+      params['start_date'] = startDate.trim();
+    }
+    if (endDate != null && endDate.trim().isNotEmpty) {
+      params['end_date'] = endDate.trim();
+    }
+    final response = await httpClient.get(
+      Uri.parse('$baseUrl/social/postiz/posts').replace(
+        queryParameters: params.isEmpty ? null : params,
+      ),
+    );
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      final List<dynamic> raw;
+      if (data is List) {
+        raw = data;
+      } else if (data is Map) {
+        const keys = ['posts', 'items', 'data', 'value', 'results'];
+        List<dynamic>? found;
+        for (final k in keys) {
+          final v = data[k];
+          if (v is List) {
+            found = v;
+            break;
+          }
+        }
+        raw = found ?? [];
+      } else {
+        return [];
+      }
+      return [
+        for (final row in raw)
+          if (row is Map) Map<String, dynamic>.from(row),
+      ];
+    }
+    if (response.statusCode == 401) {
+      throw Exception('Session expired');
+    }
+    if (response.statusCode == 404) {
+      return [];
+    }
+    _fail(response, 'loading post status');
+  }
+
   /// GET /api/v1/social/connect/{platform} — OAuth or Postiz embed for Facebook, etc.
   Future<PlatformEmbedSession> initiateSocialConnect(String platform) async {
     final slug = platform.trim().toLowerCase();

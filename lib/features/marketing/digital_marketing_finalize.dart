@@ -97,7 +97,7 @@ class _FinalizePostPageState extends State<_FinalizePostPage> {
               ),
               const SizedBox(height: 6),
               Text(
-                'Share from this phone, or publish / schedule through Postiz',
+                'Share from this phone, or publish and schedule your post',
                 textAlign: TextAlign.center,
                 style: GoogleFonts.montserrat(
                   fontSize: 12,
@@ -122,7 +122,7 @@ class _FinalizePostPageState extends State<_FinalizePostPage> {
                       const SizedBox(height: 12),
                       _actionCard(
                         icon: Icons.flash_on_rounded,
-                        title: 'Post now with Postiz',
+                        title: 'Post Now',
                         subtitle: 'Publish to your linked accounts at once',
                         onTap: _publishing
                             ? null
@@ -131,7 +131,7 @@ class _FinalizePostPageState extends State<_FinalizePostPage> {
                       const SizedBox(height: 12),
                       _actionCard(
                         icon: Icons.schedule_rounded,
-                        title: 'Schedule with Postiz',
+                        title: 'Schedule for later',
                         subtitle: 'Pick a date and time, then we’ll queue it',
                         selected: _showSchedule,
                         onTap: _publishing
@@ -519,6 +519,7 @@ class _FinalizePostPageState extends State<_FinalizePostPage> {
       var publishedCount = 0;
       var sharedCount = 0;
       final errors = <String>[];
+      final tracks = <_TrackedPublish>[];
 
       if (phoneShare) {
         for (final id in _phoneShareIds) {
@@ -530,12 +531,24 @@ class _FinalizePostPageState extends State<_FinalizePostPage> {
             );
             if (ok) {
               sharedCount++;
+              tracks.add(_trackPhoneShare(id, success: true));
             } else {
               errors.add('${_phoneShareLabel(id)} share was dismissed.');
+              tracks.add(_trackPhoneShare(id, success: false));
             }
           } catch (e) {
             errors.add(
               userFacingError(e, action: 'sharing to ${_phoneShareLabel(id)}'),
+            );
+            tracks.add(
+              _trackPhoneShare(
+                id,
+                success: false,
+                message: userFacingError(
+                  e,
+                  action: 'sharing to ${_phoneShareLabel(id)}',
+                ),
+              ),
             );
           }
         }
@@ -611,9 +624,17 @@ class _FinalizePostPageState extends State<_FinalizePostPage> {
                 mediaUrls: mediaUrls,
               );
               publishedCount++;
+              tracks.add(_trackInstagram(outletKey, success: true));
             } catch (e) {
               errors.add(
                 userFacingError(e, action: 'sharing to Instagram'),
+              );
+              tracks.add(
+                _trackInstagram(
+                  outletKey,
+                  success: false,
+                  message: userFacingError(e, action: 'sharing to Instagram'),
+                ),
               );
             }
           }
@@ -626,7 +647,7 @@ class _FinalizePostPageState extends State<_FinalizePostPage> {
           if (selected.isEmpty) {
             throw Exception('No matching Postiz channels for the selection.');
           }
-          _setStatus(postizSchedule ? 'Scheduling via Postiz…' : 'Publishing via Postiz…');
+          _setStatus(postizSchedule ? 'Scheduling…' : 'Publishing…');
           final tiktokSelected =
               selected.where((p) => p.identifier.toLowerCase() == 'tiktok');
           if (tiktokSelected.isNotEmpty) {
@@ -640,13 +661,41 @@ class _FinalizePostPageState extends State<_FinalizePostPage> {
             scheduledUtc: _campaign.scheduledDate,
             outletDetails: _campaign.outletDetails,
           );
-          final created = await _apiService.createPostizPost(
-            payload,
-            agentName: 'digital_marketing',
-          );
-          publishedCount += selected.length;
-          for (final p in tiktokSelected) {
-            await _waitForTikTok(p.id, created);
+          try {
+            final created = await _apiService.createPostizPost(
+              payload,
+              agentName: 'digital_marketing',
+            );
+            publishedCount += selected.length;
+            final publishIds = _publishIdsFrom(created);
+            var tiktokIndex = 0;
+            for (final p in selected) {
+              final isTikTok = p.identifier.toLowerCase() == 'tiktok';
+              String? publishId;
+              if (isTikTok && tiktokIndex < publishIds.length) {
+                publishId = publishIds[tiktokIndex++];
+              }
+              tracks.add(
+                _trackPostiz(
+                  p,
+                  scheduled: postizSchedule,
+                  publishId: publishId,
+                ),
+              );
+            }
+          } catch (e) {
+            final message = userFacingError(e, action: 'publishing');
+            errors.add(message);
+            for (final p in selected) {
+              tracks.add(
+                _trackPostiz(
+                  p,
+                  scheduled: postizSchedule,
+                  success: false,
+                  message: message,
+                ),
+              );
+            }
           }
         } else if (postizIds.isNotEmpty && widget.useBlotato) {
           _setStatus('Publishing…');
@@ -658,81 +707,56 @@ class _FinalizePostPageState extends State<_FinalizePostPage> {
               break;
             }
           }
-          await _apiService.publishSocialPost(
-            accountIds: postizIds,
-            content: blotatoContent.isEmpty ? ' ' : blotatoContent,
-            mediaUrls: mediaUrls,
-            scheduleTime: _campaign.scheduledDate?.toUtc().toIso8601String(),
-          );
-          publishedCount += postizIds.length;
+          try {
+            await _apiService.publishSocialPost(
+              accountIds: postizIds,
+              content: blotatoContent.isEmpty ? ' ' : blotatoContent,
+              mediaUrls: mediaUrls,
+              scheduleTime: _campaign.scheduledDate?.toUtc().toIso8601String(),
+            );
+            publishedCount += postizIds.length;
+            for (final id in postizIds) {
+              tracks.add(_trackGeneric(id, scheduled: postizSchedule));
+            }
+          } catch (e) {
+            final message = userFacingError(e, action: 'publishing');
+            errors.add(message);
+            for (final id in postizIds) {
+              tracks.add(
+                _TrackedPublish(
+                  id: id,
+                  platform: id,
+                  label: _platformLabel(id),
+                  accountName: _accountNameFor(id),
+                  phase: _PublishPhase.fail,
+                  message: message,
+                ),
+              );
+            }
+          }
         }
       }
 
       if (!mounted) return;
 
-      if (publishedCount == 0 && sharedCount == 0 && errors.isNotEmpty) {
+      if (tracks.isEmpty && publishedCount == 0 && sharedCount == 0 && errors.isNotEmpty) {
         throw Exception(errors.join('\n'));
       }
 
-      final successParts = <String>[];
-      if (publishedCount > 0) {
-        successParts.add(
-          postizSchedule
-              ? 'Scheduled for $publishedCount channel(s)'
-              : 'Published to $publishedCount channel(s)',
-        );
+      if (tracks.isEmpty && publishedCount == 0 && sharedCount == 0) {
+        throw Exception('Nothing was posted.');
       }
-      if (sharedCount > 0) {
-        successParts.add('Opened $sharedCount share sheet(s)');
-      }
-      if (successParts.isEmpty && errors.isEmpty) {
-        successParts.add('Opened the share flow.');
-      }
-      final successMsg = errors.isEmpty
-          ? successParts.join('. ')
-          : '${successParts.join('. ')}. Some failed: ${errors.join('; ')}';
 
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(
-            successMsg,
-            style: GoogleFonts.montserrat(color: Colors.white, fontSize: 13),
-          ),
-          backgroundColor: errors.isEmpty ? Colors.green : Colors.orange.shade800,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-
-      if (errors.isEmpty && mounted) {
-        final postedTikTok = (postizNow || postizSchedule) &&
-            _selectedPostiz.any((p) => p.identifier.toLowerCase() == 'tiktok');
-        if (postedTikTok) {
-          await showDialog<void>(
-            context: context,
-            builder: (ctx) => AlertDialog(
-              title: Text(
-                'Sent to TikTok',
-                style: GoogleFonts.montserrat(fontWeight: FontWeight.w700),
-              ),
-              content: Text(
-                '$kTikTokProcessingNotice\n\nOpen the TikTok app and check this account’s profile to confirm the post.',
-                style: GoogleFonts.montserrat(fontSize: 13, height: 1.4),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  child: Text(
-                    'Done',
-                    style: GoogleFonts.montserrat(fontWeight: FontWeight.w600),
-                  ),
-                ),
-              ],
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => _PublishStatusPage(
+              items: tracks,
+              scheduled: postizSchedule,
             ),
-          );
-        }
-        if (mounted) {
-          Navigator.of(context).popUntil((route) => route.isFirst);
-        }
+          ),
+        );
       }
     } catch (e) {
       if (!mounted) return;
@@ -757,37 +781,133 @@ class _FinalizePostPageState extends State<_FinalizePostPage> {
     }
   }
 
-  String? _publishIdFrom(Map<String, dynamic> created) {
-    final direct = created['tiktok_publish_ids'];
-    if (direct is List && direct.isNotEmpty) {
-      return direct.first.toString();
+  List<String> _publishIdsFrom(Map<String, dynamic> created) {
+    final out = <String>[];
+    void take(dynamic value) {
+      if (value is! List) return;
+      for (final e in value) {
+        final s = e.toString().trim();
+        if (s.isNotEmpty && !out.contains(s)) out.add(s);
+      }
     }
+
+    take(created['tiktok_publish_ids']);
     final nested = created['value'];
-    if (nested is Map) {
-      final ids = nested['tiktok_publish_ids'];
-      if (ids is List && ids.isNotEmpty) return ids.first.toString();
-    }
-    return null;
+    if (nested is Map) take(nested['tiktok_publish_ids']);
+    return out;
   }
 
-  Future<void> _waitForTikTok(
-    String integrationId,
-    Map<String, dynamic> created,
-  ) async {
-    final publishId = _publishIdFrom(created);
-    _setStatus(kTikTokProcessingNotice);
-    final deadline = DateTime.now().add(const Duration(minutes: 2));
-    while (mounted && DateTime.now().isBefore(deadline)) {
-      try {
-        final status = await _apiService.getTikTokPublishStatus(
-          integrationId: integrationId,
-          publishId: publishId,
-        );
-        _setStatus(status.message);
-        if (status.complete || status.failed) return;
-      } catch (_) {}
-      await Future.delayed(const Duration(seconds: 4));
+  String _accountNameFor(String outletId) {
+    for (final p in widget.postizIntegrations) {
+      if (p.id != outletId) continue;
+      final name = p.name.trim();
+      if (name.isNotEmpty) return name;
+      return (p.profile ?? '').trim();
     }
-    _setStatus(kTikTokProcessingNotice);
+    return '';
+  }
+
+  String _platformLabel(String identifier) {
+    final key = identifier.toLowerCase();
+    for (final o in OutletCatalog.all) {
+      if (o.postizIdentifiers.contains(key)) return o.label;
+    }
+    if (key.contains('facebook')) return 'Facebook';
+    if (key.contains('tiktok')) return 'TikTok';
+    if (key.contains('instagram')) return 'Instagram';
+    if (key.contains('youtube')) return 'YouTube';
+    return identifier.isEmpty ? 'Channel' : identifier;
+  }
+
+  _TrackedPublish _trackPhoneShare(
+    String outletId, {
+    required bool success,
+    String? message,
+  }) {
+    final platform = switch (outletId) {
+      _kShareFacebookId => 'facebook',
+      _kShareTiktokId => 'tiktok',
+      _ => outletId,
+    };
+    return _TrackedPublish(
+      id: outletId,
+      platform: platform,
+      label: _phoneShareLabel(outletId),
+      accountName: 'Share from this phone',
+      phase: success ? _PublishPhase.success : _PublishPhase.fail,
+      message: message ??
+          (success ? 'Opened the share sheet.' : 'Share was dismissed.'),
+    );
+  }
+
+  _TrackedPublish _trackInstagram(
+    String outletKey, {
+    required bool success,
+    String? message,
+  }) {
+    return _TrackedPublish(
+      id: outletKey,
+      platform: 'instagram',
+      label: 'Instagram',
+      accountName: _accountNameFor(outletKey),
+      phase: success ? _PublishPhase.success : _PublishPhase.fail,
+      message: message ??
+          (success ? 'Published to Instagram.' : 'Instagram publish failed.'),
+    );
+  }
+
+  _TrackedPublish _trackPostiz(
+    PostizIntegration p, {
+    required bool scheduled,
+    String? publishId,
+    bool success = true,
+    String? message,
+  }) {
+    final processing = success && !scheduled;
+    return _TrackedPublish(
+      id: p.id,
+      platform: p.identifier,
+      label: _platformLabel(p.identifier),
+      accountName: p.name.trim().isNotEmpty
+          ? p.name.trim()
+          : (p.profile ?? '').trim(),
+      phase: success
+          ? (processing ? _PublishPhase.processing : _PublishPhase.success)
+          : _PublishPhase.fail,
+      message: message ??
+          (success
+              ? (scheduled
+                  ? 'Scheduled. We’ll confirm when it goes out.'
+                  : 'Sent. Checking publish status…')
+              : 'Publish failed.'),
+      integrationId: p.id,
+      publishId: publishId,
+      pollable: success,
+      scheduled: scheduled,
+    );
+  }
+
+  _TrackedPublish _trackGeneric(String id, {required bool scheduled}) {
+    PostizIntegration? match;
+    for (final p in widget.postizIntegrations) {
+      if (p.id == id) {
+        match = p;
+        break;
+      }
+    }
+    if (match != null) {
+      return _trackPostiz(match, scheduled: scheduled);
+    }
+    return _TrackedPublish(
+      id: id,
+      platform: id,
+      label: _platformLabel(id),
+      accountName: _accountNameFor(id),
+      phase: scheduled ? _PublishPhase.success : _PublishPhase.processing,
+      message: scheduled ? 'Scheduled.' : 'Sent. Checking publish status…',
+      integrationId: id,
+      pollable: true,
+      scheduled: scheduled,
+    );
   }
 }

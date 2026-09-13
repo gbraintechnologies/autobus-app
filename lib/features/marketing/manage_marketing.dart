@@ -97,6 +97,18 @@ class ManageMarketing extends StatelessWidget {
                                   );
                                 },
                               ),
+                              _MarketingHubCard(
+                                icon: Icons.dynamic_feed_outlined,
+                                title: 'Recent posts',
+                                onTap: () {
+                                  Navigator.push<void>(
+                                    context,
+                                    MaterialPageRoute<void>(
+                                      builder: (_) => const RecentPostsPage(),
+                                    ),
+                                  );
+                                },
+                              ),
                             ],
                           ),
                           const SizedBox(height: 40),
