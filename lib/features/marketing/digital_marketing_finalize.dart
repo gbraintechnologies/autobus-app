@@ -237,12 +237,15 @@ class _FinalizePostPageState extends State<_FinalizePostPage> {
                     children: [
                       const AutobusLoadingIndicator(size: 36),
                       const SizedBox(height: 16),
-                      Text(
-                        _publishStatus.isEmpty ? 'Working…' : _publishStatus,
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.montserrat(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: Text(
+                          _publishStatus.isEmpty ? 'Working…' : _publishStatus,
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.montserrat(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ),
                     ],

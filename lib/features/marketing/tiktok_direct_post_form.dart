@@ -44,21 +44,28 @@ class _TikTokDirectPostFormState extends State<TikTokDirectPostForm> {
   @override
   void initState() {
     super.initState();
-    _loadCreatorInfo();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _loadCreatorInfo();
+    });
   }
 
   @override
   void didUpdateWidget(covariant TikTokDirectPostForm oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.integration.id != widget.integration.id) {
-      _loadCreatorInfo();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _loadCreatorInfo();
+      });
     } else if (oldWidget.videoDuration != widget.videoDuration ||
         oldWidget.isPhotoPost != widget.isPhotoPost) {
-      _emitValidity();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _emitValidity();
+      });
     }
   }
 
   Future<void> _loadCreatorInfo() async {
+    if (!mounted) return;
     setState(() {
       _loading = true;
       _loadError = null;

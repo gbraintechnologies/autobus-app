@@ -18,6 +18,7 @@ import 'package:video_player/video_player.dart';
 
 part 'digital_marketing_chat.dart';
 part 'digital_marketing_compose.dart';
+part 'digital_marketing_tiktok_consent.dart';
 part 'digital_marketing_finalize.dart';
 
 const _kPrimary = Color(0xFF1A1A2E);
@@ -733,8 +734,17 @@ class DigitalMarketingPage extends StatelessWidget {
 
 class _MarketingInlineVideoPlayer extends StatefulWidget {
   final String videoRef;
+  final bool autoPlay;
+  final bool looping;
+  final ValueChanged<Duration>? onDuration;
 
-  const _MarketingInlineVideoPlayer({required this.videoRef});
+  const _MarketingInlineVideoPlayer({
+    super.key,
+    required this.videoRef,
+    this.autoPlay = true,
+    this.looping = true,
+    this.onDuration,
+  });
 
   @override
   State<_MarketingInlineVideoPlayer> createState() =>
@@ -742,21 +752,59 @@ class _MarketingInlineVideoPlayer extends StatefulWidget {
 }
 
 class _MarketingInlineVideoPlayerState
-    extends State<_MarketingInlineVideoPlayer> {
+    extends State<_MarketingInlineVideoPlayer>
+    with WidgetsBindingObserver {
   VideoPlayerController? _controller;
   bool _failed = false;
   String _errorDetail = '';
+  int _initGen = 0;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _init();
+  }
+
+  @override
+  void didUpdateWidget(covariant _MarketingInlineVideoPlayer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.videoRef != widget.videoRef) {
+      _replaceController();
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final c = _controller;
+    if (c == null || !c.value.isInitialized) return;
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused ||
+        state == AppLifecycleState.hidden) {
+      c.pause();
+    } else if (state == AppLifecycleState.resumed && widget.autoPlay) {
+      c.play();
+    }
+  }
+
+  void _replaceController() {
+    _initGen++;
+    final previous = _controller;
+    _controller = null;
+    _failed = false;
+    _errorDetail = '';
+    previous?.dispose();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) setState(() {});
+    });
     _init();
   }
 
   Future<void> _init() async {
+    final gen = ++_initGen;
     final ref = widget.videoRef.trim();
     if (ref.isEmpty) {
-      if (mounted) {
+      if (mounted && gen == _initGen) {
         setState(() {
           _failed = true;
           _errorDetail = 'No video reference.';
@@ -778,7 +826,7 @@ class _MarketingInlineVideoPlayerState
       );
     } else {
       if (kIsWeb) {
-        if (mounted) {
+        if (mounted && gen == _initGen) {
           setState(() {
             _failed = true;
             _errorDetail = 'Local file playback is not supported on web.';
@@ -791,16 +839,31 @@ class _MarketingInlineVideoPlayerState
 
     try {
       await c.initialize();
-      if (!mounted) {
+      if (!mounted || gen != _initGen) {
+        await c.dispose();
+        return;
+      }
+      await c.setLooping(widget.looping);
+      if (widget.autoPlay) {
+        await c.play();
+      } else {
+        await c.pause();
+      }
+      if (!mounted || gen != _initGen) {
         await c.dispose();
         return;
       }
       setState(() => _controller = c);
-      await c.setLooping(true);
-      await c.play();
+      final duration = c.value.duration;
+      if (duration > Duration.zero) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted || gen != _initGen) return;
+          widget.onDuration?.call(duration);
+        });
+      }
     } catch (e) {
       await c.dispose();
-      if (!mounted) return;
+      if (!mounted || gen != _initGen) return;
       setState(() {
         _failed = true;
         _errorDetail = userFacingError(e);
@@ -810,7 +873,11 @@ class _MarketingInlineVideoPlayerState
 
   @override
   void dispose() {
-    _controller?.dispose();
+    WidgetsBinding.instance.removeObserver(this);
+    _initGen++;
+    final c = _controller;
+    _controller = null;
+    c?.dispose();
     super.dispose();
   }
 

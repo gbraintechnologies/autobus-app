@@ -19,8 +19,6 @@ class _ComposePostPageState extends State<_ComposePostPage> {
   bool _loadingAccounts = true;
   bool _generatingMeta = false;
   final Map<String, bool> _expanded = {};
-  final Map<String, bool> _tiktokReady = {};
-  Duration? _videoDuration;
 
   DigitalMarketingCampaign get _campaign => widget.campaign;
 
@@ -94,7 +92,6 @@ class _ComposePostPageState extends State<_ComposePostPage> {
     setState(() {
       if (_campaign.selectedOutlets.contains(id)) {
         _campaign.selectedOutlets.remove(id);
-        _tiktokReady.remove(id);
       } else {
         _campaign.selectedOutlets.add(id);
         _campaign.outletDetails.putIfAbsent(
@@ -103,7 +100,6 @@ class _ComposePostPageState extends State<_ComposePostPage> {
         );
       }
     });
-    _refreshVideoDuration();
   }
 
   PlatformPostDetails _detailsFor(String id) {
@@ -139,70 +135,11 @@ class _ComposePostPageState extends State<_ComposePostPage> {
       )
       .toList();
 
-  bool get _tiktokIsPhotoPost {
-    return !_campaign.selectedContents.any(
-      (c) => c.type == MarketingContentType.videos,
-    );
-  }
-
-  bool get _tiktokFormsReady {
-    for (final p in _selectedTikTok) {
-      if (_tiktokReady[p.id] != true) return false;
-    }
-    return true;
-  }
-
   bool get _canGoNext =>
       _hasSelectedContent &&
       _campaign.selectedOutlets.isNotEmpty &&
       _manualMetadataComplete() &&
-      _tiktokFormsReady &&
       !_generatingMeta;
-
-  Future<void> _refreshVideoDuration() async {
-    Duration? longest;
-    for (final c in _campaign.selectedContents) {
-      if (c.type != MarketingContentType.videos) continue;
-      final duration = await _durationOf(c);
-      if (duration == null) continue;
-      if (longest == null || duration > longest) longest = duration;
-    }
-    if (!mounted) return;
-    setState(() => _videoDuration = longest);
-  }
-
-  Future<Duration?> _durationOf(MarketingContent content) async {
-    VideoPlayerController? controller;
-    try {
-      final localPath = content.localFilePath?.trim();
-      if (!kIsWeb &&
-          localPath != null &&
-          localPath.isNotEmpty &&
-          File(localPath).existsSync()) {
-        controller = VideoPlayerController.file(File(localPath));
-      } else if (content.hasRemoteUrl) {
-        controller = VideoPlayerController.networkUrl(
-          Uri.parse(content.generatedResult!),
-        );
-      } else if (!kIsWeb &&
-          content.generatedBytes != null &&
-          content.generatedBytes!.isNotEmpty) {
-        final tempDir = await getTemporaryDirectory();
-        final file = File(
-          '${tempDir.path}${Platform.pathSeparator}tt-dur-${content.id}.mp4',
-        );
-        await file.writeAsBytes(content.generatedBytes!, flush: true);
-        controller = VideoPlayerController.file(file);
-      }
-      if (controller == null) return null;
-      await controller.initialize();
-      return controller.value.duration;
-    } catch (_) {
-      return null;
-    } finally {
-      await controller?.dispose();
-    }
-  }
 
   Future<void> _goNext() async {
     if (!_canGoNext) return;
@@ -228,6 +165,22 @@ class _ComposePostPageState extends State<_ComposePostPage> {
     }
 
     if (!mounted) return;
+    if (_selectedTikTok.isNotEmpty) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => _TikTokConsentPage(
+            campaign: _campaign,
+            tiktokIntegrations: _selectedTikTok,
+            postizIntegrations: _postizIntegrations,
+            blotatoAccounts: _blotatoAccounts,
+            usePostiz: _usePostiz,
+            useBlotato: _useBlotato,
+          ),
+        ),
+      );
+      return;
+    }
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -420,28 +373,6 @@ ${_campaign.conversationTranscript}
                         _postizTile(p),
                       ],
                     ],
-                    if (_selectedTikTok.isNotEmpty) ...[
-                      const SizedBox(height: 22),
-                      _sectionTitle('Post to TikTok'),
-                      const SizedBox(height: 8),
-                      for (final p in _selectedTikTok) ...[
-                        TikTokDirectPostForm(
-                          key: ValueKey('tt-form-${p.id}'),
-                          api: _apiService,
-                          integration: p,
-                          details: _detailsFor(p.id),
-                          isPhotoPost: _tiktokIsPhotoPost,
-                          videoDuration: _videoDuration,
-                          preview: _tiktokPreview(),
-                          onChanged: (_) => setState(() {}),
-                          onValidityChanged: (ok) {
-                            if (_tiktokReady[p.id] == ok) return;
-                            setState(() => _tiktokReady[p.id] = ok);
-                          },
-                        ),
-                        const SizedBox(height: 12),
-                      ],
-                    ],
                     const SizedBox(height: 22),
                     _sectionTitle('Captions & metadata'),
                     const SizedBox(height: 8),
@@ -522,7 +453,6 @@ ${_campaign.conversationTranscript}
         child: InkWell(
           onTap: () {
             setState(() => content.selectedForPost = !content.selectedForPost);
-            _refreshVideoDuration();
           },
           borderRadius: BorderRadius.circular(14),
           child: AnimatedContainer(
@@ -574,79 +504,6 @@ ${_campaign.conversationTranscript}
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _tiktokPreview() {
-    final media = _campaign.selectedContents
-        .where((c) => c.type != MarketingContentType.text)
-        .toList();
-    if (media.isEmpty) {
-      return Container(
-        height: 88,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: const Color(0xFFF7F5FB),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Text(
-          'Select a photo or video above to preview what will be posted.',
-          textAlign: TextAlign.center,
-          style: GoogleFonts.montserrat(fontSize: 12, color: Colors.black45),
-        ),
-      );
-    }
-    return Column(
-      children: [
-        for (final content in media.take(2))
-          Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: SizedBox(
-                height: 180,
-                width: double.infinity,
-                child: content.type == MarketingContentType.videos
-                    ? _videoPreview(content)
-                    : (_imagePreview(content) ?? _contentThumb(content)),
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-
-  Widget? _imagePreview(MarketingContent content) {
-    if (content.generatedBytes != null) {
-      return Image.memory(content.generatedBytes!, fit: BoxFit.cover);
-    }
-    if (!kIsWeb &&
-        content.localFilePath != null &&
-        File(content.localFilePath!).existsSync()) {
-      return Image.file(File(content.localFilePath!), fit: BoxFit.cover);
-    }
-    if (content.hasRemoteUrl) {
-      return Image.network(content.generatedResult!, fit: BoxFit.cover);
-    }
-    return null;
-  }
-
-  Widget _videoPreview(MarketingContent content) {
-    final ref = (content.localFilePath?.trim().isNotEmpty == true
-            ? content.localFilePath
-            : content.generatedResult)
-        ?.trim();
-    if (ref != null && ref.isNotEmpty) {
-      return ColoredBox(
-        color: Colors.black,
-        child: _MarketingInlineVideoPlayer(videoRef: ref),
-      );
-    }
-    return ColoredBox(
-      color: Colors.black87,
-      child: Center(
-        child: Icon(Icons.play_circle_fill_rounded, color: _kHeaderPurple, size: 48),
       ),
     );
   }
