@@ -166,7 +166,7 @@ class _ManageChatsState extends State<ManageChats> {
                               icon: Icons.lock_outline,
                               iconColor: Colors.amber.shade300,
                               child: Text(
-                                'An active subscription is required to link messaging channels in Chatwoot.',
+                                'Credits are required to link messaging channels.',
                                 style: GoogleFonts.montserrat(
                                   color: Colors.white.withValues(alpha: 0.88),
                                   fontSize: 12,

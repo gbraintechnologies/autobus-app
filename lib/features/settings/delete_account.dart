@@ -64,8 +64,15 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
     return const {};
   }
 
-  Future<void> _openAppleSubscriptions() async {
-    final uri = Uri.parse('https://apps.apple.com/account/subscriptions');
+  String _displayNote(String note) {
+    if (note.toLowerCase().contains('subscription')) {
+      return 'Unused credits will be removed when you delete your account.';
+    }
+    return note;
+  }
+
+  Future<void> _openApplePurchases() async {
+    final uri = Uri.parse('https://reportaproblem.apple.com');
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
@@ -349,14 +356,14 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
         const SizedBox(height: 8),
         _card(
           children: [
-            for (final note in notes) _row(note),
+            for (final note in notes) _row(_displayNote(note)),
             if (hasApple)
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
                 child: TextButton(
-                  onPressed: _openAppleSubscriptions,
+                  onPressed: _openApplePurchases,
                   child: Text(
-                    'Manage Apple subscription',
+                    'View Apple purchases',
                     style: GoogleFonts.montserrat(fontWeight: FontWeight.w600),
                   ),
                 ),
