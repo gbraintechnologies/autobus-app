@@ -6,12 +6,27 @@ import 'package:autobus/barrel.dart';
 /// - Injects Authorization headers with the current access token
 /// - Handles 401 responses by attempting token refresh
 /// - Retries the original request after successful token refresh
+/// - Clears the session and notifies [onSessionExpired] when refresh fails
 class SessionAwareHttpClient extends http.BaseClient {
   final TokenService tokenService;
   final String? baseUrl;
   final http.Client _innerClient = http.Client();
 
-  SessionAwareHttpClient({required this.tokenService, this.baseUrl});
+  /// Invoked after tokens are cleared because refresh failed (or was missing).
+  VoidCallback? onSessionExpired;
+
+  SessionAwareHttpClient({
+    required this.tokenService,
+    this.baseUrl,
+    this.onSessionExpired,
+  });
+
+  Future<void> _expireSession() async {
+    try {
+      await tokenService.clearTokens();
+    } catch (_) {}
+    onSessionExpired?.call();
+  }
 
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
@@ -27,17 +42,20 @@ class SessionAwareHttpClient extends http.BaseClient {
     // If we get a 401, attempt token refresh and retry
     if (response.statusCode == 401) {
       final refreshToken = await tokenService.getRefreshToken();
-      if (refreshToken != null) {
-        if (await _refreshToken(refreshToken)) {
-          // Token was refreshed successfully, retry the original request
-          final newAccessToken = await tokenService.getAccessToken();
-          if (newAccessToken != null) {
-            request.headers['Authorization'] = 'Bearer $newAccessToken';
-            // Clone the request to resend it
-            final clonedRequest = _cloneRequest(request);
-            response = await _innerClient.send(clonedRequest).timeout(timeout);
-          }
+      final hadSession = accessToken != null || refreshToken != null;
+
+      if (refreshToken != null && await _refreshToken(refreshToken)) {
+        final newAccessToken = await tokenService.getAccessToken();
+        if (newAccessToken != null) {
+          request.headers['Authorization'] = 'Bearer $newAccessToken';
+          final clonedRequest = _cloneRequest(request);
+          response = await _innerClient.send(clonedRequest).timeout(timeout);
+          return response;
         }
+      }
+      // Refresh missing/failed — do not leave a browseable stale session.
+      if (hadSession) {
+        await _expireSession();
       }
     }
 
@@ -113,35 +131,4 @@ class SessionAwareHttpClient extends http.BaseClient {
 
     return clonedRequest;
   }
-}
-
-/// Internal TokenModel for HTTP client use
-class _TokenModel {
-  final String accessToken;
-  final String refreshToken;
-  final String tokenType;
-  final int expiresIn;
-
-  _TokenModel({
-    required this.accessToken,
-    required this.refreshToken,
-    required this.tokenType,
-    required this.expiresIn,
-  });
-
-  factory _TokenModel.fromJson(Map<String, dynamic> json) {
-    return _TokenModel(
-      accessToken: json['access_token'] ?? '',
-      refreshToken: json['refresh_token'] ?? '',
-      tokenType: json['token_type'] ?? 'bearer',
-      expiresIn: json['expires_in'] ?? 1800,
-    );
-  }
-
-  Map<String, dynamic> toJson() => {
-    'access_token': accessToken,
-    'refresh_token': refreshToken,
-    'token_type': tokenType,
-    'expires_in': expiresIn,
-  };
 }

@@ -85,11 +85,11 @@ class _ManageReportsState extends State<ManageReports> {
               conversations['intervention_active']?.length ?? 0,
           interventions: interventions.length,
           marketingAssets:
-              (marketing['total'] as num?)?.toInt() ??
+              parseJsonInt(marketing['total']) ??
               (marketing['items'] as List?)?.length ??
               0,
           sentEmails:
-              (emails['total_returned'] as num?)?.toInt() ??
+              parseJsonInt(emails['total_returned']) ??
               (emails['emails'] as List?)?.length ??
               0,
         );

@@ -3,7 +3,7 @@ import 'package:autobus/common_design/light_screen_theme.dart';
 import 'package:autobus/common_design/widgets/app_bottom_nav.dart';
 import 'package:autobus/common_design/widgets/light_list_card.dart';
 import 'package:autobus/common_design/widgets/light_screen_scaffold.dart';
-
+import 'package:autobus/features/settings/delete_account.dart';
 import 'package:autobus/icons/home_figma_icons.dart';
 
 class Security extends StatelessWidget {
@@ -21,6 +21,12 @@ class Security extends StatelessWidget {
         );
       }),
       SecurityMenuItem("2FA", HomeFigmaIcons.twoFactor, () {}),
+      SecurityMenuItem("Delete Account", HomeFigmaIcons.delete, () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const DeleteAccountPage()),
+        );
+      }),
     ];
 
     return LightScreenScaffold(

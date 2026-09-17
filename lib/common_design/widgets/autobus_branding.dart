@@ -19,26 +19,31 @@ class AutobusWordmark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return RichText(
-      textAlign: textAlign,
-      text: TextSpan(
-        style: GoogleFonts.montserrat(
-          fontSize: fontSize,
-          fontWeight: fontWeight,
-          color: baseColor,
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      child: RichText(
+        textAlign: textAlign,
+        maxLines: 1,
+        overflow: TextOverflow.visible,
+        text: TextSpan(
+          style: GoogleFonts.montserrat(
+            fontSize: fontSize,
+            fontWeight: fontWeight,
+            color: baseColor,
+          ),
+          children: [
+            TextSpan(
+              text: "A",
+              style: TextStyle(color: accentColor),
+            ),
+            const TextSpan(text: "ut"),
+            TextSpan(
+              text: "ob",
+              style: TextStyle(color: accentColor),
+            ),
+            const TextSpan(text: "us"),
+          ],
         ),
-        children: [
-          TextSpan(
-            text: "A",
-            style: TextStyle(color: accentColor),
-          ),
-          const TextSpan(text: "ut"),
-          TextSpan(
-            text: "ob",
-            style: TextStyle(color: accentColor),
-          ),
-          const TextSpan(text: "us"),
-        ],
       ),
     );
   }

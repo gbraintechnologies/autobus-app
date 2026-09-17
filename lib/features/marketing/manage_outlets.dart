@@ -1,10 +1,6 @@
 import 'package:autobus/barrel.dart';
-import 'package:autobus/common_design/light_screen_theme.dart';
-import 'package:autobus/common_design/widgets/app_bottom_nav.dart';
-import 'package:autobus/common_design/widgets/app_screen_header.dart';
-import 'package:autobus/common_design/widgets/light_hub_card.dart';
-import 'package:autobus/icons/figma_icons.dart';
-import 'package:autobus/icons/home_figma_icons.dart';
+import 'package:autobus/features/marketing/outlet_catalog.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class ManageOutlets extends StatefulWidget {
   const ManageOutlets({super.key});
@@ -13,9 +9,11 @@ class ManageOutlets extends StatefulWidget {
   State<ManageOutlets> createState() => _ManageOutletsState();
 }
 
-class _ManageOutletsState extends State<ManageOutlets> {
+class _ManageOutletsState extends State<ManageOutlets>
+    with WidgetsBindingObserver {
   var _loading = true;
   var _busy = false;
+  var _awaitingBrowserConnect = false;
   String? _loadError;
   List<LinkedOutlet> _linked = [];
   List<OutletOption> _unlinked = OutletCatalog.all;
@@ -23,7 +21,22 @@ class _ManageOutletsState extends State<ManageOutlets> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _refreshIntegrations();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _awaitingBrowserConnect) {
+      _awaitingBrowserConnect = false;
+      _refreshIntegrations();
+    }
   }
 
   Future<void> _refreshIntegrations() async {
@@ -90,20 +103,24 @@ class _ManageOutletsState extends State<ManageOutlets> {
   Future<void> _linkOutlet(OutletOption outlet) async {
     final api = context.read<ApiService>();
     final connectSlug = outlet.connectSlug?.trim();
-    // Meta / TikTok / Google block in-app WebViews; use the device browser
-    // the same way Chatwoot WhatsApp Embedded Signup does.
-    await openPlatformConnectInBrowser(
+    // Meta / TikTok / Google block WKWebView; Safari View / Custom Tabs
+    // (YouTube-style in-app browser with an X) is allowed and stays in-app.
+    _awaitingBrowserConnect = true;
+    final closed = await openPlatformConnectInBrowser(
       context,
       label: outlet.label,
       fetchSession: () {
+        if (connectSlug == 'instagram') {
+          return api.getInstagramConnectSession();
+        }
         if (connectSlug != null && connectSlug.isNotEmpty) {
           return api.initiateSocialConnect(connectSlug);
         }
         return api.postizAutoLogin();
       },
     );
-
-    if (mounted) {
+    if (closed && mounted) {
+      _awaitingBrowserConnect = false;
       await _refreshIntegrations();
     }
   }
@@ -113,14 +130,15 @@ class _ManageOutletsState extends State<ManageOutlets> {
       context: context,
       builder: (ctx) {
         return AlertDialog(
-          backgroundColor: Colors.white,
+          backgroundColor: const Color(0xFF1A1333),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
+            side: const BorderSide(color: Color(0xFF3F1163)),
           ),
           title: Text(
             'Unlink ${item.outlet.label}?',
             style: GoogleFonts.montserrat(
-              color: Colors.black,
+              color: Colors.white,
               fontWeight: FontWeight.w600,
               fontSize: 18,
             ),
@@ -130,7 +148,7 @@ class _ManageOutletsState extends State<ManageOutlets> {
                 ? 'This removes ${item.subtitle} from Autobus. You can link it again later.'
                 : 'This removes all ${item.integrations.length} linked ${item.outlet.label} accounts. You can link again later.',
             style: GoogleFonts.montserrat(
-              color: LightScreenTheme.body,
+              color: Colors.white.withValues(alpha: 0.75),
               fontSize: 14,
               height: 1.45,
             ),
@@ -141,7 +159,7 @@ class _ManageOutletsState extends State<ManageOutlets> {
               child: Text(
                 'Cancel',
                 style: GoogleFonts.montserrat(
-                  color: LightScreenTheme.muted,
+                  color: Colors.white70,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -199,9 +217,10 @@ class _ManageOutletsState extends State<ManageOutlets> {
     if (_busy) return;
     final action = await showModalBottomSheet<String>(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFF1A1333),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        side: BorderSide(color: Color(0xFF3F1163)),
       ),
       builder: (ctx) {
         return SafeArea(
@@ -215,7 +234,7 @@ class _ManageOutletsState extends State<ManageOutlets> {
                   item.outlet.label,
                   textAlign: TextAlign.center,
                   style: GoogleFonts.montserrat(
-                    color: Colors.black,
+                    color: Colors.white,
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                   ),
@@ -226,30 +245,22 @@ class _ManageOutletsState extends State<ManageOutlets> {
                     item.subtitle,
                     textAlign: TextAlign.center,
                     style: GoogleFonts.montserrat(
-                      color: LightScreenTheme.muted,
+                      color: Colors.white54,
                       fontSize: 12,
                     ),
                   ),
                 ],
                 const SizedBox(height: 16),
                 ListTile(
-                  leading: HomeSfIcon(
-                    icon: HomeFigmaIcons.linkSocial,
-                    color: LightScreenTheme.accent,
-                    size: 22,
-                  ),
+                  leading: const Icon(Icons.link, color: Colors.white70),
                   title: Text(
                     'Link another account',
-                    style: GoogleFonts.montserrat(color: Colors.black87),
+                    style: GoogleFonts.montserrat(color: Colors.white),
                   ),
                   onTap: () => Navigator.of(ctx).pop('link'),
                 ),
                 ListTile(
-                  leading: const HomeSfIcon(
-                    icon: HomeFigmaIcons.unlink,
-                    color: Color(0xFFEF4444),
-                    size: 22,
-                  ),
+                  leading: const Icon(Icons.link_off, color: Color(0xFFEF4444)),
                   title: Text(
                     'Unlink',
                     style: GoogleFonts.montserrat(
@@ -275,182 +286,290 @@ class _ManageOutletsState extends State<ManageOutlets> {
 
   @override
   Widget build(BuildContext context) {
-    final scale = MediaQuery.sizeOf(context).width / appShellDesignWidth;
-
     return Scaffold(
-      backgroundColor: LightScreenTheme.background,
+      backgroundColor: Colors.black,
       body: Stack(
         fit: StackFit.expand,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              AppScreenHeader(
-                scale: scale,
-                title: 'Link Channel',
-                leading: AppScreenBackButton(scale: scale),
-                trailing: IconButton(
-                  onPressed: _loading || _busy ? null : _refreshIntegrations,
-                  padding: EdgeInsets.zero,
-                  constraints: BoxConstraints(
-                    minWidth: 32 * scale,
-                    minHeight: 32 * scale,
-                  ),
-                  icon: HomeSfIcon(
-                    icon: HomeFigmaIcons.refresh,
-                    color: Colors.black,
-                    size: 22 * scale.clamp(0.9, 1.0),
-                  ),
-                ),
-              ),
-              Expanded(
-                child: _loading
-                    ? Center(
-                        child: CircularProgressIndicator(
-                          color: LightScreenTheme.accent,
-                        ),
-                      )
-                    : RefreshIndicator(
-                        color: LightScreenTheme.accent,
-                        onRefresh: _refreshIntegrations,
-                        child: SingleChildScrollView(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          padding: LightScreenTheme.hubPagePadding(scale),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              if (_loadError != null) ...[
-                                Text(
-                                  _loadError!,
-                                  textAlign: TextAlign.center,
-                                  style: GoogleFonts.montserrat(
-                                    color: LightScreenTheme.warning,
-                                    fontSize: 12 * scale.clamp(0.9, 1.05),
-                                  ),
-                                ),
-                                SizedBox(height: 16 * scale),
-                              ],
-                              Text(
-                                'Select to Link a Channel',
-                                textAlign: TextAlign.center,
-                                style: LightScreenTheme.hubTitle(scale),
-                              ),
-                              SizedBox(height: 16 * scale),
-                              Text(
-                                'Connect a social account so you can publish and share from Autobus.',
-                                textAlign: TextAlign.center,
-                                style: LightScreenTheme.hubBody(scale).copyWith(
-                                  color: const Color(0xFF4E4E4E),
-                                ),
-                              ),
-                              SizedBox(height: 30 * scale),
-                              if (_unlinked.isEmpty)
-                                Padding(
-                                  padding: EdgeInsets.symmetric(
-                                    vertical: 12 * scale,
-                                  ),
-                                  child: Text(
-                                    'All available outlets are linked.',
-                                    textAlign: TextAlign.center,
-                                    style: LightScreenTheme.emptyState(scale),
-                                  ),
-                                )
-                              else
-                                _OutletGrid(
-                                  scale: scale,
-                                  children: [
-                                    for (final outlet in _unlinked)
-                                      _brandHubCard(
-                                        scale,
-                                        outlet,
-                                        onTap: _busy
-                                            ? () {}
-                                            : () => _linkOutlet(outlet),
-                                      ),
-                                  ],
-                                ),
-                              SizedBox(height: 40 * scale),
-                              Text(
-                                'Linked Outlets',
-                                style: LightScreenTheme.hubTitle(scale),
-                              ),
-                              if (_linked.isEmpty)
-                                Padding(
-                                  padding: EdgeInsets.only(top: 16 * scale),
-                                  child: Text(
-                                    'No outlets linked yet. Connect a channel above.',
-                                    textAlign: TextAlign.center,
-                                    style: LightScreenTheme.emptyState(scale),
-                                  ),
-                                )
-                              else ...[
-                                SizedBox(height: 16 * scale),
-                                _OutletGrid(
-                                  scale: scale,
-                                  children: [
-                                    for (final item in _linked)
-                                      _brandHubCard(
-                                        scale,
-                                        item.outlet,
-                                        subtitle: 'Linked successfully',
-                                        subtitleColor: const Color(0xFF659F0D),
-                                        onTap: () => _onLinkedTap(item),
-                                      ),
-                                  ],
-                                ),
-                              ],
-                            ],
-                          ),
+          const DecoratedBox(
+            decoration: ManageScreenStyle.homeDashboardBodyDecoration,
+          ),
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: [
+                      const ManageScreenBackButton(),
+                      const SizedBox(width: 18),
+                      Expanded(
+                        child: Text(
+                          'Link Social Media',
+                          style: ManageScreenStyle.headerTitleStyle(),
                         ),
                       ),
+                      if (!_loading)
+                        IconButton(
+                          onPressed: _busy ? null : _refreshIntegrations,
+                          icon: const Icon(Icons.refresh, color: Colors.white70),
+                          tooltip: 'Refresh',
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  Expanded(
+                    child: _loading
+                        ? const Center(child: AutobusLoadingIndicator(size: 32))
+                        : RefreshIndicator(
+                            onRefresh: _refreshIntegrations,
+                            color: Colors.white,
+                            child: SingleChildScrollView(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  if (_loadError != null) ...[
+                                    Text(
+                                      _loadError!,
+                                      textAlign: TextAlign.center,
+                                      style: GoogleFonts.montserrat(
+                                        color: Colors.amber.shade200,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 16),
+                                  ],
+                                  Text(
+                                    'Linked Outlets',
+                                    textAlign: TextAlign.center,
+                                    style: GoogleFonts.montserrat(
+                                      color: Colors.white,
+                                      fontSize: 19,
+                                       fontWeight: FontWeight.w500,
+                                      letterSpacing: -0.3,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Tap a linked outlet to unlink or add another account.',
+                                    textAlign: TextAlign.center,
+                                    style: GoogleFonts.montserrat(
+                                      color: Colors.white.withValues(alpha: 0.55),
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w300,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 20),
+                                  if (_linked.isEmpty)
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                      ),
+                                      child: Text(
+                                        'No outlets linked yet. Connect a channel below.',
+                                        textAlign: TextAlign.center,
+                                        style: GoogleFonts.montserrat(
+                                          color: Colors.white.withValues(
+                                            alpha: 0.55,
+                                          ),
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w300,
+                                          height: 1.45,
+                                        ),
+                                      ),
+                                    )
+                                  else
+                                    _OutletGrid(
+                                      children: [
+                                        for (final item in _linked)
+                                          _OutletCard(
+                                            label: item.outlet.label,
+                                            subtitle: item.subtitle,
+                                            icon: FaIcon(item.outlet.icon),
+                                            iconColor: item.outlet.iconColor,
+                                            isLinked: true,
+                                            onTap: () => _onLinkedTap(item),
+                                          ),
+                                      ],
+                                    ),
+                                  const SizedBox(height: 28),
+                                  Text(
+                                    'Select to Link Social Media',
+                                    textAlign: TextAlign.center,
+                                    style: GoogleFonts.montserrat(
+                                      color: Colors.white.withValues(alpha: 0.9),
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w400,
+                                      height: 1.5,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    'Instagram uses Business Login for inbox and posting. TikTok and YouTube open in a lightweight in-app browser — tap X when you are done.',
+                                    textAlign: TextAlign.center,
+                                    style: GoogleFonts.montserrat(
+                                      color: Colors.white.withValues(alpha: 0.65),
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w300,
+                                      height: 1.45,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 20),
+                                  _OutletGrid(
+                                    children: [
+                                      for (final outlet in _unlinked)
+                                        _OutletCard(
+                                          label: outlet.label,
+                                          icon: FaIcon(outlet.icon),
+                                          iconColor: outlet.iconColor,
+                                          onTap: _busy
+                                              ? () {}
+                                              : () => _linkOutlet(outlet),
+                                        ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 24),
+                                ],
+                              ),
+                            ),
+                          ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
           if (_busy)
-            ColoredBox(
-              color: Colors.black.withValues(alpha: 0.25),
-              child: Center(
-                child: CircularProgressIndicator(color: LightScreenTheme.accent),
-              ),
+            const ColoredBox(
+              color: Color(0x66000000),
+              child: Center(child: AutobusLoadingIndicator(size: 32)),
             ),
         ],
       ),
     );
   }
+}
 
-  Widget _brandHubCard(
-    double scale,
-    OutletOption outlet, {
-    required VoidCallback onTap,
-    String? subtitle,
-    Color? subtitleColor,
-  }) {
-    return LightHubCard(
-      scale: scale,
-      title: outlet.label,
-      subtitle: subtitle ?? outlet.linkSubtitle,
-      subtitleColor: subtitleColor,
-      icon: HomeFigmaIcons.linkChannel,
-      iconTileColor: outlet.tileColor,
-      iconWidget: FigmaBrandIcon(
-        asset: outlet.iconAsset,
-        fallback: outlet.icon,
-        color: Colors.white,
-        size: 22 * scale,
-      ),
-      onTap: onTap,
+class _OutletGrid extends StatelessWidget {
+  final List<Widget> children;
+
+  const _OutletGrid({required this.children});
+
+  @override
+  Widget build(BuildContext context) {
+    return GridView.count(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisCount: 2,
+      crossAxisSpacing: 16,
+      mainAxisSpacing: 16,
+      childAspectRatio: 1.12,
+      children: children,
     );
   }
 }
 
-class _OutletGrid extends StatelessWidget {
-  final double scale;
-  final List<Widget> children;
+class _OutletCard extends StatelessWidget {
+  final String label;
+  final String? subtitle;
+  final Widget icon;
+  final Color iconColor;
+  final bool isLinked;
+  final bool isDeviceShare;
+  final VoidCallback onTap;
 
-  const _OutletGrid({required this.scale, required this.children});
+  const _OutletCard({
+    required this.label,
+    required this.icon,
+    required this.iconColor,
+    required this.onTap,
+    this.subtitle,
+    this.isLinked = false,
+    this.isDeviceShare = false,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return LightHubGrid(scale: scale, children: children);
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(12, 14, 12, 10),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1A1333).withValues(alpha: 0.35),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isLinked
+                ? const Color(0xFF22C55E)
+                : isDeviceShare
+                ? const Color(0xFF25D366)
+                : const Color(0xFF3F1163),
+            width: isLinked || isDeviceShare ? 1.5 : 1,
+          ),
+        ),
+        child: Stack(
+          children: [
+            Column(
+              children: [
+                Expanded(
+                  child: Center(
+                    child: IconTheme(
+                      data: IconThemeData(color: iconColor, size: 28),
+                      child: icon,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  label,
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.montserrat(
+                    color: Colors.white.withValues(alpha: 0.88),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                if (subtitle != null && subtitle!.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle!,
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.montserrat(
+                      color: Colors.white.withValues(alpha: 0.55),
+                      fontSize: 10,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            if (isLinked)
+              const Positioned(
+                top: 0,
+                right: 0,
+                child: Icon(
+                  Icons.check_circle,
+                  color: Color(0xFF22C55E),
+                  size: 18,
+                ),
+              )
+            else if (isDeviceShare)
+              const Positioned(
+                top: 0,
+                right: 0,
+                child: Icon(
+                  Icons.smartphone,
+                  color: Color(0xFF25D366),
+                  size: 18,
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
   }
 }

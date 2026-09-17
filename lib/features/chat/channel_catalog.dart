@@ -72,25 +72,6 @@ class ChannelCatalog {
       linkSubtitle: 'Link whatsapp',
       chatwootKinds: {'whatsapp'},
     ),
-    ChannelOption(
-      label: 'SMS',
-      apiSlug: 'sms',
-      icon: FontAwesomeIcons.commentSms,
-      iconColor: Color(0xFF0EA5E9),
-      tileColor: Color(0xFF0EA5E9),
-      linkSubtitle: 'Link SMS',
-      chatwootKinds: {'sms'},
-    ),
-    ChannelOption(
-      label: 'X',
-      apiSlug: 'twitter',
-      icon: FontAwesomeIcons.xTwitter,
-      iconColor: Colors.white,
-      tileColor: Color(0xFF111827),
-      linkSubtitle: 'Coming soon',
-      chatwootKinds: {'twitter'},
-      comingSoon: true,
-    ),
   ];
 
   static ({List<LinkedChannel> linked, List<ChannelOption> unlinked}) partition(

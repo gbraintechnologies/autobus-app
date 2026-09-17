@@ -1,7 +1,9 @@
 import 'package:autobus/barrel.dart';
+import 'package:autobus/common_design/plain_ai_text.dart';
 import 'dart:developer';
 import 'package:autobus/features/chat/models/chatwoot_inbox.dart';
 import 'package:autobus/features/marketing/models/postiz_integration.dart';
+import 'package:autobus/features/marketing/tiktok_creator_info.dart';
 import 'package:autobus/features/notifications/models/app_notification.dart';
 import 'dart:io';
 import 'package:http/http.dart' as http;
@@ -24,6 +26,66 @@ class ApiService {
           ? baseUrl!
           : '${AppConfig.backendUrl}/api/v1';
 
+  Never _fail(http.Response response, String action) {
+    debugPrint('API error [$action] ${response.statusCode}: ${response.body}');
+    throw AppException.fromResponse(response, action: action);
+  }
+
+  /// FastAPI Decimal values often arrive as JSON strings like `"12.50"`.
+  static double _decodeJsonDouble(dynamic data) {
+    final direct = parseJsonDouble(data);
+    if (direct != null) return direct;
+    if (data is Map) {
+      return parseJsonDouble(
+            data['revenue'] ??
+                data['total'] ??
+                data['amount'] ??
+                data['value'] ??
+                data['total_revenue'],
+          ) ??
+          0.0;
+    }
+    return 0.0;
+  }
+
+  /// GET /api/v1/auth/account-deletion-preview
+  Future<Map<String, dynamic>> getAccountDeletionPreview() async {
+    final response = await httpClient.get(
+      Uri.parse('$baseUrl/auth/account-deletion-preview'),
+    );
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      if (data is Map<String, dynamic>) return data;
+      if (data is Map) return Map<String, dynamic>.from(data);
+    }
+    _fail(response, 'loading account deletion details');
+  }
+
+  /// POST /api/v1/auth/delete-account — permanently delete this login and linked businesses.
+  Future<Map<String, dynamic>> deleteMyAccount({required String password}) async {
+    final response = await httpClient.post(
+      Uri.parse('$baseUrl/auth/delete-account'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({'password': password}),
+    );
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      if (data is Map<String, dynamic>) return data;
+      if (data is Map) return Map<String, dynamic>.from(data);
+      return {'status': 'ok'};
+    }
+    if (response.statusCode == 403) {
+      throw AppException.user(
+        'Incorrect PIN. Try again.',
+        kind: AppErrorKind.forbidden,
+        action: 'deleting your account',
+        statusCode: response.statusCode,
+        debugDetail: response.body,
+      );
+    }
+    _fail(response, 'deleting your account');
+  }
+
   /// Get current user profile
   Future<Map<String, dynamic>> getUserProfile() async {
     try {
@@ -41,10 +103,32 @@ class ApiService {
       } else if (response.statusCode == 401) {
         throw Exception('Session expired');
       } else {
-        throw Exception('Failed to fetch user profile: ${response.statusCode}');
+        _fail(response, 'loading your profile');
       }
     } catch (e) {
-      throw Exception('Error fetching user profile: $e');
+      throw AppException.fromCause(e, action: 'loading your profile');
+    }
+  }
+
+  /// PUT /api/v1/user/me/sender-email — From address for outbound customer email.
+  Future<Map<String, dynamic>> updateSenderEmail({
+    required String senderEmail,
+  }) async {
+    try {
+      final response = await httpClient.put(
+        Uri.parse('$baseUrl/user/me/sender-email'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'sender_email': senderEmail.trim()}),
+      );
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      }
+      if (response.statusCode == 401) {
+        throw Exception('Session expired');
+      }
+      _fail(response, 'saving your from email');
+    } catch (e) {
+      throw AppException.fromCause(e, action: 'saving your from email');
     }
   }
 
@@ -71,7 +155,7 @@ class ApiService {
     }
   }
 
-  /// GET /api/v1/credits/me — JWT; per-category credit balances.
+  /// GET /api/v1/credits/me — JWT; wallet + per-feature remaining actions.
   Future<Map<String, dynamic>?> getMyCredits() async {
     try {
       final response = await httpClient.get(Uri.parse('$baseUrl/credits/me'));
@@ -85,6 +169,42 @@ class ApiService {
       debugPrint('getMyCredits: $e');
       return null;
     }
+  }
+
+  Future<List<Map<String, dynamic>>> getCreditPacks() async {
+    final response = await httpClient.get(Uri.parse('$baseUrl/credits/packs'));
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      final packs = data is Map ? data['packs'] : data;
+      if (packs is List) {
+        return packs
+            .whereType<Map>()
+            .map((e) => Map<String, dynamic>.from(e))
+            .toList();
+      }
+    }
+    return [];
+  }
+
+  Future<Map<String, dynamic>?> checkoutCreditPack({
+    required String packId,
+    String? email,
+  }) async {
+    final body = <String, dynamic>{
+      'pack_id': packId,
+      if (email != null && email.trim().isNotEmpty) 'email': email.trim(),
+    };
+    final response = await httpClient.post(
+      Uri.parse('$baseUrl/credits/checkout'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode(body),
+    );
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final data = json.decode(response.body);
+      if (data is Map) return Map<String, dynamic>.from(data);
+    }
+    _fail(response, 'starting credit checkout');
+    return null;
   }
 
   /// GET /api/v1/subscription/me — JWT; current user's subscription snapshot.
@@ -120,19 +240,37 @@ class ApiService {
     try {
       final data = json.decode(response.body);
       if (data is! Map) {
-        throw Exception('Unexpected cancel response');
+        throw AppException(kind: AppErrorKind.unexpected, action: 'canceling subscription');
       }
       map = Map<String, dynamic>.from(data);
     } catch (_) {
-      throw Exception(
-        'Cancel failed (${response.statusCode}): ${response.body}',
-      );
+      _fail(response, 'canceling subscription');
     }
     if (response.statusCode != 200) {
-      final detail = map['detail']?.toString() ?? response.body;
-      throw Exception(detail);
+      _fail(response, 'canceling subscription');
     }
     return map;
+  }
+
+  /// POST /api/v1/subscription/me/enroll-free — JWT.
+  /// Grants the complimentary Free plan (iOS / App Review).
+  Future<bool> enrollIosFreePlan() async {
+    final response = await httpClient.post(
+      Uri.parse('$baseUrl/subscription/me/enroll-free'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({}),
+    );
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      try {
+        final data = json.decode(response.body);
+        if (data is Map && data['success'] == false) return false;
+      } catch (_) {}
+      return true;
+    }
+    debugPrint(
+      'enrollIosFreePlan: failed (${response.statusCode}) ${response.body}',
+    );
+    return false;
   }
 
   /// POST /api/v1/subscription/me/upgrade — JWT.
@@ -179,13 +317,11 @@ class ApiService {
       } else if (response.statusCode == 401) {
         throw Exception('Session expired - unauthorized');
       } else {
-        throw Exception(
-          'Failed to fetch rides: ${response.statusCode} - ${response.body}',
-        );
+        _fail(response, 'loading rides');
       }
     } catch (e) {
       debugPrint('Error fetching rides: $e');
-      throw Exception('Error fetching rides: $e');
+      throw AppException.fromCause(e, action: 'loading rides');
     }
   }
 
@@ -203,10 +339,10 @@ class ApiService {
       } else if (response.statusCode == 404) {
         throw Exception('Ride not found');
       } else {
-        throw Exception('Failed to fetch ride details: ${response.statusCode}');
+        _fail(response, 'loading ride details');
       }
     } catch (e) {
-      throw Exception('Error fetching ride details: $e');
+      throw AppException.fromCause(e, action: 'loading ride details');
     }
   }
 
@@ -234,13 +370,12 @@ class ApiService {
       } else if (response.statusCode == 401) {
         throw Exception('Session expired');
       } else if (response.statusCode == 400) {
-        final error = json.decode(response.body);
-        throw Exception(error['detail'] ?? 'Invalid booking details');
+        _fail(response, 'creating booking');
       } else {
-        throw Exception('Failed to create booking: ${response.statusCode}');
+        _fail(response, 'creating booking');
       }
     } catch (e) {
-      throw Exception('Error creating booking: $e');
+      throw AppException.fromCause(e, action: 'creating booking');
     }
   }
 
@@ -258,10 +393,10 @@ class ApiService {
       } else if (response.statusCode == 401) {
         throw Exception('Session expired');
       } else {
-        throw Exception('Failed to fetch bookings: ${response.statusCode}');
+        _fail(response, 'loading bookings');
       }
     } catch (e) {
-      throw Exception('Error fetching bookings: $e');
+      throw AppException.fromCause(e, action: 'loading bookings');
     }
   }
 
@@ -279,10 +414,10 @@ class ApiService {
       } else if (response.statusCode == 404) {
         throw Exception('Booking not found');
       } else {
-        throw Exception('Failed to cancel booking: ${response.statusCode}');
+        _fail(response, 'canceling booking');
       }
     } catch (e) {
-      throw Exception('Error canceling booking: $e');
+      throw AppException.fromCause(e, action: 'canceling booking');
     }
   }
 
@@ -313,12 +448,13 @@ class ApiService {
     String? linkedinUrl,
     String? twitterUrl,
     String? instagramUrl,
+    String? currencyCode,
   }) async {
     try {
       final body = <String, dynamic>{};
       if (fullname != null) body['fullname'] = fullname;
       if (email != null) body['email'] = email;
-      if (phone != null) body['phone'] = phone;
+      if (phone != null) body['phone'] = phone.isEmpty ? null : phone;
       if (profilePictureUrl != null) {
         body['profile_picture_url'] = profilePictureUrl;
       }
@@ -348,6 +484,7 @@ class ApiService {
       if (linkedinUrl != null) body['linkedin_url'] = linkedinUrl;
       if (twitterUrl != null) body['twitter_url'] = twitterUrl;
       if (instagramUrl != null) body['instagram_url'] = instagramUrl;
+      if (currencyCode != null) body['currency_code'] = currencyCode;
 
       final response = await httpClient.put(
         Uri.parse('$baseUrl/user/me'),
@@ -360,13 +497,12 @@ class ApiService {
       } else if (response.statusCode == 401) {
         throw Exception('Session expired');
       } else if (response.statusCode == 400) {
-        final error = json.decode(response.body);
-        throw Exception(error['detail'] ?? 'Invalid profile data');
+        _fail(response, 'updating profile');
       } else {
-        throw Exception('Failed to update profile: ${response.statusCode}');
+        _fail(response, 'updating profile');
       }
     } catch (e) {
-      throw Exception('Error updating profile: $e');
+      throw AppException.fromCause(e, action: 'updating profile');
     }
   }
 
@@ -398,9 +534,7 @@ class ApiService {
     } else if (response.statusCode == 401) {
       throw Exception('Session expired');
     }
-    throw Exception(
-      'Failed to update notification settings: ${response.statusCode} ${response.body}',
-    );
+    _fail(response, 'updating notification settings');
   }
 
   /// Patch a specific user's notification settings by id.
@@ -431,9 +565,7 @@ class ApiService {
     } else if (response.statusCode == 401) {
       throw Exception('Session expired');
     }
-    throw Exception(
-      'Failed to update notification settings: ${response.statusCode} ${response.body}',
-    );
+    _fail(response, 'updating notification settings');
   }
 
   /// Patch current user's profile image URL only.
@@ -457,9 +589,7 @@ class ApiService {
     } else if (response.statusCode == 401) {
       throw Exception('Session expired');
     }
-    throw Exception(
-      'Failed to update profile image: ${response.statusCode} ${response.body}',
-    );
+    _fail(response, 'updating profile image');
   }
 
   /// Patch a specific user's profile image URL by id.
@@ -483,9 +613,7 @@ class ApiService {
     } else if (response.statusCode == 401) {
       throw Exception('Session expired');
     }
-    throw Exception(
-      'Failed to update profile image: ${response.statusCode} ${response.body}',
-    );
+    _fail(response, 'updating profile image');
   }
 
   /// Upload a file (image/doc) to storage service.
@@ -519,12 +647,12 @@ class ApiService {
       final data = jsonDecode(response.body);
       final url = (data['file_url'] ?? data['url'] ?? '').toString();
       if (url.isEmpty) {
-        throw Exception('Upload succeeded but no file_url returned');
+        throw AppException(kind: AppErrorKind.unexpected, action: 'uploading file');
       }
       return url;
     }
 
-    throw Exception('Upload failed: ${response.statusCode} ${response.body}');
+    _fail(response, 'uploading file');
   }
 
   /// Same as [uploadFile] but from bytes (e.g. web `FilePicker` with `withData: true`).
@@ -551,12 +679,12 @@ class ApiService {
       final data = jsonDecode(response.body);
       final url = (data['file_url'] ?? data['url'] ?? '').toString();
       if (url.isEmpty) {
-        throw Exception('Upload succeeded but no file_url returned');
+        throw AppException(kind: AppErrorKind.unexpected, action: 'uploading file');
       }
       return url;
     }
 
-    throw Exception('Upload failed: ${response.statusCode} ${response.body}');
+    _fail(response, 'uploading file');
   }
 
   /// List available files in storage (typically AI training docs).
@@ -593,9 +721,7 @@ class ApiService {
     if (response.statusCode == 401) {
       throw Exception('Session expired');
     }
-    throw Exception(
-      'Failed to list storage files: ${response.statusCode} ${response.body}',
-    );
+    _fail(response, 'loading files');
   }
 
   /// List files for the authenticated user under:
@@ -628,9 +754,7 @@ class ApiService {
     if (response.statusCode == 401) {
       throw Exception('Session expired');
     }
-    throw Exception(
-      'Failed to list my storage files: ${response.statusCode} ${response.body}',
-    );
+    _fail(response, 'loading files');
   }
 
   /// Download a user's file.
@@ -665,9 +789,7 @@ class ApiService {
     if (response.statusCode == 401) {
       throw Exception('Session expired');
     }
-    throw Exception(
-      'Failed to delete file: ${response.statusCode} ${response.body}',
-    );
+    _fail(response, 'deleting file');
   }
 
   /// Preview extractable text for an intelligence file (Word/PDF/etc.).
@@ -689,21 +811,19 @@ class ApiService {
         final empty = decoded['empty'] == true;
         final text = (decoded['text'] ?? '').toString();
         if (empty || text.trim().isEmpty) {
-          throw Exception(
+          throw AppException.user(
             'No readable text could be extracted from this file.',
           );
         }
         final truncated = decoded['truncated'] == true;
         return truncated ? '$text\n\n…' : text;
       }
-      throw Exception('Unexpected preview response');
+      throw AppException(kind: AppErrorKind.unexpected, action: 'previewing file');
     }
     if (response.statusCode == 401) {
       throw Exception('Session expired');
     }
-    throw Exception(
-      'Failed to preview file: ${response.statusCode} ${response.body}',
-    );
+    _fail(response, 'previewing file');
   }
 
   /// Clear all intelligence files + document/website vectors.
@@ -730,9 +850,125 @@ class ApiService {
     if (response.statusCode == 401) {
       throw Exception('Session expired');
     }
-    throw Exception(
-      'Failed to clear intelligence: ${response.statusCode} ${response.body}',
+    _fail(response, 'clearing intelligence');
+  }
+
+  /// Owner copilot chat grounded in this business's live setup.
+  ///
+  /// Backend: `POST /api/v1/intelligence/chat` (JWT)
+  Future<String> sendIntelligenceChat(String message) async {
+    final trimmed = message.trim();
+    if (trimmed.isEmpty) {
+      throw AppException.user('Please type a message.');
+    }
+    final response = await httpClient.post(
+      Uri.parse('$baseUrl/intelligence/chat'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({'message': trimmed}),
     );
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      if (data is Map) {
+        final reply = (data['message'] ??
+                data['reply'] ??
+                data['response'] ??
+                data['text'] ??
+                '')
+            .toString();
+        return stripAiMarkdown(reply);
+      }
+      throw AppException(kind: AppErrorKind.unexpected, action: 'talking to your AI');
+    }
+    if (response.statusCode == 401) {
+      throw Exception('Session expired');
+    }
+    _fail(response, 'talking to your AI');
+  }
+
+  /// POST /api/v1/intelligence/agent — owner agent turn (tools, asks, confirms).
+  Future<Map<String, dynamic>> sendAgentTurn({
+    String? message,
+    List<Map<String, dynamic>> attachments = const [],
+    String? confirmId,
+    bool? confirmed,
+    String? askId,
+  }) async {
+    final body = <String, dynamic>{};
+    final trimmed = message?.trim();
+    if (trimmed != null && trimmed.isNotEmpty) body['message'] = trimmed;
+    if (attachments.isNotEmpty) body['attachments'] = attachments;
+    if (confirmId != null && confirmId.isNotEmpty) {
+      body['confirm_id'] = confirmId;
+    }
+    if (confirmed != null) body['confirmed'] = confirmed;
+    if (askId != null && askId.isNotEmpty) body['ask_id'] = askId;
+
+    if (body.isEmpty) {
+      throw AppException.user('Please type a message or attach a file.');
+    }
+
+    final response = await httpClient
+        .post(
+          Uri.parse('$baseUrl/intelligence/agent'),
+          headers: {'Content-Type': 'application/json'},
+          body: json.encode(body),
+        )
+        .timeout(
+          const Duration(minutes: 11),
+          onTimeout: () => throw AppException(
+            kind: AppErrorKind.timeout,
+            action: 'talking to your AI',
+          ),
+        );
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      if (data is Map<String, dynamic>) return data;
+      if (data is Map) return Map<String, dynamic>.from(data);
+      throw AppException(
+        kind: AppErrorKind.unexpected,
+        action: 'talking to your AI',
+      );
+    }
+    if (response.statusCode == 401) {
+      throw Exception('Session expired');
+    }
+    _fail(response, 'talking to your AI');
+  }
+
+  /// GET /api/v1/intelligence/onboarding — questions + saved business profile.
+  Future<Map<String, dynamic>> getBusinessOnboarding() async {
+    final response = await httpClient.get(
+      Uri.parse('$baseUrl/intelligence/onboarding'),
+    );
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      if (data is Map<String, dynamic>) return data;
+      if (data is Map) return Map<String, dynamic>.from(data);
+    }
+    if (response.statusCode == 401) {
+      throw Exception('Session expired');
+    }
+    _fail(response, 'loading your business questionnaire');
+  }
+
+  /// POST /api/v1/intelligence/onboarding — save answers and index into Qdrant.
+  Future<Map<String, dynamic>> submitBusinessOnboarding(
+    Map<String, String> answers,
+  ) async {
+    final response = await httpClient.post(
+      Uri.parse('$baseUrl/intelligence/onboarding'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({'answers': answers}),
+    );
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final data = json.decode(response.body);
+      if (data is Map<String, dynamic>) return data;
+      if (data is Map) return Map<String, dynamic>.from(data);
+    }
+    if (response.statusCode == 401) {
+      throw Exception('Session expired');
+    }
+    _fail(response, 'saving your business profile');
   }
 
   /// Download a user's storage file bytes (authenticated).
@@ -748,9 +984,7 @@ class ApiService {
     if (response.statusCode == 401) {
       throw Exception('Session expired');
     }
-    throw Exception(
-      'Failed to download file: ${response.statusCode} ${response.body}',
-    );
+    _fail(response, 'downloading file');
   }
 
   /// Upload a file to the authenticated user's folder.
@@ -786,14 +1020,12 @@ class ApiService {
         return Map<String, dynamic>.from(decoded.first as Map);
       }
       if (decoded is Map<String, dynamic>) return decoded;
-      throw Exception('Upload succeeded but response shape was unexpected');
+      throw AppException(kind: AppErrorKind.unexpected, action: 'uploading file');
     }
     if (response.statusCode == 401) {
       throw Exception('Session expired');
     }
-    throw Exception(
-      'Failed to upload file: ${response.statusCode} ${response.body}',
-    );
+    _fail(response, 'uploading file');
   }
 
   /// Upload one document for RAG indexing (storage + optional Qdrant).
@@ -848,14 +1080,12 @@ class ApiService {
       final decoded = jsonDecode(response.body);
       if (decoded is Map<String, dynamic>) return decoded;
       if (decoded is Map) return Map<String, dynamic>.from(decoded);
-      throw Exception('Upload succeeded but response shape was unexpected');
+      throw AppException(kind: AppErrorKind.unexpected, action: 'uploading file');
     }
     if (response.statusCode == 401) {
       throw Exception('Session expired');
     }
-    throw Exception(
-      'Failed to upload RAG document: ${response.statusCode} ${response.body}',
-    );
+    _fail(response, 'uploading document');
   }
 
   /// Scrape a public website and index its text into RAG.
@@ -888,14 +1118,12 @@ class ApiService {
       final decoded = jsonDecode(response.body);
       if (decoded is Map<String, dynamic>) return decoded;
       if (decoded is Map) return Map<String, dynamic>.from(decoded);
-      throw Exception('URL index started but response shape was unexpected');
+      throw AppException(kind: AppErrorKind.unexpected, action: 'indexing website');
     }
     if (response.statusCode == 401) {
       throw Exception('Session expired');
     }
-    throw Exception(
-      'Failed to index website: ${response.statusCode} ${response.body}',
-    );
+    _fail(response, 'indexing website');
   }
 
   /// Poll indexing progress for an async file or URL upload.
@@ -916,7 +1144,7 @@ class ApiService {
       final decoded = jsonDecode(response.body);
       if (decoded is Map<String, dynamic>) return decoded;
       if (decoded is Map) return Map<String, dynamic>.from(decoded);
-      throw Exception('Unexpected job status response shape');
+      throw AppException(kind: AppErrorKind.unexpected, action: 'checking indexing status');
     }
     if (response.statusCode == 401) {
       throw Exception('Session expired');
@@ -924,9 +1152,7 @@ class ApiService {
     if (response.statusCode == 404) {
       throw Exception('Indexing job not found');
     }
-    throw Exception(
-      'Failed to get RAG job status: ${response.statusCode} ${response.body}',
-    );
+    _fail(response, 'checking indexing status');
   }
 
   static String? ragIndexJobId(Map<String, dynamic> startResponse) {
@@ -967,10 +1193,10 @@ class ApiService {
       } else if (response.statusCode == 401) {
         throw Exception('Session expired');
       } else {
-        throw Exception('Failed to search rides: ${response.statusCode}');
+        _fail(response, 'searching rides');
       }
     } catch (e) {
-      throw Exception('Error searching rides: $e');
+      throw AppException.fromCause(e, action: 'searching rides');
     }
   }
 
@@ -1084,8 +1310,37 @@ class ApiService {
     if (response.statusCode == 200 && map?['success'] == true) {
       return true;
     }
-    final detail = map?['detail']?.toString() ?? map?['message']?.toString();
-    throw Exception(detail ?? 'Apple purchase verification failed (${response.statusCode})');
+    _fail(response, 'verifying purchase');
+  }
+
+  /// POST /api/v1/iap/google/verify — Google Play purchase token.
+  Future<bool> verifyGooglePlayPurchase({
+    required String purchaseToken,
+    required String productId,
+    String? packageName,
+    String? orderId,
+  }) async {
+    final body = <String, dynamic>{
+      'purchase_token': purchaseToken,
+      'product_id': productId,
+      if (packageName != null && packageName.trim().isNotEmpty)
+        'package_name': packageName.trim(),
+      if (orderId != null && orderId.trim().isNotEmpty) 'order_id': orderId.trim(),
+    };
+    final response = await httpClient.post(
+      Uri.parse('$baseUrl/iap/google/verify'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode(body),
+    );
+    Map<String, dynamic>? map;
+    try {
+      final data = json.decode(response.body);
+      if (data is Map) map = Map<String, dynamic>.from(data);
+    } catch (_) {}
+    if (response.statusCode == 200 && map?['success'] == true) {
+      return true;
+    }
+    _fail(response, 'verifying purchase');
   }
 
   Future<List<SubscriptionPlan>> getSubscriptionPlans() async {
@@ -1112,8 +1367,7 @@ class ApiService {
       Uri.parse('$baseUrl/payment/revenue'),
     );
     if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      return (data as num).toDouble();
+      return _decodeJsonDouble(jsonDecode(response.body));
     }
     return 0.0;
   }
@@ -1126,8 +1380,7 @@ class ApiService {
       Uri.parse('$baseUrl/payment/revenue/$key'),
     );
     if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      return (data as num).toDouble();
+      return _decodeJsonDouble(jsonDecode(response.body));
     }
     return 0.0;
   }
@@ -1253,9 +1506,7 @@ class ApiService {
     if (response.statusCode == 200 || response.statusCode == 201) {
       return jsonDecode(response.body) as Map<String, dynamic>;
     }
-    throw Exception(
-      'Failed to publish: ${response.statusCode} ${response.body}',
-    );
+    _fail(response, 'publishing post');
   }
 
   Future<String> generateAgentContent({
@@ -1274,19 +1525,55 @@ class ApiService {
     );
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      if (data is String) return data;
-      if (data is Map) {
-        return (data['response'] ?? data['message'] ?? data['reply'] ?? '')
+      final String raw;
+      if (data is String) {
+        raw = data;
+      } else if (data is Map) {
+        raw = (data['response'] ?? data['message'] ?? data['reply'] ?? '')
             .toString();
+      } else {
+        raw = data.toString();
       }
-      return data.toString();
+      return stripAiMarkdown(raw);
     }
-    throw Exception('Agent error: ${response.statusCode}');
+    _fail(response, 'sending your message');
+  }
+
+  /// POST /api/v1/nlu/detect — classify intent without running NLU handlers.
+  Future<Map<String, dynamic>> detectNluIntent({
+    required String message,
+    String? currentIntent,
+    List<Map<String, String>>? conversation,
+  }) async {
+    final response = await httpClient.post(
+      Uri.parse('$baseUrl/nlu/detect'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'message': message,
+        if (currentIntent != null && currentIntent.trim().isNotEmpty)
+          'current_intent': currentIntent.trim(),
+        if (conversation != null) 'conversation': conversation,
+      }),
+    );
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data is Map<String, dynamic>) return data;
+      if (data is Map) return Map<String, dynamic>.from(data);
+      throw AppException(kind: AppErrorKind.unexpected, action: 'understanding your message');
+    }
+    if (response.statusCode == 401) {
+      throw Exception('Session expired');
+    }
+    _fail(response, 'understanding your message');
   }
 
   Future<Map<String, dynamic>> generateImageMedia({
     required String prompt,
     String? userId,
+    String? referenceBase64,
+    String? referenceMimeType,
+    String? referenceUrl,
+    List<Map<String, String>>? references,
     Duration timeout = const Duration(minutes: 11),
   }) async {
     final response = await httpClient
@@ -1296,25 +1583,28 @@ class ApiService {
           body: jsonEncode({
             'prompt': prompt,
             if (userId != null && userId.trim().isNotEmpty) 'user_id': userId,
+            if (referenceBase64 != null && referenceBase64.trim().isNotEmpty)
+              'reference_base64': referenceBase64,
+            if (referenceMimeType != null && referenceMimeType.trim().isNotEmpty)
+              'reference_mime_type': referenceMimeType,
+            if (referenceUrl != null && referenceUrl.trim().isNotEmpty)
+              'reference_url': referenceUrl,
+            if (references != null && references.isNotEmpty) 'references': references,
           }),
         )
         .timeout(
           timeout,
-          onTimeout: () => throw Exception(
-            'Image generation timed out. The server may still be processing; try again.',
-          ),
+          onTimeout: () => throw AppException(kind: AppErrorKind.timeout, action: 'creating media'),
         );
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       if (data is Map<String, dynamic>) return data;
       if (data is Map) return Map<String, dynamic>.from(data);
-      throw Exception('Image generation returned an unexpected response');
+      throw AppException(kind: AppErrorKind.unexpected, action: 'creating media');
     }
 
-    throw Exception(
-      'Image generation failed: ${response.statusCode} ${response.body}',
-    );
+    _fail(response, 'creating media');
   }
 
   /// [store] When true, the backend downloads the Veo output and uploads a public MP4 URL
@@ -1323,6 +1613,10 @@ class ApiService {
     required String prompt,
     String? userId,
     bool store = false,
+    String? referenceBase64,
+    String? referenceMimeType,
+    String? referenceUrl,
+    List<Map<String, String>>? references,
     Duration timeout = const Duration(minutes: 11),
   }) async {
     final uri = Uri.parse(
@@ -1335,25 +1629,28 @@ class ApiService {
           body: jsonEncode({
             'prompt': prompt,
             if (userId != null && userId.trim().isNotEmpty) 'user_id': userId,
+            if (referenceBase64 != null && referenceBase64.trim().isNotEmpty)
+              'reference_base64': referenceBase64,
+            if (referenceMimeType != null && referenceMimeType.trim().isNotEmpty)
+              'reference_mime_type': referenceMimeType,
+            if (referenceUrl != null && referenceUrl.trim().isNotEmpty)
+              'reference_url': referenceUrl,
+            if (references != null && references.isNotEmpty) 'references': references,
           }),
         )
         .timeout(
           timeout,
-          onTimeout: () => throw Exception(
-            'Video generation timed out. The server may still be processing; try again.',
-          ),
+          onTimeout: () => throw AppException(kind: AppErrorKind.timeout, action: 'creating media'),
         );
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       if (data is Map<String, dynamic>) return data;
       if (data is Map) return Map<String, dynamic>.from(data);
-      throw Exception('Video generation returned an unexpected response');
+      throw AppException(kind: AppErrorKind.unexpected, action: 'creating media');
     }
 
-    throw Exception(
-      'Video generation failed: ${response.statusCode} ${response.body}',
-    );
+    _fail(response, 'creating media');
   }
 
   /// GET /api/v1/user/me/notifications — paged list for the current user.
@@ -1392,9 +1689,7 @@ class ApiService {
     } else if (response.statusCode == 401) {
       throw Exception('Session expired');
     }
-    throw Exception(
-      'Failed to fetch notifications: ${response.statusCode} ${response.body}',
-    );
+    _fail(response, 'loading notifications');
   }
 
   Future<List<AppNotification>> getUnreadNotifications({
@@ -1431,13 +1726,11 @@ class ApiService {
       if (data is Map) {
         return AppNotification.fromJson(Map<String, dynamic>.from(data));
       }
-      throw Exception('Invalid mark-as-read response');
+      throw AppException(kind: AppErrorKind.unexpected, action: 'updating notification');
     } else if (response.statusCode == 401) {
       throw Exception('Session expired');
     }
-    throw Exception(
-      'Failed to mark notification as read: ${response.statusCode} ${response.body}',
-    );
+    _fail(response, 'updating notification');
   }
 
   /// GET /api/v1/social/postiz/integrations — connected Postiz channels.
@@ -1471,11 +1764,16 @@ class ApiService {
       } else {
         return [];
       }
-      return raw
-          .whereType<Map>()
-          .map((e) => PostizIntegration.fromJson(Map<String, dynamic>.from(e)))
-          .where((i) => i.isActive)
-          .toList();
+      final parsed = <PostizIntegration>[];
+      for (final row in raw) {
+        if (row is! Map) continue;
+        try {
+          parsed.add(
+            PostizIntegration.fromJson(Map<String, dynamic>.from(row)),
+          );
+        } catch (_) {}
+      }
+      return parsed.where((i) => i.isActive).toList();
     }
     if (response.statusCode == 401) {
       throw Exception('Session expired');
@@ -1484,17 +1782,14 @@ class ApiService {
     if (response.statusCode == 404) {
       return [];
     }
-    throw Exception(
-      _httpDetailMessage(response.body) ??
-          'Could not load linked social media (${response.statusCode})',
-    );
+    _fail(response, 'loading linked social media');
   }
 
   /// DELETE /api/v1/social/postiz/integrations/{id} — unlink a Postiz channel.
   Future<void> deletePostizIntegration(String integrationId) async {
     final id = integrationId.trim();
     if (id.isEmpty) {
-      throw Exception('Missing integration id');
+      throw AppException(kind: AppErrorKind.unexpected, action: 'disconnecting outlet');
     }
     final response = await httpClient.delete(
       Uri.parse(
@@ -1510,17 +1805,14 @@ class ApiService {
     if (response.statusCode == 404) {
       return;
     }
-    throw Exception(
-      _httpDetailMessage(response.body) ??
-          'Could not unlink outlet (${response.statusCode})',
-    );
+    _fail(response, 'disconnecting outlet');
   }
 
   /// DELETE /api/v1/instagram/accounts/{id} — unlink Autobus Instagram account.
   Future<void> deleteInstagramAccount(String accountId) async {
     final id = accountId.trim();
     if (id.isEmpty) {
-      throw Exception('Missing Instagram account id');
+      throw AppException(kind: AppErrorKind.unexpected, action: 'connecting Instagram');
     }
     final response = await httpClient.delete(
       Uri.parse('$baseUrl/instagram/accounts/${Uri.encodeComponent(id)}'),
@@ -1534,17 +1826,14 @@ class ApiService {
     if (response.statusCode == 404) {
       return;
     }
-    throw Exception(
-      _httpDetailMessage(response.body) ??
-          'Could not unlink Instagram (${response.statusCode})',
-    );
+    _fail(response, 'disconnecting Instagram');
   }
 
   /// DELETE /api/v1/whatsapp/accounts/{id} — unlink Autobus WhatsApp account.
   Future<void> deleteWhatsAppAccount(String accountId) async {
     final id = accountId.trim();
     if (id.isEmpty) {
-      throw Exception('Missing WhatsApp account id');
+      throw AppException(kind: AppErrorKind.unexpected, action: 'connecting WhatsApp');
     }
     final response = await httpClient.delete(
       Uri.parse('$baseUrl/whatsapp/accounts/${Uri.encodeComponent(id)}'),
@@ -1558,10 +1847,7 @@ class ApiService {
     if (response.statusCode == 404) {
       return;
     }
-    throw Exception(
-      _httpDetailMessage(response.body) ??
-          'Could not unlink WhatsApp (${response.statusCode})',
-    );
+    _fail(response, 'disconnecting WhatsApp');
   }
 
   /// POST /api/v1/social/postiz/auto-login — Postiz LOCAL login + integrations URL.
@@ -1580,15 +1866,12 @@ class ApiService {
           Map<String, dynamic>.from(data),
         );
       }
-      throw Exception('Invalid Postiz auto-login response');
+      throw AppException(kind: AppErrorKind.unexpected, action: 'connecting Postiz');
     }
     if (response.statusCode == 401) {
       throw Exception('Session expired');
     }
-    throw Exception(
-      _httpDetailMessage(response.body) ??
-          'Postiz sign-in failed (${response.statusCode})',
-    );
+    _fail(response, 'connecting Postiz');
   }
 
   /// POST /api/v1/social/postiz/posts — create or schedule via Postiz Public API.
@@ -1618,17 +1901,115 @@ class ApiService {
     if (response.statusCode == 401) {
       throw Exception('Session expired');
     }
-    throw Exception(
-      _httpDetailMessage(response.body) ??
-          'Postiz publish failed (${response.statusCode})',
+    _fail(response, 'publishing post');
+  }
+
+  /// GET /api/v1/social/postiz/tiktok/creator-info
+  Future<TikTokCreatorInfo> getTikTokCreatorInfo(String integrationId) async {
+    final id = integrationId.trim();
+    final response = await httpClient.get(
+      Uri.parse('$baseUrl/social/postiz/tiktok/creator-info').replace(
+        queryParameters: {'integration_id': id},
+      ),
     );
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data is Map<String, dynamic>) return TikTokCreatorInfo.fromJson(data);
+      if (data is Map) {
+        return TikTokCreatorInfo.fromJson(Map<String, dynamic>.from(data));
+      }
+      throw AppException(kind: AppErrorKind.unexpected, action: 'loading TikTok account');
+    }
+    if (response.statusCode == 401) {
+      throw Exception('Session expired');
+    }
+    _fail(response, 'loading TikTok account');
+  }
+
+  /// GET /api/v1/social/postiz/tiktok/publish-status
+  Future<TikTokPublishStatus> getTikTokPublishStatus({
+    required String integrationId,
+    String? publishId,
+  }) async {
+    final params = <String, String>{'integration_id': integrationId.trim()};
+    final pid = publishId?.trim() ?? '';
+    if (pid.isNotEmpty) params['publish_id'] = pid;
+    final response = await httpClient.get(
+      Uri.parse('$baseUrl/social/postiz/tiktok/publish-status').replace(
+        queryParameters: params,
+      ),
+    );
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data is Map<String, dynamic>) return TikTokPublishStatus.fromJson(data);
+      if (data is Map) {
+        return TikTokPublishStatus.fromJson(Map<String, dynamic>.from(data));
+      }
+      throw AppException(kind: AppErrorKind.unexpected, action: 'checking TikTok post');
+    }
+    if (response.statusCode == 401) {
+      throw Exception('Session expired');
+    }
+    _fail(response, 'checking TikTok post');
+  }
+
+  /// GET /api/v1/social/postiz/posts — recent Postiz posts for publish status.
+  Future<List<Map<String, dynamic>>> listPostizPosts({
+    String? startDate,
+    String? endDate,
+  }) async {
+    final params = <String, String>{};
+    if (startDate != null && startDate.trim().isNotEmpty) {
+      params['start_date'] = startDate.trim();
+    }
+    if (endDate != null && endDate.trim().isNotEmpty) {
+      params['end_date'] = endDate.trim();
+    }
+    final response = await httpClient.get(
+      Uri.parse('$baseUrl/social/postiz/posts').replace(
+        queryParameters: params.isEmpty ? null : params,
+      ),
+    );
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      final List<dynamic> raw;
+      if (data is List) {
+        raw = data;
+      } else if (data is Map) {
+        const keys = ['posts', 'items', 'data', 'value', 'results'];
+        List<dynamic>? found;
+        for (final k in keys) {
+          final v = data[k];
+          if (v is List) {
+            found = v;
+            break;
+          }
+        }
+        raw = found ?? [];
+      } else {
+        return [];
+      }
+      return [
+        for (final row in raw)
+          if (row is Map) Map<String, dynamic>.from(row),
+      ];
+    }
+    if (response.statusCode == 401) {
+      throw Exception('Session expired');
+    }
+    if (response.statusCode == 404) {
+      return [];
+    }
+    _fail(response, 'loading post status');
   }
 
   /// GET /api/v1/social/connect/{platform} — OAuth or Postiz embed for Facebook, etc.
   Future<PlatformEmbedSession> initiateSocialConnect(String platform) async {
     final slug = platform.trim().toLowerCase();
     final response = await httpClient.get(
-      Uri.parse('$baseUrl/social/connect/$slug'),
+      Uri.parse('$baseUrl/social/connect/$slug').replace(
+        queryParameters: const {'return_to': 'app'},
+      ),
     );
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
@@ -1644,19 +2025,17 @@ class ApiService {
             .toString()
             .trim();
         if (authUrl.toLowerCase().contains('chatwoot')) {
-          throw Exception(
-            'Server returned a Chatwoot URL for $slug. '
-            'Check POSTIZ_PUBLIC_URL on the API (expected Postiz, not Chatwoot).',
+          throw AppException(
+            kind: AppErrorKind.unexpected,
+            action: 'connecting $slug',
           );
         }
         if (provider == 'POSTIZ') {
           final session = PlatformEmbedSession.fromSocialConnect(map);
           if (!session.directOauth) {
-            throw Exception(
-              (map['message'] ?? '').toString().trim().isNotEmpty
-                  ? map['message'].toString()
-                  : 'Could not open $slug provider login. '
-                      'Provider OAuth is not configured on Postiz.',
+            throw AppException(
+              kind: AppErrorKind.unexpected,
+              action: 'connecting $slug',
             );
           }
           return session;
@@ -1664,17 +2043,17 @@ class ApiService {
         if (authUrl.isNotEmpty) {
           return PlatformEmbedSession(authorizationUrl: authUrl);
         }
-        throw Exception('Unsupported social connect response for $slug');
+        throw AppException(
+          kind: AppErrorKind.unexpected,
+          action: 'connecting $slug',
+        );
       }
-      throw Exception('Invalid social connect response');
+      throw AppException(kind: AppErrorKind.unexpected, action: 'connecting account');
     }
     if (response.statusCode == 401) {
       throw Exception('Session expired');
     }
-    throw Exception(
-      _httpDetailMessage(response.body) ??
-          'Could not start $slug connection (${response.statusCode})',
-    );
+    _fail(response, 'connecting $slug');
   }
 
   /// GET /api/v1/chatwoot/session — Chatwoot login + inbox settings URL.
@@ -1692,21 +2071,12 @@ class ApiService {
           Map<String, dynamic>.from(data),
         );
       }
-      throw Exception('Invalid Chatwoot session response');
+      throw AppException(kind: AppErrorKind.unexpected, action: 'connecting Chatwoot');
     }
     if (response.statusCode == 401) {
       throw Exception('Session expired');
     }
-    if (response.statusCode == 403) {
-      throw Exception(
-        _httpDetailMessage(response.body) ??
-            'An active subscription is required for Chatwoot.',
-      );
-    }
-    throw Exception(
-      _httpDetailMessage(response.body) ??
-          'Chatwoot sign-in failed (${response.statusCode})',
-    );
+    _fail(response, 'connecting Chatwoot');
   }
 
   /// GET /api/v1/chatwoot/channels/{channel}/link — per-channel Chatwoot embed.
@@ -1725,27 +2095,24 @@ class ApiService {
           Map<String, dynamic>.from(data),
         );
       }
-      throw Exception('Invalid Chatwoot channel link response');
+      throw AppException(kind: AppErrorKind.unexpected, action: 'linking channel');
     }
     if (response.statusCode == 401) {
       throw Exception('Session expired');
     }
-    if (response.statusCode == 403) {
-      throw Exception(
-        _httpDetailMessage(response.body) ??
-            'An active subscription is required to link channels.',
-      );
-    }
-    throw Exception(
-      _httpDetailMessage(response.body) ??
-          'Chatwoot channel link failed (${response.statusCode})',
-    );
+    _fail(response, 'linking channel');
   }
 
   /// GET /api/v1/whatsapp/connect — Meta WhatsApp Embedded Signup URL.
   Future<PlatformEmbedSession> getWhatsAppConnectSession() async {
+    // JS SDK on the Meta-whitelisted callback URL. Do not use launch=redirect:
+    // Facebook's OAuth dialog then sends a redirect_uri that is not in
+    // Client OAuth Settings ("URL blocked").
+    final query = <String, String>{
+      'return_to': 'app',
+    };
     final response = await httpClient.get(
-      Uri.parse('$baseUrl/whatsapp/connect'),
+      Uri.parse('$baseUrl/whatsapp/connect').replace(queryParameters: query),
     );
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
@@ -1753,22 +2120,19 @@ class ApiService {
         final map = Map<String, dynamic>.from(data);
         final authUrl = (map['authorization_url'] ?? '').toString();
         if (authUrl.isEmpty) {
-          throw Exception('WhatsApp connect response missing authorization_url');
+          throw AppException(kind: AppErrorKind.unexpected, action: 'connecting WhatsApp');
         }
         return PlatformEmbedSession(
           authorizationUrl: authUrl,
           message: map['message']?.toString(),
         );
       }
-      throw Exception('Invalid WhatsApp connect response');
+      throw AppException(kind: AppErrorKind.unexpected, action: 'connecting WhatsApp');
     }
     if (response.statusCode == 401) {
       throw Exception('Session expired');
     }
-    throw Exception(
-      _httpDetailMessage(response.body) ??
-          'WhatsApp connect failed (${response.statusCode})',
-    );
+    _fail(response, 'connecting WhatsApp');
   }
 
   /// GET /api/v1/whatsapp/accounts — Meta-linked WhatsApp numbers.
@@ -1793,7 +2157,9 @@ class ApiService {
   /// GET /api/v1/instagram/connect — Instagram Business Login authorize URL.
   Future<PlatformEmbedSession> getInstagramConnectSession() async {
     final response = await httpClient.get(
-      Uri.parse('$baseUrl/instagram/connect'),
+      Uri.parse('$baseUrl/instagram/connect').replace(
+        queryParameters: const {'return_to': 'app'},
+      ),
     );
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
@@ -1801,22 +2167,19 @@ class ApiService {
         final map = Map<String, dynamic>.from(data);
         final authUrl = (map['authorization_url'] ?? '').toString();
         if (authUrl.isEmpty) {
-          throw Exception('Instagram connect response missing authorization_url');
+          throw AppException(kind: AppErrorKind.unexpected, action: 'connecting Instagram');
         }
         return PlatformEmbedSession(
           authorizationUrl: authUrl,
           message: map['message']?.toString(),
         );
       }
-      throw Exception('Invalid Instagram connect response');
+      throw AppException(kind: AppErrorKind.unexpected, action: 'connecting Instagram');
     }
     if (response.statusCode == 401) {
       throw Exception('Session expired');
     }
-    throw Exception(
-      _httpDetailMessage(response.body) ??
-          'Instagram connect failed (${response.statusCode})',
-    );
+    _fail(response, 'connecting Instagram');
   }
 
   /// GET /api/v1/instagram/accounts — Instagram Business Login linked accounts.
@@ -1846,12 +2209,12 @@ class ApiService {
   }) async {
     final id = accountId.trim();
     if (id.isEmpty) {
-      throw Exception('Missing Instagram account id');
+      throw AppException(kind: AppErrorKind.unexpected, action: 'connecting Instagram');
     }
     final urls =
         mediaUrls.map((u) => u.trim()).where((u) => u.isNotEmpty).toList();
     if (urls.isEmpty) {
-      throw Exception('Instagram requires at least one media URL');
+      throw AppException.user('Add an image or video before posting to Instagram');
     }
     final response = await httpClient.post(
       Uri.parse('$baseUrl/instagram/posts'),
@@ -1871,10 +2234,7 @@ class ApiService {
     if (response.statusCode == 401) {
       throw Exception('Session expired');
     }
-    throw Exception(
-      _httpDetailMessage(response.body) ??
-          'Instagram publish failed (${response.statusCode})',
-    );
+    _fail(response, 'publishing to Instagram');
   }
 
   /// GET /api/v1/sms-sender-ids — current user's SMS sender ID registrations.
@@ -1899,13 +2259,10 @@ class ApiService {
   /// POST /api/v1/sms-sender-ids — register a sender ID for team approval.
   Future<Map<String, dynamic>> registerSmsSenderId({
     required String senderId,
-    String? companyName,
     String? notes,
   }) async {
     final body = <String, dynamic>{
       'sender_id': senderId.trim(),
-      if (companyName != null && companyName.trim().isNotEmpty)
-        'company_name': companyName.trim(),
       if (notes != null && notes.trim().isNotEmpty) 'notes': notes.trim(),
     };
     final response = await httpClient.post(
@@ -1917,15 +2274,12 @@ class ApiService {
       final data = jsonDecode(response.body);
       if (data is Map<String, dynamic>) return data;
       if (data is Map) return Map<String, dynamic>.from(data);
-      throw Exception('Invalid SMS sender ID response');
+      throw AppException(kind: AppErrorKind.unexpected, action: 'registering sender ID');
     }
     if (response.statusCode == 401) {
       throw Exception('Session expired');
     }
-    throw Exception(
-      _httpDetailMessage(response.body) ??
-          'SMS sender ID registration failed (${response.statusCode})',
-    );
+    _fail(response, 'registering sender ID');
   }
 
   /// GET /api/v1/chatwoot/status — env + workspace mapping (no subscription required).
@@ -1937,13 +2291,12 @@ class ApiService {
       final data = jsonDecode(response.body);
       if (data is Map<String, dynamic>) return data;
       if (data is Map) return Map<String, dynamic>.from(data);
-      throw Exception('Invalid Chatwoot status response');
+      throw AppException(kind: AppErrorKind.unexpected, action: 'loading chat status');
     }
     if (response.statusCode == 401) {
       throw Exception('Session expired');
     }
-    final msg = _httpDetailMessage(response.body);
-    throw Exception(msg ?? 'Chatwoot status failed (${response.statusCode})');
+    _fail(response, 'loading chat status');
   }
 
   /// GET /api/v1/orders/me — current user's orders; optional [orderStatus] filter.
@@ -1965,10 +2318,7 @@ class ApiService {
     if (response.statusCode == 401) {
       throw Exception('Session expired');
     }
-    throw Exception(
-      _httpDetailMessage(response.body) ??
-          'Failed to load orders (${response.statusCode})',
-    );
+    _fail(response, 'loading orders');
   }
 
   /// GET /api/v1/products/me — current user's products; optional [category] filter.
@@ -1990,10 +2340,7 @@ class ApiService {
     if (response.statusCode == 401) {
       throw Exception('Session expired');
     }
-    throw Exception(
-      _httpDetailMessage(response.body) ??
-          'Failed to load products (${response.statusCode})',
-    );
+    _fail(response, 'loading products');
   }
 
   /// GET /api/v1/products/{productId}
@@ -2013,15 +2360,12 @@ class ApiService {
     if (response.statusCode == 404) {
       throw Exception('Product not found');
     }
-    throw Exception(
-      _httpDetailMessage(response.body) ??
-          'Failed to load product (${response.statusCode})',
-    );
+    _fail(response, 'loading product');
   }
 
   /// POST /api/v1/products — create a product (inventory is created on the server).
   ///
-  /// [photos] must contain at least one image URL (see backend `ProductCreateDTO`).
+  /// [photos] and/or [videos] must contain at least one media URL.
   Future<Map<String, dynamic>> createProduct({
     required String name,
     String? description,
@@ -2030,22 +2374,28 @@ class ApiService {
     required String condition,
     int? numberInStock,
     String? link,
-    required List<String> photos,
+    List<String> photos = const [],
+    List<String> videos = const [],
   }) async {
     final urls = photos
         .map((e) => e.trim())
         .where((e) => e.isNotEmpty)
         .toList();
-    if (urls.isEmpty) {
-      throw ArgumentError('At least one product image URL is required');
+    final videoUrls = videos
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .toList();
+    if (urls.isEmpty && videoUrls.isEmpty) {
+      throw ArgumentError('At least one product image or video is required');
     }
 
     final body = <String, dynamic>{
       'name': name.trim(),
       'price': price,
       'condition': condition.trim(),
-      'photos': urls,
     };
+    if (urls.isNotEmpty) body['photos'] = urls;
+    if (videoUrls.isNotEmpty) body['videos'] = videoUrls;
     if (description != null && description.trim().isNotEmpty) {
       body['description'] = description.trim();
     }
@@ -2069,10 +2419,7 @@ class ApiService {
     if (response.statusCode == 401) {
       throw Exception('Session expired');
     }
-    throw Exception(
-      _httpDetailMessage(response.body) ??
-          'Failed to create product (${response.statusCode})',
-    );
+    _fail(response, 'creating product');
   }
 
   /// PUT /api/v1/products/{productId}
@@ -2115,10 +2462,7 @@ class ApiService {
     if (response.statusCode == 401) {
       throw Exception('Session expired');
     }
-    throw Exception(
-      _httpDetailMessage(response.body) ??
-          'Failed to update product (${response.statusCode})',
-    );
+    _fail(response, 'updating product');
   }
 
   /// DELETE /api/v1/products/{productId}
@@ -2136,10 +2480,7 @@ class ApiService {
     if (response.statusCode == 404) {
       throw Exception('Product not found');
     }
-    throw Exception(
-      _httpDetailMessage(response.body) ??
-          'Failed to delete product (${response.statusCode})',
-    );
+    _fail(response, 'deleting product');
   }
 
   /// GET /api/v1/products/{productId}/photos
@@ -2165,10 +2506,7 @@ class ApiService {
     if (response.statusCode == 404) {
       throw Exception('Product not found');
     }
-    throw Exception(
-      _httpDetailMessage(response.body) ??
-          'Failed to load product photos (${response.statusCode})',
-    );
+    _fail(response, 'loading product photos');
   }
 
   /// POST /api/v1/products/{productId}/photos — upload multiple image files.
@@ -2212,10 +2550,7 @@ class ApiService {
     if (response.statusCode == 401) {
       throw Exception('Session expired');
     }
-    throw Exception(
-      _httpDetailMessage(response.body) ??
-          'Failed to upload product photos (${response.statusCode})',
-    );
+    _fail(response, 'uploading product photos');
   }
 
   /// DELETE /api/v1/products/{productId}/photos/{imageId}
@@ -2235,10 +2570,7 @@ class ApiService {
     if (response.statusCode == 401) {
       throw Exception('Session expired');
     }
-    throw Exception(
-      _httpDetailMessage(response.body) ??
-          'Failed to delete product photo (${response.statusCode})',
-    );
+    _fail(response, 'deleting product photo');
   }
 
   /// PATCH /api/v1/products/{productId}/photos/{imageId}/primary
@@ -2258,10 +2590,7 @@ class ApiService {
     if (response.statusCode == 401) {
       throw Exception('Session expired');
     }
-    throw Exception(
-      _httpDetailMessage(response.body) ??
-          'Failed to set cover photo (${response.statusCode})',
-    );
+    _fail(response, 'updating cover photo');
   }
 
   /// GET /api/v1/conversations/session/{sessionId} — full session with history.
@@ -2279,10 +2608,7 @@ class ApiService {
     if (response.statusCode == 404) {
       throw Exception('Conversation not found');
     }
-    throw Exception(
-      _httpDetailMessage(response.body) ??
-          'Failed to load conversation (${response.statusCode})',
-    );
+    _fail(response, 'loading conversation');
   }
 
   /// GET /api/v1/conversations/for-order/{orderId} — customer chat for an order.
@@ -2302,10 +2628,7 @@ class ApiService {
     if (response.statusCode == 404) {
       throw Exception('No conversation found for this order');
     }
-    throw Exception(
-      _httpDetailMessage(response.body) ??
-          'Failed to load order conversation (${response.statusCode})',
-    );
+    _fail(response, 'loading order conversation');
   }
 
   /// POST /api/v1/interventions/human-message — agent reply during intervention.
@@ -2315,7 +2638,7 @@ class ApiService {
   }) async {
     final trimmed = message.trim();
     if (trimmed.isEmpty) {
-      throw Exception('Message cannot be empty');
+      throw AppException.user('Message cannot be empty');
     }
     final qp = <String, String>{'message': trimmed};
     if (sessionId != null) {
@@ -2337,18 +2660,15 @@ class ApiService {
     if (response.statusCode == 401) {
       throw Exception('Session expired');
     }
-    throw Exception(
-      _httpDetailMessage(response.body) ??
-          'Failed to send message (${response.statusCode})',
-    );
+    _fail(response, 'sending message');
   }
 
-  /// POST /api/v1/conversations/session/{sessionId}/deactivate-intervention
-  Future<Map<String, dynamic>> deactivateConversationIntervention(
+  /// POST /api/v1/conversations/session/{sessionId}/complete
+  Future<Map<String, dynamic>> completeConversationSession(
     int sessionId,
   ) async {
     final uri = Uri.parse(
-      '$baseUrl/conversations/session/$sessionId/deactivate-intervention',
+      '$baseUrl/conversations/session/$sessionId/complete',
     );
     final response = await httpClient.post(uri);
     if (response.statusCode == 200) {
@@ -2362,11 +2682,14 @@ class ApiService {
     if (response.statusCode == 401) {
       throw Exception('Session expired');
     }
-    throw Exception(
-      _httpDetailMessage(response.body) ??
-          'Failed to deactivate intervention (${response.statusCode})',
-    );
+    _fail(response, 'completing conversation');
   }
+
+  /// Deprecated alias — completing the session is the only way to leave intervention.
+  Future<Map<String, dynamic>> deactivateConversationIntervention(
+    int sessionId,
+  ) =>
+      completeConversationSession(sessionId);
 
   /// GET /api/v1/orders/{orderId}
   Future<Map<String, dynamic>> getOrder(String orderId) async {
@@ -2383,10 +2706,7 @@ class ApiService {
     if (response.statusCode == 404) {
       throw Exception('Order not found');
     }
-    throw Exception(
-      _httpDetailMessage(response.body) ??
-          'Failed to load order (${response.statusCode})',
-    );
+    _fail(response, 'loading order');
   }
 
   /// PUT /api/v1/orders/{orderId}
@@ -2420,10 +2740,7 @@ class ApiService {
     if (response.statusCode == 401) {
       throw Exception('Session expired');
     }
-    throw Exception(
-      _httpDetailMessage(response.body) ??
-          'Failed to update order (${response.statusCode})',
-    );
+    _fail(response, 'updating order');
   }
 
   /// POST /api/v1/orders/{orderId}/send-invoice — Paystack link + message to customer chat.
@@ -2448,10 +2765,24 @@ class ApiService {
     if (response.statusCode == 401) {
       throw Exception('Session expired');
     }
-    throw Exception(
-      _httpDetailMessage(response.body) ??
-          'Failed to send invoice (${response.statusCode})',
+    _fail(response, 'sending invoice');
+  }
+
+  /// POST /api/v1/orders/{orderId}/save-customer — copy order contact into customers.
+  Future<Map<String, dynamic>> saveCustomerFromOrder(String orderId) async {
+    final uri = Uri.parse(
+      '$baseUrl/orders/${Uri.encodeComponent(orderId)}/save-customer',
     );
+    final response = await httpClient.post(uri);
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data is Map<String, dynamic>) return data;
+      if (data is Map) return Map<String, dynamic>.from(data);
+    }
+    if (response.statusCode == 401) {
+      throw Exception('Session expired');
+    }
+    _fail(response, 'saving customer from order');
   }
 
   /// GET /api/v1/conversations/me — `{ completed, intervention_active }`.
@@ -2481,10 +2812,7 @@ class ApiService {
     if (response.statusCode == 401) {
       throw Exception('Session expired');
     }
-    throw Exception(
-      _httpDetailMessage(response.body) ??
-          'Failed to load conversations (${response.statusCode})',
-    );
+    _fail(response, 'loading conversations');
   }
 
   List<Map<String, dynamic>> _decodeMapList(dynamic raw) {
@@ -2536,77 +2864,79 @@ class ApiService {
     if (response.statusCode == 401) {
       throw Exception('Session expired');
     }
-    throw Exception(
-      _httpDetailMessage(response.body) ??
-          'Failed to load sent emails (${response.statusCode})',
-    );
+    _fail(response, 'loading sent emails');
   }
 
-  /// Notifications where `sms_sent` is true (`GET /api/v1/user/me/notifications`).
-  Future<List<Map<String, dynamic>>> getMySentSms({int size = 100}) async {
+  /// GET /api/v1/user/me/sms/sent — body `{ messages: [...], total_returned }`.
+  /// Server validates `limit` ≤ 50.
+  Future<List<Map<String, dynamic>>> getMySentSms({int limit = 50}) async {
+    final safeLimit = limit.clamp(1, 50);
     final uri = Uri.parse(
-      '$baseUrl/user/me/notifications',
-    ).replace(queryParameters: {'page': '1', 'size': '${size.clamp(1, 100)}'});
+      '$baseUrl/user/me/sms/sent',
+    ).replace(queryParameters: {'limit': '$safeLimit'});
     final response = await httpClient.get(uri);
     if (response.statusCode == 401) {
       throw Exception('Session expired');
     }
     if (response.statusCode != 200) {
-      throw Exception(
-        _httpDetailMessage(response.body) ??
-            'Failed to load sent SMS (${response.statusCode})',
-      );
+      _fail(response, 'loading sent SMS');
     }
 
     final data = jsonDecode(response.body);
-    final list = data is List
-        ? data
-        : (data is Map
-              ? (data['notifications'] ??
-                    data['data'] ??
-                    data['items'] ??
-                    data['results'] ??
-                    [])
-              : []);
-    if (list is! List) return const [];
-
-    final sent = <Map<String, dynamic>>[];
-    for (final item in list) {
-      if (item is! Map) continue;
-      final raw = Map<String, dynamic>.from(item);
-      if (!_jsonTruthy(raw['sms_sent'])) continue;
-
-      final nested = raw['data'];
-      final map = nested is Map
-          ? Map<String, dynamic>.from(nested)
-          : <String, dynamic>{};
-      sent.add({
-        'phone': (raw['sms_phone'] ?? map['phone'] ?? map['to'] ?? '')
-            .toString(),
-        'message':
-            (map['message'] ??
-                    map['body'] ??
-                    map['content'] ??
-                    map['description'] ??
-                    '')
-                .toString(),
-        'sent_at': (raw['sms_sent_at'] ?? raw['created_at'] ?? '').toString(),
-        'status': (raw['sms_status'] ?? raw['sms_delivery_status'] ?? '')
-            .toString(),
-      });
-    }
-    return sent;
+    final raw = data is Map
+        ? (data['messages'] ?? data['sms'] ?? data['items'] ?? [])
+        : (data is List ? data : []);
+    return _decodeMapList(raw);
   }
 
-  static bool _jsonTruthy(dynamic v) {
-    if (v == null) return false;
-    if (v is bool) return v;
-    if (v is num) return v != 0;
-    if (v is String) {
-      final s = v.trim().toLowerCase();
-      return s == 'true' || s == '1' || s == 'yes';
+  /// POST /api/v1/social/digital-marketing/assets — archive a chat campaign.
+  Future<Map<String, dynamic>> createDigitalMarketingAsset({
+    String? marketingText,
+    List<String> contentLinks = const [],
+    List<Map<String, dynamic>>? conversation,
+    List<Map<String, dynamic>>? contents,
+    String agentName = 'digital_marketing',
+  }) async {
+    final response = await httpClient.post(
+      Uri.parse('$baseUrl/social/digital-marketing/assets'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'marketing_text': marketingText,
+        'content_links': contentLinks,
+        if (conversation != null) 'conversation': conversation,
+        if (contents != null) 'contents': contents,
+        'agent_name': agentName,
+      }),
+    );
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final data = jsonDecode(response.body);
+      if (data is Map<String, dynamic>) return data;
+      if (data is Map) return Map<String, dynamic>.from(data);
+      return {'ok': true};
     }
-    return false;
+    if (response.statusCode == 401) {
+      throw Exception('Session expired');
+    }
+    _fail(response, 'saving campaign');
+  }
+
+  /// GET /api/v1/social/digital-marketing/assets/{id}
+  Future<Map<String, dynamic>> getDigitalMarketingAsset(String assetId) async {
+    final response = await httpClient.get(
+      Uri.parse(
+        '$baseUrl/social/digital-marketing/assets/${Uri.encodeComponent(assetId)}',
+      ),
+    );
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data is Map<String, dynamic>) return data;
+      if (data is Map) return Map<String, dynamic>.from(data);
+      throw AppException(kind: AppErrorKind.unexpected, action: 'saving campaign');
+    }
+    if (response.statusCode == 401) {
+      throw Exception('Session expired');
+    }
+    _fail(response, 'loading campaign');
   }
 
   /// GET /api/v1/social/digital-marketing/assets — body `{ items: [...], total }`.
@@ -2627,10 +2957,7 @@ class ApiService {
     if (response.statusCode == 401) {
       throw Exception('Session expired');
     }
-    throw Exception(
-      _httpDetailMessage(response.body) ??
-          'Failed to load campaigns (${response.statusCode})',
-    );
+    _fail(response, 'loading campaigns');
   }
 
   /// GET /api/v1/chatwoot/inboxes — Chatwoot inboxes (subscription required).
@@ -2662,16 +2989,7 @@ class ApiService {
     if (response.statusCode == 404) {
       return [];
     }
-    if (response.statusCode == 403) {
-      throw Exception(
-        _httpDetailMessage(response.body) ??
-            'An active subscription is required for Chatwoot.',
-      );
-    }
-    throw Exception(
-      _httpDetailMessage(response.body) ??
-          'Could not load Chatwoot inboxes (${response.statusCode})',
-    );
+    _fail(response, 'loading Chatwoot inboxes');
   }
 
   /// Inbox count for dashboard summaries.
@@ -2680,15 +2998,6 @@ class ApiService {
     return inboxes.length;
   }
 
-  static String? _httpDetailMessage(String body) {
-    try {
-      final decoded = jsonDecode(body);
-      if (decoded is Map && decoded['detail'] != null) {
-        return decoded['detail'].toString();
-      }
-    } catch (_) {}
-    return null;
-  }
 
   /// GET /api/v1/customers/list
   Future<List<Map<String, dynamic>>> listCustomers() async {
@@ -2697,10 +3006,7 @@ class ApiService {
       return _decodeListPayload(json.decode(response.body));
     }
     if (response.statusCode == 401) throw Exception('Session expired');
-    throw Exception(
-      _httpDetailMessage(response.body) ??
-          'Failed to load customers (${response.statusCode})',
-    );
+    _fail(response, 'loading customers');
   }
 
   /// GET /api/v1/customers/get/{customerId}
@@ -2715,10 +3021,7 @@ class ApiService {
     }
     if (response.statusCode == 401) throw Exception('Session expired');
     if (response.statusCode == 404) throw Exception('Customer not found');
-    throw Exception(
-      _httpDetailMessage(response.body) ??
-          'Failed to load customer (${response.statusCode})',
-    );
+    _fail(response, 'loading customer');
   }
 
   /// POST /api/v1/customers/add
@@ -2754,10 +3057,7 @@ class ApiService {
       if (data is Map) return Map<String, dynamic>.from(data);
     }
     if (response.statusCode == 401) throw Exception('Session expired');
-    throw Exception(
-      _httpDetailMessage(response.body) ??
-          'Failed to add customer (${response.statusCode})',
-    );
+    _fail(response, 'adding customer');
   }
 
   /// PUT /api/v1/customers/update/{customerId}
@@ -2794,10 +3094,7 @@ class ApiService {
       if (data is Map) return Map<String, dynamic>.from(data);
     }
     if (response.statusCode == 401) throw Exception('Session expired');
-    throw Exception(
-      _httpDetailMessage(response.body) ??
-          'Failed to update customer (${response.statusCode})',
-    );
+    _fail(response, 'updating customer');
   }
 
   /// DELETE /api/v1/customers/delete/{customerId}
@@ -2808,10 +3105,7 @@ class ApiService {
     if (response.statusCode == 200) return;
     if (response.statusCode == 401) throw Exception('Session expired');
     if (response.statusCode == 404) throw Exception('Customer not found');
-    throw Exception(
-      _httpDetailMessage(response.body) ??
-          'Failed to delete customer (${response.statusCode})',
-    );
+    _fail(response, 'deleting customer');
   }
 
   /// POST /api/v1/customers/message/sms
@@ -2833,10 +3127,7 @@ class ApiService {
       if (data is Map) return Map<String, dynamic>.from(data);
     }
     if (response.statusCode == 401) throw Exception('Session expired');
-    throw Exception(
-      _httpDetailMessage(response.body) ??
-          'Failed to send SMS (${response.statusCode})',
-    );
+    _fail(response, 'sending SMS');
   }
 
   /// POST /api/v1/customers/message/email
@@ -2860,10 +3151,7 @@ class ApiService {
       if (data is Map) return Map<String, dynamic>.from(data);
     }
     if (response.statusCode == 401) throw Exception('Session expired');
-    throw Exception(
-      _httpDetailMessage(response.body) ??
-          'Failed to send email (${response.statusCode})',
-    );
+    _fail(response, 'sending email');
   }
 }
 
@@ -2880,7 +3168,7 @@ class PaystackInitResult {
 
   factory PaystackInitResult.fromJson(dynamic json) {
     if (json is! Map<String, dynamic>) {
-      throw Exception('Invalid Paystack init response');
+      throw AppException(kind: AppErrorKind.unexpected, action: 'starting payment');
     }
 
     final authorizationUrl = (json['authorization_url'] ?? '').toString();
@@ -2888,7 +3176,7 @@ class PaystackInitResult {
     final reference = (json['reference'] ?? '').toString();
 
     if (authorizationUrl.isEmpty || reference.isEmpty) {
-      throw Exception('Missing Paystack authorization_url/reference');
+      throw AppException(kind: AppErrorKind.unexpected, action: 'starting payment');
     }
 
     return PaystackInitResult(

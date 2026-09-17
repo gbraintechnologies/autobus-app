@@ -153,6 +153,7 @@ class _CustomerPickerSheetState extends State<_CustomerPickerSheet> {
                 TextField(
                   controller: _searchController,
                   cursorColor: _purple,
+                  onTapOutside: dismissAppKeyboard,
                   decoration: InputDecoration(
                     hintText: 'Search contacts…',
                     prefixIcon: const Icon(Icons.search, color: _purple),
@@ -211,6 +212,8 @@ class _CustomerPickerSheetState extends State<_CustomerPickerSheet> {
                           ),
                         )
                       : ListView.separated(
+                          keyboardDismissBehavior:
+                              ScrollViewKeyboardDismissBehavior.onDrag,
                           itemCount: filtered.length,
                           separatorBuilder: (_, __) => Divider(
                             color: Colors.black.withValues(alpha: 0.08),

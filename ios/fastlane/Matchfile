@@ -1,0 +1,6 @@
+git_url("git@github.com:gbraintechnologies/ios-certificates.git")
+git_branch("main")
+storage_mode("git")
+type("appstore")
+app_identifier(["com.autobus.app"])
+team_id("LTYQMJBM79")

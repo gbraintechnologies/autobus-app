@@ -18,6 +18,25 @@ String _clampTitle(String title, int max) {
   return t.length > max ? t.substring(0, max) : t;
 }
 
+/// Postiz YouTube `checkValidity` only accepts a path containing `mp4`.
+bool postizMediaLooksLikeVideo(String url) {
+  final path = url.split('?').first.toLowerCase();
+  return path.endsWith('.mp4') ||
+      path.endsWith('.mov') ||
+      path.endsWith('.m4v') ||
+      path.endsWith('.webm') ||
+      path.contains('.mp4');
+}
+
+String postizDateIso(DateTime utc) {
+  final s = utc.toUtc().toIso8601String();
+  final match = RegExp(r'^(.+\.\d{3})\d*(Z)?$').firstMatch(s);
+  if (match != null) {
+    return '${match.group(1)}${match.group(2) ?? 'Z'}';
+  }
+  return s.endsWith('Z') ? s : '${s}Z';
+}
+
 /// `settings` for Postiz Public API `POST /api/public/v1/posts`.
 /// See https://docs.postiz.com/public-api/posts/create
 Map<String, dynamic> postizSettingsForIntegration(
@@ -62,24 +81,25 @@ Map<String, dynamic> postizSettingsForIntegration(
       final rawTitle = details?.tiktokTitle.trim().isNotEmpty == true
           ? details!.tiktokTitle
           : titleFallback;
-      final privacy = details?.tiktokPrivacy ?? 'PUBLIC_TO_EVERYONE';
+      final privacy = details?.tiktokPrivacy ?? '';
       const allowedPrivacy = {
         'PUBLIC_TO_EVERYONE',
         'MUTUAL_FOLLOW_FRIENDS',
         'FOLLOWER_OF_CREATOR',
         'SELF_ONLY',
       };
+      final disclose = details?.tiktokDiscloseCommercial == true;
       return {
         '__type': 'tiktok',
         'title': _clampTitle(rawTitle, 90),
         'privacy_level':
-            allowedPrivacy.contains(privacy) ? privacy : 'PUBLIC_TO_EVERYONE',
-        'duet': details?.tiktokDuet ?? true,
-        'stitch': details?.tiktokStitch ?? true,
-        'comment': details?.tiktokComment ?? true,
+            allowedPrivacy.contains(privacy) ? privacy : 'SELF_ONLY',
+        'duet': details?.tiktokDuet ?? false,
+        'stitch': details?.tiktokStitch ?? false,
+        'comment': details?.tiktokComment ?? false,
         'autoAddMusic': 'no',
-        'brand_content_toggle': details?.tiktokBrandContent ?? false,
-        'brand_organic_toggle': details?.tiktokBrandOrganic ?? false,
+        'brand_content_toggle': disclose && (details?.tiktokBrandContent ?? false),
+        'brand_organic_toggle': disclose && (details?.tiktokBrandOrganic ?? false),
         'video_made_with_ai': details?.tiktokMadeWithAi ?? false,
         'content_posting_method': 'DIRECT_POST',
       };
@@ -135,7 +155,7 @@ Map<String, dynamic> buildPostizCreatePostPayload({
   } else {
     dateUtc = DateTime.now().toUtc();
   }
-  final dateIso = dateUtc.toIso8601String();
+  final dateIso = postizDateIso(dateUtc);
 
   final imageBlocks = <Map<String, dynamic>>[
     for (var i = 0; i < mediaUrls.length; i++)

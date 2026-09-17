@@ -17,9 +17,9 @@ class _SignupState extends State<Signup> {
   final _companyController = TextEditingController();
   final _ghanaTenController = TextEditingController();
   final _ghanaCheckController = TextEditingController();
-  final _pinController = TextEditingController();
+  final _ghanaCardCheckFocusNode = FocusNode();
 
-  String get _pin => _pinController.text.trim();
+  String _pin = '';
 
   String get _ghanaCardValue {
     final ten = _ghanaTenController.text.trim();
@@ -36,24 +36,24 @@ class _SignupState extends State<Signup> {
     _companyController.dispose();
     _ghanaTenController.dispose();
     _ghanaCheckController.dispose();
-    _pinController.dispose();
+    _ghanaCardCheckFocusNode.dispose();
     super.dispose();
   }
 
   void _submitSignup() {
+    final username = _usernameController.text.trim();
+    if (username.isEmpty) {
+      showAppSnackBar(context, 'Please enter a username');
+      return;
+    }
     if (_pin.length != 4) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter a 4-digit PIN'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      showAppSnackBar(context, 'Please enter a 4-digit PIN');
       return;
     }
 
     context.read<AuthBloc>().add(
       SignupEvent(
-        username: _usernameController.text.trim(),
+        username: username,
         phone: _phoneController.text.trim(),
         email: _emailController.text.trim(),
         password: _pin,
@@ -87,6 +87,11 @@ class _SignupState extends State<Signup> {
               maxLength: 10,
               style: style,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              onChanged: (v) {
+                if (v.length == 10) {
+                  FocusScope.of(context).requestFocus(_ghanaCardCheckFocusNode);
+                }
+              },
               decoration: const InputDecoration(
                 border: InputBorder.none,
                 counterText: '',
@@ -100,6 +105,7 @@ class _SignupState extends State<Signup> {
             width: 28 * scale,
             child: TextField(
               controller: _ghanaCheckController,
+              focusNode: _ghanaCardCheckFocusNode,
               enabled: enabled,
               keyboardType: TextInputType.number,
               maxLength: 1,
@@ -143,11 +149,9 @@ class _SignupState extends State<Signup> {
                   ),
                 );
               } else if (state is AuthError && state.source == 'signup') {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(state.message),
-                    backgroundColor: Colors.red,
-                  ),
+                showAppSnackBar(
+                  context,
+                  userFacingError(state.message, action: 'creating account'),
                 );
               }
             },
@@ -158,6 +162,7 @@ class _SignupState extends State<Signup> {
             final isLoading = state is AuthLoading;
 
             return SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               padding: EdgeInsets.fromLTRB(
                 24 * scale,
                 8 * scale,
@@ -184,7 +189,7 @@ class _SignupState extends State<Signup> {
                     icon: Icons.person_outline,
                     controller: _usernameController,
                     enabled: !isLoading,
-                    hintText: 'Enter your full name',
+                    hintText: 'Enter your username',
                   ),
                   SizedBox(height: 16 * scale),
                   AuthFieldLabel(scale: scale, label: 'Phone'),
@@ -231,10 +236,9 @@ class _SignupState extends State<Signup> {
                   SizedBox(height: 16 * scale),
                   AuthFieldLabel(scale: scale, label: 'Pin'),
                   SizedBox(height: 8 * scale),
-                  AuthPinField(
-                    scale: scale,
-                    controller: _pinController,
+                  PinDigitInput(
                     enabled: !isLoading,
+                    onChanged: (v) => _pin = v,
                   ),
                   SizedBox(height: 28 * scale),
                   AuthPrimaryButton(
@@ -242,6 +246,12 @@ class _SignupState extends State<Signup> {
                     label: 'Sign up',
                     loading: isLoading,
                     onPressed: _submitSignup,
+                  ),
+                  SizedBox(height: 16 * scale),
+                  AuthLegalNotice(
+                    prefix: 'By signing up, you agree to the ',
+                    textColor: AuthScreenTokens.labelColor,
+                    linkColor: AuthScreenTokens.accentColor,
                   ),
                   SizedBox(height: 28 * scale),
                   AuthLinkText(

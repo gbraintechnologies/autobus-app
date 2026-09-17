@@ -36,8 +36,10 @@ class _SignupOtpState extends State<SignupOtp> {
       child: MultiBlocListener(
         listeners: [
           BlocListener<AuthBloc, AuthState>(
-            listener: (context, state) {
+            listener: (context, state) async {
               if (state is SignupOtpVerified) {
+                context.read<AuthBloc>().add(const CheckSessionEvent());
+                if (!context.mounted) return;
                 Navigator.of(context).pushReplacement(
                   PageTransition(
                     type: PageTransitionType.rightToLeftWithFade,
@@ -49,14 +51,17 @@ class _SignupOtpState extends State<SignupOtp> {
                   ),
                 );
               } else if (state is SignupOtpResent) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(state.message)),
+                showAppSnackBar(
+                  context,
+                  state.message,
+                  backgroundColor: CustColors.mainCol,
                 );
               } else if (state is AuthError &&
                   (state.source == 'signup_otp' ||
                       state.source == 'signup_otp_resend')) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(state.message)),
+                showAppSnackBar(
+                  context,
+                  userFacingError(state.message, action: 'verifying code'),
                 );
               }
             },
@@ -67,6 +72,7 @@ class _SignupOtpState extends State<SignupOtp> {
             final isLoading = state is AuthLoading;
 
             return SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               padding: EdgeInsets.fromLTRB(
                 24 * scale,
                 8 * scale,

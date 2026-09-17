@@ -1,8 +1,9 @@
 import 'package:autobus/barrel.dart';
-import 'package:autobus/common_design/light_screen_theme.dart';
-import 'package:autobus/common_design/widgets/app_bottom_nav.dart';
 import 'package:autobus/common_design/widgets/light_screen_scaffold.dart';
+import 'package:autobus/features/products/pricing_currency.dart';
 import 'package:autobus/features/products/product_existing_gallery.dart';
+import 'package:autobus/features/products/product_media.dart';
+
 class ProductDetailScreen extends StatefulWidget {
   final String productId;
   final String? initialName;
@@ -32,6 +33,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   bool _photoBusy = false;
   String? _loadError;
   String? _inventoryId;
+  String _currency = kDefaultPricingCurrency;
   List<ProductGalleryPhoto> _photos = const [];
 
   @override
@@ -92,6 +94,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               imageId: 'legacy-${entry.key}',
               url: entry.value,
               isPrimary: entry.key == 0,
+              isVideo: productMediaLooksLikeVideo(entry.value),
             ),
           )
           .toList();
@@ -99,7 +102,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     final single = (p['photo'] ?? '').toString().trim();
     if (single.isNotEmpty) {
       return [
-        ProductGalleryPhoto(imageId: 'legacy-0', url: single, isPrimary: true),
+        ProductGalleryPhoto(
+          imageId: 'legacy-0',
+          url: single,
+          isPrimary: true,
+          isVideo: productMediaLooksLikeVideo(single),
+        ),
       ];
     }
     return const [];
@@ -133,8 +141,14 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       if (p != null) {
         _populateForm(p);
       }
+      String currency = _currency;
+      if (!photosOnly) {
+        currency = await loadBusinessCurrency(api);
+      }
+      if (!mounted) return;
       setState(() {
         _photos = photos;
+        _currency = currency;
         _loading = false;
         _photoBusy = false;
       });
@@ -150,44 +164,35 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     }
   }
 
-  InputDecoration _fieldDecoration(double scale, String label, {String? hint}) {
+  InputDecoration _fieldDecoration(String label, {String? hint}) {
     return InputDecoration(
       labelText: label,
       hintText: hint,
-      labelStyle: GoogleFonts.montserrat(
-        color: LightScreenTheme.muted,
-        fontSize: 13 * scale.clamp(0.9, 1.05),
+      labelStyle: GoogleFonts.outfit(
+        color: Colors.white.withValues(alpha: 0.7),
+        fontSize: 13,
       ),
-      hintStyle: GoogleFonts.montserrat(
-        color: LightScreenTheme.hint,
-        fontSize: 13 * scale.clamp(0.9, 1.05),
+      hintStyle: GoogleFonts.outfit(
+        color: Colors.white.withValues(alpha: 0.35),
+        fontSize: 13,
       ),
       filled: true,
-      fillColor: LightScreenTheme.field,
+      fillColor: Colors.white.withValues(alpha: 0.06),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16 * scale),
+        borderRadius: BorderRadius.circular(14),
         borderSide: BorderSide.none,
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16 * scale),
-        borderSide: BorderSide.none,
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(
+          color: const Color(0xFF3F1163).withValues(alpha: 0.8),
+        ),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16 * scale),
-        borderSide: BorderSide(color: LightScreenTheme.accent, width: 1.2),
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Color(0xFFA855F7)),
       ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16 * scale),
-        borderSide: BorderSide(color: Colors.red.shade400),
-      ),
-      focusedErrorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16 * scale),
-        borderSide: BorderSide(color: Colors.red.shade400, width: 1.2),
-      ),
-      contentPadding: EdgeInsets.symmetric(
-        horizontal: 14 * scale,
-        vertical: 12 * scale,
-      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
     );
   }
 
@@ -231,7 +236,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       setState(() => _saving = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Product saved', style: GoogleFonts.montserrat()),
+          content: Text('Product saved', style: GoogleFonts.outfit()),
         ),
       );
       Navigator.pop(context, true);
@@ -255,7 +260,31 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         context: context,
         api: api,
         productId: widget.productId,
-        currentCount: _photos.length,
+        currentCount: _photos.where((p) => !p.isVideo).length,
+      );
+      if (!mounted) return;
+      await _load(photosOnly: true);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(userFacingError(e)),
+        ),
+      );
+      setState(() => _photoBusy = false);
+    }
+  }
+
+  Future<void> _addVideos() async {
+    if (_photoBusy) return;
+    setState(() => _photoBusy = true);
+    try {
+      final api = context.read<ApiService>();
+      await pickAndUploadProductVideos(
+        context: context,
+        api: api,
+        productId: widget.productId,
+        currentVideoCount: _photos.where((p) => p.isVideo).length,
       );
       if (!mounted) return;
       await _load(photosOnly: true);
@@ -307,37 +336,28 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: LightScreenTheme.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
+        backgroundColor: const Color(0xFF1E0A32),
         title: Text(
           'Delete product?',
-          style: GoogleFonts.montserrat(
-            color: Colors.black,
-            fontWeight: FontWeight.w600,
-          ),
+          style: GoogleFonts.outfit(color: Colors.white),
         ),
         content: Text(
           'Remove "$name" permanently? This cannot be undone.',
-          style: GoogleFonts.montserrat(
-            color: LightScreenTheme.muted,
+          style: GoogleFonts.outfit(
+            color: Colors.white.withValues(alpha: 0.8),
             fontSize: 14,
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text(
-              'Cancel',
-              style: GoogleFonts.montserrat(color: LightScreenTheme.muted),
-            ),
+            child: Text('Cancel', style: GoogleFonts.outfit(color: Colors.white70)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             child: Text(
               'Delete',
-              style: GoogleFonts.montserrat(color: const Color(0xFFE11D48)),
+              style: GoogleFonts.outfit(color: Colors.redAccent),
             ),
           ),
         ],
@@ -351,9 +371,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       await api.deleteProduct(widget.productId);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Product deleted', style: GoogleFonts.montserrat()),
-        ),
+        SnackBar(content: Text('Product deleted', style: GoogleFonts.outfit())),
       );
       Navigator.pop(context, true);
     } catch (e) {
@@ -369,47 +387,50 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final scale = MediaQuery.sizeOf(context).width / appShellDesignWidth;
     final title = widget.initialName?.trim().isNotEmpty == true
         ? widget.initialName!.trim()
         : 'Product';
 
     return LightScreenScaffold(
       title: title,
+      titleFontSize: 16,
       creditCategory: CreditCategory.storageMb,
       resizeToAvoidBottomInset: true,
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Expanded(child: _buildBody(scale)),
-          if (!_loading && _loadError == null) _buildActions(scale),
+          Expanded(child: _buildBody()),
+          if (!_loading && _loadError == null) _buildActions(),
         ],
       ),
     );
   }
 
-  Widget _buildBody(double scale) {
+  Widget _buildBody() {
     if (_loading) {
       return const Center(child: AutobusLoadingIndicator(size: 32));
     }
     if (_loadError != null) {
       return Center(
         child: Padding(
-          padding: EdgeInsets.all(24 * scale),
+          padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
                 _loadError!,
                 textAlign: TextAlign.center,
-                style: LightScreenTheme.emptyState(scale),
+                style: GoogleFonts.outfit(
+                  color: Colors.white.withValues(alpha: 0.75),
+                  fontSize: 14,
+                ),
               ),
-              SizedBox(height: 16 * scale),
+              const SizedBox(height: 16),
               TextButton(
                 onPressed: _load,
                 child: Text(
                   'Retry',
-                  style: GoogleFonts.montserrat(color: LightScreenTheme.accent),
+                  style: GoogleFonts.outfit(color: const Color(0xFFA855F7)),
                 ),
               ),
             ],
@@ -421,89 +442,105 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     return Form(
       key: _formKey,
       child: ListView(
-        padding: EdgeInsets.fromLTRB(
-          20 * scale,
-          20 * scale,
-          20 * scale,
-          16 * scale,
-        ),
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
         children: [
           if (_inventoryId != null && _inventoryId!.isNotEmpty)
             Padding(
-              padding: EdgeInsets.only(bottom: 16 * scale),
+              padding: const EdgeInsets.only(bottom: 16),
               child: Text(
                 'SKU: $_inventoryId',
-                style: LightScreenTheme.listSubtitle(scale),
+                style: GoogleFonts.outfit(
+                  color: Colors.white.withValues(alpha: 0.45),
+                  fontSize: 12,
+                ),
               ),
             ),
           ProductExistingGallery(
             photos: _photos,
             busy: _photoBusy,
             onAddPhotos: _addPhotos,
+            onAddVideos: _addVideos,
             onPhotoTap: _onPhotoTap,
           ),
-          SizedBox(height: 20 * scale),
+          const SizedBox(height: 20),
           _textField(
-            scale: scale,
             controller: _nameCtrl,
             label: 'Name',
             validator: (v) =>
                 (v == null || v.trim().isEmpty) ? 'Name is required' : null,
           ),
-          SizedBox(height: 14 * scale),
+          const SizedBox(height: 14),
           _textField(
-            scale: scale,
             controller: _descriptionCtrl,
             label: 'Description',
             maxLines: 3,
           ),
-          SizedBox(height: 14 * scale),
-          _textField(
-            scale: scale,
-            controller: _priceCtrl,
-            label: 'Price',
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            validator: (v) {
-              if (v == null || v.trim().isEmpty) return 'Price is required';
-              if (double.tryParse(v.trim()) == null) return 'Invalid price';
-              return null;
-            },
+          const SizedBox(height: 14),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: 128,
+                child: PricingCurrencyDropdown(
+                  value: _currency,
+                  enabled: !_saving,
+                  onChanged: (code) async {
+                    setState(() => _currency = code);
+                    try {
+                      await saveBusinessCurrency(
+                        context.read<ApiService>(),
+                        code,
+                      );
+                    } catch (_) {}
+                  },
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _textField(
+                  controller: _priceCtrl,
+                  label: 'Price',
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) {
+                      return 'Price is required';
+                    }
+                    if (double.tryParse(v.trim()) == null) {
+                      return 'Invalid price';
+                    }
+                    return null;
+                  },
+                ),
+              ),
+            ],
           ),
-          SizedBox(height: 14 * scale),
+          const SizedBox(height: 14),
+          _textField(controller: _categoryCtrl, label: 'Category'),
+          const SizedBox(height: 14),
           _textField(
-            scale: scale,
-            controller: _categoryCtrl,
-            label: 'Category',
-          ),
-          SizedBox(height: 14 * scale),
-          _textField(
-            scale: scale,
             controller: _conditionCtrl,
             label: 'Condition',
             validator: (v) => (v == null || v.trim().isEmpty)
                 ? 'Condition is required'
                 : null,
           ),
-          SizedBox(height: 14 * scale),
+          const SizedBox(height: 14),
           _textField(
-            scale: scale,
             controller: _stockCtrl,
             label: 'Stock quantity',
             keyboardType: TextInputType.number,
           ),
-          SizedBox(height: 14 * scale),
-          _textField(
-            scale: scale,
-            controller: _linkCtrl,
-            label: 'Product link',
-          ),
+          const SizedBox(height: 14),
+          _textField(controller: _linkCtrl, label: 'Product link'),
         ],
       ),
     );
   }
 
   Widget _textField({
-    required double scale,
     required TextEditingController controller,
     required String label,
     String? Function(String?)? validator,
@@ -517,69 +554,55 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       keyboardType: keyboardType,
       maxLines: maxLines,
       onChanged: onChanged,
-      style: GoogleFonts.montserrat(
-        color: Colors.black,
-        fontSize: 14 * scale.clamp(0.9, 1.05),
-      ),
-      cursorColor: LightScreenTheme.button,
-      decoration: _fieldDecoration(scale, label),
+      onTapOutside: dismissAppKeyboard,
+      style: GoogleFonts.outfit(color: Colors.white, fontSize: 14),
+      cursorColor: const Color(0xFFA855F7),
+      decoration: _fieldDecoration(label),
     );
   }
 
-  Widget _buildActions(double scale) {
-    final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
-
+  Widget _buildActions() {
     return Padding(
-      padding: EdgeInsets.fromLTRB(
-        20 * scale,
-        0,
-        20 * scale,
-        24 * scale + bottomInset,
-      ),
+      padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           FilledButton(
             onPressed: _saving ? null : _save,
             style: FilledButton.styleFrom(
-              backgroundColor: LightScreenTheme.button,
-              disabledBackgroundColor:
-                  LightScreenTheme.button.withValues(alpha: 0.5),
+              backgroundColor: const Color(0xFFA855F7),
               foregroundColor: Colors.white,
-              padding: EdgeInsets.symmetric(vertical: 14 * scale),
+              padding: const EdgeInsets.symmetric(vertical: 14),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20 * scale),
+                borderRadius: BorderRadius.circular(20),
               ),
-              elevation: 0,
             ),
             child: _saving
                 ? const AutobusLoadingIndicator(size: 22)
                 : Text(
                     'Save changes',
-                    style: GoogleFonts.montserrat(
-                      fontSize: 15 * scale.clamp(0.9, 1.05),
-                      fontWeight: FontWeight.w600,
+                    style: GoogleFonts.outfit(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
           ),
-          SizedBox(height: 12 * scale),
+          const SizedBox(height: 12),
           OutlinedButton(
             onPressed: _saving ? null : _confirmDelete,
             style: OutlinedButton.styleFrom(
-              foregroundColor: const Color(0xFFE11D48),
-              side: BorderSide(
-                color: const Color(0xFFE11D48).withValues(alpha: 0.7),
-              ),
-              padding: EdgeInsets.symmetric(vertical: 14 * scale),
+              foregroundColor: Colors.redAccent,
+              side: BorderSide(color: Colors.redAccent.withValues(alpha: 0.7)),
+              padding: const EdgeInsets.symmetric(vertical: 14),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20 * scale),
+                borderRadius: BorderRadius.circular(20),
               ),
             ),
             child: Text(
               'Delete product',
-              style: GoogleFonts.montserrat(
-                fontSize: 15 * scale.clamp(0.9, 1.05),
-                fontWeight: FontWeight.w600,
+              style: GoogleFonts.outfit(
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ),

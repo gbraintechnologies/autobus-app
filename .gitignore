@@ -1,3 +1,17 @@
+# Apple signing / App Store Connect (never commit)
+*.p8
+AuthKey_*.p8
+**/AuthKey_*.p8
+*.mobileprovision
+*.cer
+*.certSigningRequest
+*.p12
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+vendor/bundle
+
 # Miscellaneous
 *.class
 *.log

@@ -54,17 +54,13 @@ class _VerifyCodeState extends State<VerifyCode> {
               ),
             );
           } else if (state is ResetCodeSent) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message)),
-            );
+            showAppSnackBar(context, state.message);
           } else if (state is AuthError &&
               (state.source == 'verify_code' ||
                   state.source == 'send_reset_code')) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: Colors.red,
-              ),
+            showAppSnackBar(
+              context,
+              userFacingError(state.message, action: 'verifying code'),
             );
           }
         },
@@ -73,6 +69,7 @@ class _VerifyCodeState extends State<VerifyCode> {
             final isLoading = state is AuthLoading;
 
             return SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               padding: EdgeInsets.fromLTRB(
                 24 * scale,
                 8 * scale,

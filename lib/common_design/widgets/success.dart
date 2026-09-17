@@ -8,76 +8,84 @@ class Success extends StatefulWidget {
 }
 
 class _SuccessState extends State<Success> {
+  static const _checkGreen = Color(0xFF22C55E);
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: BlocListener<SuccessBloc, SuccessState>(
-        listener: (context, state) {
-          // Handle navigation when success state changes
+      backgroundColor: Colors.white,
+      body: BlocBuilder<SuccessBloc, SuccessState>(
+        builder: (context, state) {
+          String displayMessage = 'Account creation was successful!';
+          String? nextScreen;
+          var userEmail = '';
+
           if (state is SuccessDisplaying) {
-            // You can add navigation logic here if needed
+            displayMessage = state.message;
+            nextScreen = state.nextScreen;
+            userEmail = state.userEmail;
           }
-        },
-        child: BlocBuilder<SuccessBloc, SuccessState>(
-          builder: (context, state) {
-            // Extract message and nextScreen based on state
-            String displayMessage = 'Account creation was successful!';
-            String? nextScreen;
 
-            if (state is SuccessDisplaying) {
-              displayMessage = state.message;
-              nextScreen = state.nextScreen;
-            }
-
-            return Center(
+          return SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
               child: Column(
                 children: [
-                  SizedBox(height: MediaQuery.of(context).size.width * 0.1),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      SizedBox(height: MediaQuery.of(context).size.width * 0.2),
-                      SizedBox(
-                        width: 150,
-                        height: 150,
-                        child: Image.asset(
-                          'assets/icons/success.png',
-                          fit: BoxFit.cover,
-                          width: 50,
-                        ),
+                  const Spacer(flex: 2),
+                  Center(
+                    child: Container(
+                      width: 120,
+                      height: 120,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: _checkGreen.withValues(alpha: 0.1),
+                        border: Border.all(color: _checkGreen, width: 3),
                       ),
-                      SizedBox(height: MediaQuery.of(context).size.width * 0.2),
-                      Text(
-                        displayMessage,
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.montserrat(
-                          color: Colors.black,
-                          fontSize: 15,
-                          fontWeight: FontWeight.normal,
-                        ),
+                      child: const Icon(
+                        Icons.check_rounded,
+                        color: _checkGreen,
+                        size: 64,
                       ),
-                    ],
+                    ),
                   ),
-                  SizedBox(height: MediaQuery.of(context).size.width * 0.5),
+                  const SizedBox(height: 36),
+                  Text(
+                    displayMessage,
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.montserrat(
+                      color: Colors.black,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      height: 1.4,
+                    ),
+                  ),
+                  const Spacer(flex: 3),
                   CtaButton(
                     onPressed: () {
                       context.read<SuccessBloc>().add(ClearSuccessEvent());
 
-                      final userEmail = state is SuccessDisplaying
-                          ? state.userEmail
-                          : '';
-
                       if (nextScreen == 'login') {
-                        Navigator.of(context).pushReplacement(
+                        Navigator.of(context).pushAndRemoveUntil(
                           MaterialPageRoute(
-                            builder: (context) => const Signin(),
+                            builder: (context) =>
+                                Signin(initialIdentifier: userEmail),
                           ),
+                          (route) => route.isFirst,
                         );
                       } else if (nextScreen == 'subscribe') {
                         Navigator.of(context).pushReplacement(
                           MaterialPageRoute(
                             builder: (context) =>
-                                SelectPlan(userEmail: userEmail),
+                                BuyCreditsPage(userEmail: userEmail),
+                          ),
+                        );
+                      } else if (nextScreen == 'onboarding') {
+                        Navigator.of(context).pushReplacement(
+                          MaterialPageRoute(
+                            builder: (context) => BusinessOnboarding(
+                              nextScreen: 'welcome',
+                              userEmail: userEmail,
+                            ),
                           ),
                         );
                       } else if (nextScreen == 'welcome') {
@@ -89,11 +97,12 @@ class _SuccessState extends State<Success> {
                       }
                     },
                   ),
+                  const SizedBox(height: 12),
                 ],
               ),
-            );
-          },
-        ),
+            ),
+          );
+        },
       ),
     );
   }

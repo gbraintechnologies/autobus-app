@@ -32,6 +32,17 @@ class _CreditAvatarState extends State<CreditAvatar> {
     try {
       final data = await context.read<ApiService>().getMyCredits();
       if (!mounted) return;
+      final wallet = data?['wallet'];
+      if (wallet is Map) {
+        final rem = wallet['remaining'];
+        setState(() {
+          _remaining = rem is num
+              ? rem.toDouble()
+              : double.tryParse(rem?.toString() ?? '');
+          _loading = false;
+        });
+        return;
+      }
       final credits = data?['credits'];
       if (credits is Map) {
         final item = credits[widget.creditCategory];
@@ -76,7 +87,7 @@ class _CreditAvatarState extends State<CreditAvatar> {
 
   @override
   Widget build(BuildContext context) {
-    final short = CreditCategory.shortLabelFor(widget.creditCategory);
+    final short = 'Credits';
     return Material(
       color: Colors.transparent,
       child: InkWell(

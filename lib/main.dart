@@ -17,9 +17,15 @@ void main() async {
   await AppConfig.init();
   print('✓ AppConfig initialized');
 
-  // Load fonts in the background so the first frame is not blocked.
-  unawaited(GoogleFonts.pendingFonts([GoogleFonts.montserrat()]));
-  print('✓ Google Fonts loading in background');
+  // Don't block first frame on font CDN or StoreKit/Keychain.
+  try {
+    await GoogleFonts.pendingFonts([
+      GoogleFonts.montserrat(),
+    ]).timeout(const Duration(seconds: 2));
+    print('✓ Google Fonts loaded');
+  } catch (_) {
+    print('⚠ Google Fonts timed out; using fallback');
+  }
 
   // Initialize session handling services
   _tokenService = TokenService();
@@ -30,9 +36,6 @@ void main() async {
   _apiService = ApiService(httpClient: _httpClient);
 
   _paystackService = PaystackService();
-  if (AppleIapIds.isSupported) {
-    await AppleIapService.instance.start(api: _apiService);
-  }
   print('✓ Services initialized');
 
   // Create blocs
@@ -41,6 +44,14 @@ void main() async {
     tokenService: _tokenService,
     successBloc: successBloc,
   );
+  _httpClient.onSessionExpired = () {
+    final state = authBloc.state;
+    if (state is Authenticated ||
+        state is TokenRefreshed ||
+        state is TokenRefreshing) {
+      authBloc.add(const SessionExpiredEvent());
+    }
+  };
   print('✓ BLoCs created');
 
   runApp(
@@ -62,6 +73,9 @@ void main() async {
       ),
     ),
   );
+  if (AppleIapIds.isSupported) {
+    unawaited(AppleIapService.instance.start(api: _apiService));
+  }
   print('=== APP INITIALIZED ===');
 }
 
@@ -82,13 +96,19 @@ class MyApp extends StatelessWidget {
       builder: (context, state) {
         return MaterialApp(
           navigatorKey: NavigationService.navigatorKey,
+          scaffoldMessengerKey: NavigationService.scaffoldMessengerKey,
           debugShowCheckedModeBanner: false,
           title: 'Autobus',
           theme: state.themeData,
           builder: (context, child) {
             return AnnotatedRegion<SystemUiOverlayStyle>(
               value: AppSystemUi.light,
-              child: child ?? const SizedBox.shrink(),
+              child: MediaQuery(
+                data: MediaQuery.of(context).copyWith(
+                  textScaler: AppScale.textScalerOf(context),
+                ),
+                child: child ?? const SizedBox.shrink(),
+              ),
             );
           },
           home: const SplashWrapper(),

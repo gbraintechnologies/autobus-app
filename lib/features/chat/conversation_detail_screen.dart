@@ -1,8 +1,5 @@
 import 'package:autobus/barrel.dart';
-import 'package:autobus/common_design/light_screen_theme.dart';
-import 'package:autobus/common_design/widgets/app_bottom_nav.dart';
 import 'package:autobus/common_design/widgets/light_screen_scaffold.dart';
-import 'package:autobus/icons/home_figma_icons.dart';
 
 /// How the conversation screen was opened (controls which actions appear).
 enum ConversationScreenMode {
@@ -33,6 +30,9 @@ class ConversationDetailScreen extends StatefulWidget {
 }
 
 class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
+  static const Color _bubbleUser = Color(0xFF3F1163);
+  static const Color _bubbleOther = Color(0xFF1E0A32);
+
   final _messageCtrl = TextEditingController();
   final _scrollCtrl = ScrollController();
 
@@ -92,7 +92,9 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
       final active = detail['intervention_active'];
       final isActive =
           active is bool ? active : active?.toString().toLowerCase() == 'true';
-      if (!isActive) {
+      final lifecycle =
+          (detail['conversation_lifecycle'] ?? '').toString().toLowerCase();
+      if (!isActive || lifecycle == 'completed') {
         _stopLivePolling();
       } else if (nextLen > prevLen) {
         _scrollToBottom();
@@ -172,16 +174,76 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
     return v?.toString().toLowerCase() == 'true';
   }
 
-  bool get _showComposer =>
-      widget.mode == ConversationScreenMode.liveChat && _interventionActive;
+  bool get _isCompleted {
+    final v = (_detail?['conversation_lifecycle'] ?? '').toString().toLowerCase();
+    return v == 'completed';
+  }
 
-  Future<void> _deactivateIntervention() async {
+  bool get _showComposer =>
+      widget.mode == ConversationScreenMode.liveChat &&
+      _interventionActive &&
+      !_isCompleted;
+
+  String get _headerTitle {
+    final detail = _detail;
+    if (detail != null) {
+      final username = (detail['customer_username'] ?? '').toString().trim();
+      final phone = (detail['customer_phone'] ?? '').toString().trim();
+      final displayName =
+          (detail['customer_display_name'] ?? detail['user_fullname'] ?? '')
+              .toString()
+              .trim();
+      final handle = username.isEmpty
+          ? ''
+          : (username.startsWith('@') ? username : '@$username');
+      if (handle.isNotEmpty && phone.isNotEmpty) return '$handle · $phone';
+      if (handle.isNotEmpty) return handle;
+      if (phone.isNotEmpty) return phone;
+      if (displayName.isNotEmpty) return displayName;
+    }
+    return widget.title;
+  }
+
+  Future<void> _completeConversation() async {
     final sid = _resolvedSessionId;
     if (sid == null) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E0A32),
+        title: Text(
+          'Mark as completed?',
+          style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.w600),
+        ),
+        content: Text(
+          'This ends the intervention. The next customer message will start a new conversation with the assistant.',
+          style: GoogleFonts.outfit(color: Colors.white70, fontSize: 14, height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('Cancel', style: GoogleFonts.outfit(color: Colors.white70)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(
+              'Complete',
+              style: GoogleFonts.outfit(
+                color: const Color(0xFFA855F7),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
     setState(() => _actionBusy = true);
     try {
       final api = context.read<ApiService>();
-      final updated = await api.deactivateConversationIntervention(sid);
+      final updated = await api.completeConversationSession(sid);
       if (!mounted) return;
       setState(() {
         _detail = updated;
@@ -189,7 +251,7 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
       });
       _stopLivePolling();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Intervention turned off')),
+        const SnackBar(content: Text('Conversation marked as completed')),
       );
     } catch (e) {
       if (!mounted) return;
@@ -235,44 +297,66 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
     }
   }
 
-  Widget _buildControls(double scale) {
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+      behavior: HitTestBehavior.translucent,
+      child: LightScreenScaffold(
+        title: _headerTitle,
+        creditCategory: CreditCategory.llm,
+        resizeToAvoidBottomInset: true,
+        body: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (!_loading && _loadError == null) _buildControls(),
+            Expanded(child: _buildBody()),
+            if (_showComposer) _buildComposer(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildControls() {
     if (widget.mode == ConversationScreenMode.liveChat &&
-        _interventionActive) {
+        _interventionActive &&
+        !_isCompleted) {
       return Padding(
-        padding: EdgeInsets.fromLTRB(20 * scale, 12 * scale, 20 * scale, 0),
+        padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
         child: SizedBox(
           width: double.infinity,
           child: FilledButton.icon(
-            onPressed: _actionBusy ? null : _deactivateIntervention,
+            onPressed: _actionBusy ? null : _completeConversation,
             style: FilledButton.styleFrom(
-              backgroundColor: LightScreenTheme.accent,
+              backgroundColor: const Color(0xFFA855F7),
               foregroundColor: Colors.white,
-              padding: EdgeInsets.symmetric(vertical: 14 * scale),
+              padding: const EdgeInsets.symmetric(vertical: 14),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20 * scale),
+                borderRadius: BorderRadius.circular(20),
               ),
             ),
             icon: _actionBusy
-                ? SizedBox(
-                    width: 18 * scale,
-                    height: 18 * scale,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
-                : HomeSfIcon(
-                    icon: HomeFigmaIcons.ai,
-                    size: 20 * scale,
-                    color: Colors.white,
-                  ),
+                ? const AutobusLoadingIndicator(size: 18)
+                : const Icon(Icons.check_circle_outline, size: 20),
             label: Text(
-              'Turn off intervention',
-              style: GoogleFonts.montserrat(
-                fontSize: 15 * scale.clamp(0.9, 1.05),
-                fontWeight: FontWeight.w500,
-              ),
+              'Mark as completed',
+              style: GoogleFonts.outfit(fontSize: 15, fontWeight: FontWeight.w500),
             ),
+          ),
+        ),
+      );
+    }
+
+    if (_isCompleted) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+        child: Text(
+          'This conversation is completed. A new customer message will start a fresh assistant chat.',
+          style: GoogleFonts.outfit(
+            color: Colors.white.withValues(alpha: 0.65),
+            fontSize: 13,
+            height: 1.4,
           ),
         ),
       );
@@ -281,17 +365,17 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
     return const SizedBox.shrink();
   }
 
-  Widget _buildComposer(double scale) {
+  Widget _buildComposer() {
     final canSend = _messageCtrl.text.trim().isNotEmpty && !_sending;
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(16 * scale, 8 * scale, 16 * scale, 12 * scale),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
       child: Container(
-        padding: EdgeInsets.fromLTRB(16 * scale, 12 * scale, 8 * scale, 8 * scale),
+        padding: const EdgeInsets.fromLTRB(16, 12, 8, 8),
         decoration: BoxDecoration(
-          color: LightScreenTheme.surface,
-          borderRadius: BorderRadius.circular(24 * scale),
-          border: Border.all(color: LightScreenTheme.hint.withValues(alpha: 0.5)),
+          color: Colors.white.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: const Color(0xFF3F1163)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -299,22 +383,20 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
             TextField(
               controller: _messageCtrl,
               enabled: !_sending,
-              cursorColor: LightScreenTheme.accent,
+              cursorColor: const Color(0xFFA855F7),
               keyboardType: TextInputType.multiline,
               textInputAction: TextInputAction.newline,
               minLines: 1,
               maxLines: 4,
               onChanged: (_) => setState(() {}),
               onSubmitted: canSend ? (_) => _sendMessage() : null,
-              style: GoogleFonts.montserrat(
-                color: Colors.black87,
-                fontSize: 14 * scale.clamp(0.9, 1.05),
-              ),
+              onTapOutside: dismissAppKeyboard,
+              style: GoogleFonts.outfit(color: Colors.white, fontSize: 14),
               decoration: InputDecoration(
                 hintText: 'Reply as agent…',
-                hintStyle: GoogleFonts.montserrat(
-                  color: LightScreenTheme.hint,
-                  fontSize: 14 * scale.clamp(0.9, 1.05),
+                hintStyle: GoogleFonts.outfit(
+                  color: Colors.white.withValues(alpha: 0.4),
+                  fontSize: 14,
                 ),
                 border: InputBorder.none,
                 isDense: true,
@@ -327,19 +409,12 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
                 IconButton(
                   onPressed: canSend ? _sendMessage : null,
                   icon: _sending
-                      ? SizedBox(
-                          width: 22 * scale,
-                          height: 22 * scale,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: LightScreenTheme.accent,
-                          ),
-                        )
+                      ? const AutobusLoadingIndicator(size: 22)
                       : Icon(
                           Icons.send_rounded,
                           color: canSend
-                              ? LightScreenTheme.accent
-                              : LightScreenTheme.hint,
+                              ? const Color(0xFFA855F7)
+                              : Colors.white.withValues(alpha: 0.25),
                         ),
                 ),
               ],
@@ -350,30 +425,31 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
     );
   }
 
-  Widget _buildBody(double scale) {
+  Widget _buildBody() {
     if (_loading) {
-      return Center(child: CircularProgressIndicator(color: LightScreenTheme.accent));
+      return const Center(child: AutobusLoadingIndicator(size: 32));
     }
     if (_loadError != null) {
       return Center(
         child: Padding(
-          padding: EdgeInsets.all(24 * scale),
+          padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
                 _loadError!,
                 textAlign: TextAlign.center,
-                style: LightScreenTheme.emptyState(scale),
+                style: GoogleFonts.outfit(
+                  color: Colors.white.withValues(alpha: 0.75),
+                  fontSize: 14,
+                ),
               ),
-              SizedBox(height: 16 * scale),
+              const SizedBox(height: 16),
               TextButton(
                 onPressed: _load,
                 child: Text(
                   'Retry',
-                  style: LightScreenTheme.listTitle(scale).copyWith(
-                    color: LightScreenTheme.accent,
-                  ),
+                  style: GoogleFonts.outfit(color: const Color(0xFFA855F7)),
                 ),
               ),
             ],
@@ -384,20 +460,28 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
 
     final history = _history;
     if (history.isEmpty) {
-      return Center(
-        child: Text(
-          _showComposer
-              ? 'No messages yet — send a reply below'
-              : 'No messages in this conversation',
-          textAlign: TextAlign.center,
-          style: LightScreenTheme.emptyState(scale),
+      return GestureDetector(
+        onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+        behavior: HitTestBehavior.opaque,
+        child: Center(
+          child: Text(
+            _showComposer
+                ? 'No messages yet — send a reply below'
+                : 'No messages in this conversation',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.outfit(
+              color: Colors.white.withValues(alpha: 0.6),
+              fontSize: 16,
+            ),
+          ),
         ),
       );
     }
 
     return ListView.builder(
       controller: _scrollCtrl,
-      padding: EdgeInsets.fromLTRB(20 * scale, 16 * scale, 20 * scale, 24 * scale),
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
       itemCount: history.length,
       itemBuilder: (context, index) {
         final msg = history[index];
@@ -405,87 +489,61 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
         final content = (msg['content'] ?? '').toString();
         final isUser = role == 'user';
         return Padding(
-          padding: EdgeInsets.only(bottom: 12 * scale),
+          padding: const EdgeInsets.only(bottom: 12),
           child: Align(
             alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
-            child: _messageBubble(scale, content, isUser: isUser, role: role),
+            child: _messageBubble(content, isUser: isUser, role: role),
           ),
         );
       },
     );
   }
 
-  Widget _messageBubble(
-    double scale,
-    String text, {
-    required bool isUser,
-    required String role,
-  }) {
-    final bg = isUser ? LightScreenTheme.accent : LightScreenTheme.surface;
-    final fg = isUser ? Colors.white : LightScreenTheme.body;
-
+  Widget _messageBubble(String text, {required bool isUser, required String role}) {
+    final bg = isUser ? _bubbleUser : _bubbleOther;
     return ConstrainedBox(
       constraints: BoxConstraints(
         maxWidth: MediaQuery.sizeOf(context).width * 0.78,
       ),
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 14 * scale, vertical: 10 * scale),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
           color: bg,
           borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(isUser ? 16 * scale : 4 * scale),
-            topRight: Radius.circular(isUser ? 4 * scale : 16 * scale),
-            bottomLeft: Radius.circular(16 * scale),
-            bottomRight: Radius.circular(16 * scale),
+            topLeft: Radius.circular(isUser ? 16 : 4),
+            topRight: Radius.circular(isUser ? 4 : 16),
+            bottomLeft: const Radius.circular(16),
+            bottomRight: const Radius.circular(16),
           ),
-          border: isUser
-              ? null
-              : Border.all(color: LightScreenTheme.hint.withValues(alpha: 0.4)),
+          border: Border.all(
+            color: const Color(0xFF3F1163).withValues(alpha: 0.6),
+          ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (role == 'human')
               Padding(
-                padding: EdgeInsets.only(bottom: 4 * scale),
+                padding: const EdgeInsets.only(bottom: 4),
                 child: Text(
                   'Agent',
-                  style: GoogleFonts.montserrat(
-                    color: LightScreenTheme.accent,
-                    fontSize: 10 * scale.clamp(0.9, 1.05),
+                  style: GoogleFonts.outfit(
+                    color: const Color(0xFFA855F7),
+                    fontSize: 10,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
             Text(
-              text,
-              style: GoogleFonts.montserrat(
-                color: fg,
-                fontSize: 14 * scale.clamp(0.9, 1.05),
+              isUser ? text : stripAiMarkdown(text),
+              style: GoogleFonts.outfit(
+                color: Colors.white,
+                fontSize: 14,
                 height: 1.35,
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final scale = MediaQuery.sizeOf(context).width / appShellDesignWidth;
-
-    return LightScreenScaffold(
-      title: widget.title,
-      creditCategory: CreditCategory.llm,
-      resizeToAvoidBottomInset: true,
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (!_loading && _loadError == null) _buildControls(scale),
-          Expanded(child: _buildBody(scale)),
-          if (_showComposer) _buildComposer(scale),
-        ],
       ),
     );
   }

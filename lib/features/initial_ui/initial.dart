@@ -12,8 +12,10 @@ class SplashWrapper extends StatefulWidget {
 class _SplashWrapperState extends State<SplashWrapper> {
   bool _navigated = false;
   bool? _hasSeenSplash;
+  bool _forceMarketingSplash = false;
   Timer? _splashTimer;
   Timer? _authStallTimer;
+  Timer? _failsafeTimer;
 
   @override
   void initState() {
@@ -21,6 +23,7 @@ class _SplashWrapperState extends State<SplashWrapper> {
     print('=== SPLASH WRAPPER INIT ===');
     _startAuthStallTimer();
     _loadSplashPref();
+    _failsafeTimer = Timer(const Duration(seconds: 4), _onFailsafe);
   }
 
   void _startAuthStallTimer() {
@@ -33,10 +36,18 @@ class _SplashWrapperState extends State<SplashWrapper> {
   }
 
   Future<void> _loadSplashPref() async {
-    final seen = await OnboardingStorage().hasSeenSplash();
-    if (!mounted) return;
-    setState(() => _hasSeenSplash = seen);
-    _handleAuthResolved(context.read<AuthBloc>().state);
+    try {
+      final seen = await OnboardingStorage()
+          .hasSeenSplash()
+          .timeout(const Duration(seconds: 2), onTimeout: () => false);
+      if (!mounted) return;
+      setState(() => _hasSeenSplash = seen);
+      _handleAuthResolved(context.read<AuthBloc>().state);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _hasSeenSplash = false);
+      _handleAuthResolved(context.read<AuthBloc>().state);
+    }
   }
 
   void _goToAuth() {
@@ -44,6 +55,7 @@ class _SplashWrapperState extends State<SplashWrapper> {
     _navigated = true;
     _splashTimer?.cancel();
     _authStallTimer?.cancel();
+    _failsafeTimer?.cancel();
     print('=== NAVIGATING TO AUTH WRAPPER ===');
     if (_hasSeenSplash == false) {
       unawaited(OnboardingStorage().markSplashSeen());
@@ -59,29 +71,50 @@ class _SplashWrapperState extends State<SplashWrapper> {
     _splashTimer = Timer(const Duration(seconds: 3), _goToAuth);
   }
 
+  bool _isLoggedIn(AuthState state) =>
+      state is Authenticated || state is TokenRefreshed;
+
+  bool _isLoggedOut(AuthState state) =>
+      state is Unauthenticated ||
+      state is SessionExpired ||
+      state is TokenRefreshFailed ||
+      state is AuthError;
+
   void _handleAuthResolved(AuthState state) {
-    if (state is Authenticated || state is TokenRefreshed) {
-      // Logged-in users skip the marketing splash and go straight to the app.
+    if (_isLoggedIn(state)) {
       _goToAuth();
       return;
     }
 
-    if (state is Unauthenticated ||
-        state is SessionExpired ||
-        state is TokenRefreshFailed ||
-        state is AuthError) {
+    if (_isLoggedOut(state)) {
       if (_hasSeenSplash == true) {
         _goToAuth();
-      } else {
+      } else if (_hasSeenSplash == false) {
         _scheduleSplashTimeout();
       }
     }
+  }
+
+  void _onFailsafe() {
+    if (_navigated || !mounted) return;
+    final state = context.read<AuthBloc>().state;
+    if (_isLoggedIn(state)) {
+      _goToAuth();
+      return;
+    }
+    if (_hasSeenSplash == false) {
+      setState(() => _forceMarketingSplash = true);
+      _scheduleSplashTimeout();
+      return;
+    }
+    _goToAuth();
   }
 
   @override
   void dispose() {
     _splashTimer?.cancel();
     _authStallTimer?.cancel();
+    _failsafeTimer?.cancel();
     super.dispose();
   }
 
@@ -92,32 +125,17 @@ class _SplashWrapperState extends State<SplashWrapper> {
         if (_hasSeenSplash == null) return;
         _handleAuthResolved(state);
       },
-      buildWhen: (previous, current) =>
-          previous.runtimeType != current.runtimeType ||
-          _hasSeenSplash != null,
       builder: (context, state) {
-        if (_hasSeenSplash == null) {
+        if (_isLoggedIn(state)) {
           return const Scaffold(
             body: Center(child: AutobusLoadingIndicator()),
           );
         }
 
-        if (state is Authenticated || state is TokenRefreshed) {
-          return const Scaffold(
-            body: Center(child: AutobusLoadingIndicator()),
-          );
-        }
-
-        if (state is AuthInitial ||
-            state is AuthLoading ||
-            state is TokenRefreshing) {
-          return const Scaffold(
-            body: Center(child: AutobusLoadingIndicator()),
-          );
-        }
-
-        if ((state is Unauthenticated || state is SessionExpired) &&
-            _hasSeenSplash == false) {
+        final showOnboarding =
+            _forceMarketingSplash ||
+            ((_hasSeenSplash == false) && _isLoggedOut(state));
+        if (showOnboarding) {
           return OnboardingPage(onFinished: _goToAuth);
         }
 

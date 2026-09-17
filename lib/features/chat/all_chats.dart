@@ -123,6 +123,19 @@ class _AllChatsPageState extends State<AllChatsPage> {
                 ),
               ),
               SizedBox(width: 12 * scale),
+              if ((c['conversation_lifecycle'] ?? '')
+                      .toString()
+                      .toLowerCase() ==
+                  'completed') ...[
+                Text(
+                  'Completed',
+                  style: LightScreenTheme.listSubtitle(scale).copyWith(
+                    color: LightScreenTheme.accent,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                SizedBox(width: 8 * scale),
+              ],
               Text(
                 _formatChatListDate(c),
                 maxLines: 1,

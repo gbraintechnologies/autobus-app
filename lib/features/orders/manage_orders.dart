@@ -64,6 +64,7 @@ class ManageOrders extends StatelessWidget {
                         builder: (_) => const AllOrdersHistory(
                           orderStatus: 'completed',
                           title: 'Completed Orders',
+                          emptyMessage: 'No completed orders',
                         ),
                       ),
                     );

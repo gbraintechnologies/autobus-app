@@ -1,33 +1,59 @@
 import 'package:autobus/barrel.dart';
 import 'package:autobus/common_design/widgets/auth_field.dart';
 import 'package:autobus/common_design/widgets/auth_screen_layout.dart';
-import 'package:flutter/services.dart';
 
 class Signin extends StatefulWidget {
-  const Signin({super.key});
+  const Signin({super.key, this.initialIdentifier});
+
+  /// Prefills the email / username field (e.g. after subscribe → re-login).
+  final String? initialIdentifier;
 
   @override
   State<Signin> createState() => _SigninState();
 }
 
 class _SigninState extends State<Signin> {
-  final _emailController = TextEditingController();
-  final _pinController = TextEditingController();
+  late final TextEditingController _emailController = TextEditingController(
+    text: widget.initialIdentifier?.trim() ?? '',
+  );
+  String _pin = '';
+
+  @override
+  void initState() {
+    super.initState();
+    if (_emailController.text.isEmpty) {
+      LastLoginStore.read().then((id) {
+        if (!mounted || id == null || _emailController.text.isNotEmpty) return;
+        _emailController.text = id;
+      });
+    }
+  }
 
   @override
   void dispose() {
     _emailController.dispose();
-    _pinController.dispose();
     super.dispose();
+  }
+
+  void _onBack() {
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+      return;
+    }
+    Navigator.of(context).push(
+      PageTransition(
+        type: PageTransitionType.leftToRightWithFade,
+        child: const LogorSign(),
+      ),
+    );
   }
 
   void _submitLogin() {
     final email = _emailController.text.trim();
-    final pin = _pinController.text.trim();
-    if (email.isEmpty || pin.length != 4) return;
+    if (email.isEmpty || _pin.length != 4) return;
 
     context.read<AuthBloc>().add(
-      LoginEvent(identifier: email, password: pin),
+      LoginEvent(identifier: email, password: _pin),
     );
   }
 
@@ -46,11 +72,9 @@ class _SigninState extends State<Signin> {
               (route) => false,
             );
           } else if (state is AuthError && state.source == 'login') {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message, style: GoogleFonts.montserrat()),
-                backgroundColor: Colors.red,
-              ),
+            showAppSnackBar(
+              context,
+              userFacingError(state.message, action: 'signing in'),
             );
           }
         },
@@ -58,11 +82,17 @@ class _SigninState extends State<Signin> {
           final isLoading = state is AuthLoading;
 
           return SingleChildScrollView(
-            padding: EdgeInsets.fromLTRB(24 * scale, 8 * scale, 24 * scale, 24 * scale),
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            padding: EdgeInsets.fromLTRB(
+              24 * scale,
+              8 * scale,
+              24 * scale,
+              24 * scale,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const AuthBackButton(),
+                AuthBackButton(onTap: _onBack),
                 SizedBox(height: 12 * scale),
                 AuthScreenHeader(
                   scale: scale,
@@ -82,19 +112,16 @@ class _SigninState extends State<Signin> {
                   textInputAction: TextInputAction.next,
                 ),
                 SizedBox(height: 16 * scale),
-                AuthField(
-                  width: fieldWidth,
-                  height: fieldHeight,
-                  scale: scale,
-                  icon: Icons.lock_outline,
-                  controller: _pinController,
+                AuthFieldLabel(scale: scale, label: 'PIN'),
+                SizedBox(height: 8 * scale),
+                PinDigitInput(
                   enabled: !isLoading,
-                  obscureText: true,
-                  hintText: '4-digit PIN',
-                  keyboardType: TextInputType.number,
-                  maxLength: 4,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  onSubmitted: (_) => _submitLogin(),
+                  onChanged: (v) => _pin = v,
+                  onCompleted: (_) {
+                    if (_emailController.text.isNotEmpty) {
+                      _submitLogin();
+                    }
+                  },
                 ),
                 SizedBox(height: 16 * scale),
                 Align(

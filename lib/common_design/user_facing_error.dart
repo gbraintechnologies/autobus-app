@@ -32,11 +32,13 @@ String userFacingError(
   Object? error, {
   String? fallback,
   String? context,
+  String? action,
 }) {
   final safeFallback = fallback ?? AppUserMessages.generic;
   if (error == null) return safeFallback;
 
-  debugPrint('App error${context == null ? '' : ' [$context]'}: $error');
+  final label = context ?? action;
+  debugPrint('App error${label == null ? '' : ' [$label]'}: $error');
 
   if (error is TimeoutException) return AppUserMessages.timeout;
   if (error is SocketException || error is HandshakeException) {

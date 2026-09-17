@@ -18,37 +18,20 @@ class ResetPassword extends StatefulWidget {
 }
 
 class _ResetPasswordState extends State<ResetPassword> {
-  final _newPinController = TextEditingController();
-  final _confirmPinController = TextEditingController();
-
-  @override
-  void dispose() {
-    _newPinController.dispose();
-    _confirmPinController.dispose();
-    super.dispose();
-  }
+  String _newPin = '';
+  String _confirmPin = '';
 
   void _submit() {
-    final newPin = _newPinController.text.trim();
-    final confirmPin = _confirmPinController.text.trim();
-
-    if (newPin.length != 4 || confirmPin.length != 4) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter and confirm your 4-digit PIN'),
-          backgroundColor: Colors.red,
-        ),
+    if (_newPin.length != 4 || _confirmPin.length != 4) {
+      showAppSnackBar(
+        context,
+        'Please enter and confirm your 4-digit PIN',
       );
       return;
     }
 
-    if (newPin != confirmPin) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('PINs do not match'),
-          backgroundColor: Colors.red,
-        ),
-      );
+    if (_newPin != _confirmPin) {
+      showAppSnackBar(context, 'PINs do not match');
       return;
     }
 
@@ -57,7 +40,7 @@ class _ResetPasswordState extends State<ResetPassword> {
         email: widget.email,
         phone: widget.phone,
         code: widget.code,
-        newPassword: newPin,
+        newPassword: _newPin,
       ),
     );
   }
@@ -70,19 +53,15 @@ class _ResetPasswordState extends State<ResetPassword> {
       child: BlocListener<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is PasswordResetSuccess) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message)),
-            );
+            showAppSnackBar(context, state.message);
             Navigator.of(context).pushAndRemoveUntil(
               MaterialPageRoute(builder: (_) => const Signin()),
               (route) => false,
             );
           } else if (state is AuthError && state.source == 'reset_password') {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: Colors.red,
-              ),
+            showAppSnackBar(
+              context,
+              userFacingError(state.message, action: 'resetting password'),
             );
           }
         },
@@ -91,6 +70,7 @@ class _ResetPasswordState extends State<ResetPassword> {
             final isLoading = state is AuthLoading;
 
             return SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               padding: EdgeInsets.fromLTRB(
                 24 * scale,
                 8 * scale,
@@ -110,18 +90,16 @@ class _ResetPasswordState extends State<ResetPassword> {
                   SizedBox(height: 32 * scale),
                   AuthFieldLabel(scale: scale, label: 'New Pin'),
                   SizedBox(height: 8 * scale),
-                  AuthPinField(
-                    scale: scale,
-                    controller: _newPinController,
+                  PinDigitInput(
                     enabled: !isLoading,
+                    onChanged: (v) => _newPin = v,
                   ),
                   SizedBox(height: 16 * scale),
                   AuthFieldLabel(scale: scale, label: 'Confirm Pin'),
                   SizedBox(height: 8 * scale),
-                  AuthPinField(
-                    scale: scale,
-                    controller: _confirmPinController,
+                  PinDigitInput(
                     enabled: !isLoading,
+                    onChanged: (v) => _confirmPin = v,
                   ),
                   SizedBox(height: 32 * scale),
                   AuthPrimaryButton(

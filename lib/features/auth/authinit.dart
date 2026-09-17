@@ -1,94 +1,186 @@
 import 'package:autobus/barrel.dart';
 import 'package:autobus/features/subscription/subscription_guard.dart';
 
-class AuthWrapper extends StatelessWidget {
+class AuthWrapper extends StatefulWidget {
   const AuthWrapper({super.key});
 
   @override
+  State<AuthWrapper> createState() => _AuthWrapperState();
+}
+
+class _AuthWrapperState extends State<AuthWrapper> {
+  /// Last login/signup landing page. Kept mounted through AuthLoading/AuthError
+  /// so form snackbar listeners are not torn down (iOS).
+  Widget _formGate = const LoggedOutGate();
+
+  /// Last authenticated shell — kept during in-place token refresh so the app
+  /// does not flash LogorSign / a Guest-labeled home.
+  Widget? _authedShell;
+  Timer? _initialTimeout;
+  String? _shellUserId;
+
+  @override
+  void initState() {
+    super.initState();
+    _initialTimeout = Timer(const Duration(seconds: 4), () {
+      if (!mounted) return;
+      final state = context.read<AuthBloc>().state;
+      if (state is AuthInitial || state is TokenRefreshing) {
+        setState(() {});
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _initialTimeout?.cancel();
+    super.dispose();
+  }
+
+  Map<String, dynamic> _userMap(dynamic user) {
+    if (user is Map<String, dynamic>) return user;
+    if (user is Map) return Map<String, dynamic>.from(user);
+    return <String, dynamic>{};
+  }
+
+  bool _hasUserIdentity(Map<String, dynamic> user) {
+    final id = (user['id'] ?? user['user_id'] ?? user['userId'] ?? '')
+        .toString()
+        .trim();
+    final email = (user['email'] ?? user['user_email'] ?? user['userEmail'] ?? '')
+        .toString()
+        .trim();
+    final phone =
+        (user['phone'] ?? user['user_phone'] ?? user['phone_number'] ?? '')
+            .toString()
+            .trim();
+    return id.isNotEmpty || email.isNotEmpty || phone.isNotEmpty;
+  }
+
+  void _popToRoot() {
+    final nav = Navigator.of(context, rootNavigator: true);
+    if (!nav.canPop()) return;
+    nav.popUntil((route) => route.isFirst);
+  }
+
+  Widget _requireAuthShell(dynamic user) {
+    final map = _userMap(user);
+    if (!_hasUserIdentity(map)) {
+      _authedShell = null;
+      _shellUserId = null;
+      _formGate = const LoggedOutGate();
+      return _formGate;
+    }
+    final id = (map['id'] ?? map['user_id'] ?? '').toString().trim();
+    if (_authedShell != null && _shellUserId != null && _shellUserId == id) {
+      return _authedShell!;
+    }
+    _shellUserId = id;
+    _authedShell = SubscriptionGuard(user: map);
+    return _authedShell!;
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return BlocListener<AuthBloc, AuthState>(
+    return BlocConsumer<AuthBloc, AuthState>(
       listener: (context, state) {
-        // Handle session expiration
-        if (state is SessionExpired) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(userFacingError(state.message)),
-              backgroundColor: Colors.red,
-            ),
-          );
-          Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (_) => const AuthWrapper()),
-            (route) => false,
-          );
+        if (state is Unauthenticated ||
+            state is SessionExpired ||
+            state is TokenRefreshFailed) {
+          _authedShell = null;
+          _formGate = const LoggedOutGate();
+          _shellUserId = null;
+          _popToRoot();
         }
-        // Handle token refresh failure
-        else if (state is TokenRefreshFailed) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(userFacingError(state.message)),
-              backgroundColor: Colors.red,
-            ),
-          );
+
+        if (state is BusinessSwitching) {
+          _popToRoot();
+        }
+
+        if (state is Authenticated && state.resetNavigation) {
+          _popToRoot();
+        }
+
+        if (state is SessionExpired) {
+          showAppSnackBar(context, userFacingError(state.message));
+        } else if (state is TokenRefreshFailed) {
+          showAppSnackBar(context, userFacingError(state.message));
+        } else if (state is AuthError && state.source == 'switch_business') {
+          showAppSnackBar(context, userFacingError(state.message));
         }
       },
-      child: BlocBuilder<AuthBloc, AuthState>(
-        builder: (context, state) {
-          print('=== AuthWrapper State: ${state.runtimeType} ===');
+      builder: (context, state) {
+        print('=== AuthWrapper State: ${state.runtimeType} ===');
 
-          if (state is Authenticated) {
-            print('✓ User is Authenticated');
-            final dynamic u = state.user;
-            final userMap = (u is Map<String, dynamic>)
-                ? u
-                : (u is Map
-                      ? Map<String, dynamic>.from(u)
-                      : <String, dynamic>{});
-            return SubscriptionGuard(user: userMap);
-          } else if (state is TokenRefreshed) {
-            final dynamic u = state.user;
-            final userMap = (u is Map<String, dynamic>)
-                ? u
-                : (u is Map
-                      ? Map<String, dynamic>.from(u)
-                      : <String, dynamic>{});
-            return SubscriptionGuard(user: userMap);
-          } else if (state is Unauthenticated) {
-            print('✗ User is Unauthenticated - showing Signin');
-            return const Signin();
-          } else if (state is SessionExpired) {
-            print('✗ Session Expired - showing LogorSign');
-            return const LogorSign();
-          } else if (state is AuthError) {
-            print('✗ Auth Error: ${state.message}');
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(
-                SnackBar(content: Text(userFacingError(state.message))),
-              );
-            });
-            // Render relevant page based on error source
-            if (state.source == 'signup') {
-              return const Signup();
-            } else {
-              return const Signin();
-            }
-          } else if (state is TokenRefreshing) {
-            print('⏳ Token Refreshing...');
-            return const Scaffold(
-              body: Center(child: AutobusLoadingIndicator()),
-            );
-          } else if (state is TokenRefreshFailed) {
-            print('✗ Token Refresh Failed: ${state.message} - showing Signin');
-            return const Signin();
-          } else {
-            print('⏳ Initial Loading State: $state');
-            return const Scaffold(
-              body: Center(child: AutobusLoadingIndicator()),
-            );
+        if (state is Authenticated) {
+          print('✓ User is Authenticated');
+          _initialTimeout?.cancel();
+          return _requireAuthShell(state.user);
+        }
+        if (state is TokenRefreshed) {
+          _initialTimeout?.cancel();
+          return _requireAuthShell(state.user);
+        }
+
+        if (state is Unauthenticated ||
+            state is SessionExpired ||
+            state is TokenRefreshFailed) {
+          print('✗ ${state.runtimeType} - showing logged-out gate');
+          _authedShell = null;
+          _formGate = const LoggedOutGate();
+          return _formGate;
+        }
+
+        // In-app refresh: keep the authenticated shell mounted.
+        if (state is TokenRefreshing && _authedShell != null) {
+          return _authedShell!;
+        }
+
+        if (state is BusinessSwitching && _authedShell != null) {
+          return PopScope(
+            canPop: false,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                _authedShell!,
+                BusinessSwitchScrim(displayName: state.displayName),
+              ],
+            ),
+          );
+        }
+
+        // Keep Signin/LogorSign mounted through login/signup load and error so
+        // the form (and its snackbar listener) is not torn down. Replacing the
+        // Scaffold here is what hid error snackbars on iOS.
+        if (state is AuthLoading ||
+            state is AuthError ||
+            state is Registered ||
+            state is SignupOtpVerified ||
+            state is SignupOtpResent ||
+            state is EmailExists ||
+            state is ResetCodeSent ||
+            state is ResetCodeVerified ||
+            state is PasswordResetSuccess ||
+            state is TokenRefreshing ||
+            state is DetachOtpSent ||
+            state is BusinessSwitching) {
+          if (_authedShell != null) {
+            return _authedShell!;
           }
-        },
-      ),
+          print('✗ Auth gate: ${state.runtimeType} - keeping form');
+          return _formGate;
+        }
+
+        // AuthInitial — brief loader, then login landing if session check stalls.
+        if (_initialTimeout?.isActive == false) {
+          print('⏳ Session check timed out - showing LogorSign');
+          return _formGate;
+        }
+        print('⏳ Initial Loading State: $state');
+        return const Scaffold(
+          body: Center(child: AutobusLoadingIndicator()),
+        );
+      },
     );
   }
 }

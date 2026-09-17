@@ -2,7 +2,6 @@ import 'package:autobus/barrel.dart';
 import 'package:autobus/icons/figma_icons.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:autobus/features/onboarding/onboarding_storage.dart';
 
 import 'services/subscription_storage.dart';
 
@@ -117,17 +116,18 @@ class _SubscriptionBillPageState extends State<SubscriptionBillPage> {
     }
 
     await _persistAndNavigate(
-      messenger: messenger,
       successBloc: successBloc,
       navigator: navigator,
     );
   }
 
   Future<void> _persistAndNavigate({
-    required ScaffoldMessengerState messenger,
     required SuccessBloc successBloc,
     required NavigatorState navigator,
   }) async {
+    final authBloc = context.read<AuthBloc>();
+    final email = widget.userEmail;
+
     try {
       await _storage.saveSelection(
         planId: widget.plan.id.toString(),
@@ -139,9 +139,6 @@ class _SubscriptionBillPageState extends State<SubscriptionBillPage> {
     }
 
     if (!mounted) return;
-    // Avoid ShowSuccessEvent here: Signup (and other screens) listen to
-    // SuccessBloc and would push the generic Success page on top after Paystack
-    // closes. Subscription completion goes straight to Welcome.
     successBloc.add(ClearSuccessEvent());
 
     final popName = widget.successPopUntilRouteName?.trim();
@@ -152,42 +149,59 @@ class _SubscriptionBillPageState extends State<SubscriptionBillPage> {
       return;
     }
 
-    try {
-      final api = context.read<ApiService>();
-      final user = await api.getUserProfile();
+    // Existing subscribers changing plans stay signed in.
+    if (widget.isUpgrade) {
       if (!mounted) return;
+      navigator.pushReplacement(Home.routeFromWelcome());
+      return;
+    }
 
-      final userKey = OnboardingStorage.userKeyFromMap(user);
-      final showWelcome =
-          userKey.isNotEmpty &&
-          !await OnboardingStorage().hasCompletedWelcome(userKey);
+    // First-time subscribe: drop the signup auto-login session and require a
+    // real login so AuthBloc becomes Authenticated and subscription status loads.
+    await _requireLoginAfterSubscribe(
+      authBloc: authBloc,
+      successBloc: successBloc,
+      email: email,
+    );
+  }
 
-      if (showWelcome) {
-        navigator.pushReplacement(
-          PageTransition(
-            type: PageTransitionType.rightToLeftWithFade,
-            duration: const Duration(milliseconds: 600),
-            child: const Welcome(),
-          ),
-        );
-        return;
-      }
-    } catch (e) {
-      debugPrint('Welcome routing fallback after subscription: $e');
-      if (!widget.isUpgrade) {
-        navigator.pushReplacement(
-          PageTransition(
-            type: PageTransitionType.rightToLeftWithFade,
-            duration: const Duration(milliseconds: 600),
-            child: const Welcome(),
-          ),
-        );
-        return;
+  Future<void> _requireLoginAfterSubscribe({
+    required AuthBloc authBloc,
+    required SuccessBloc successBloc,
+    required String email,
+  }) async {
+    successBloc.add(
+      ShowSuccessEvent(
+        message: 'Subscription successful.\nPlease log in to continue.',
+        nextScreen: 'login',
+        userEmail: email,
+      ),
+    );
+
+    if (authBloc.state is! Unauthenticated) {
+      authBloc.add(LogoutEvent());
+      try {
+        await authBloc.stream
+            .firstWhere(
+              (s) =>
+                  s is Unauthenticated ||
+                  (s is AuthError && s.source == 'logout'),
+            )
+            .timeout(const Duration(seconds: 8));
+      } catch (e) {
+        debugPrint('Logout after subscribe: $e');
       }
     }
 
-    if (!mounted) return;
-    navigator.pushReplacement(Home.routeFromWelcome());
+    final rootNav = NavigationService.navigatorKey.currentState;
+    if (rootNav == null) return;
+    rootNav.push(
+      PageTransition(
+        type: PageTransitionType.rightToLeftWithFade,
+        duration: const Duration(milliseconds: 600),
+        child: const Success(),
+      ),
+    );
   }
 
   @override
@@ -292,12 +306,11 @@ class _SubscriptionBillPageState extends State<SubscriptionBillPage> {
     }
     if (!result.success) {
       messenger.showSnackBar(
-        SnackBar(content: Text(userFacingError(result.error, fallback: AppUserMessages.payment))),
+        SnackBar(content: Text(result.error ?? 'App Store purchase failed.')),
       );
       return;
     }
     await _persistAndNavigate(
-      messenger: messenger,
       successBloc: successBloc,
       navigator: navigator,
     );
@@ -323,7 +336,6 @@ class _SubscriptionBillPageState extends State<SubscriptionBillPage> {
         return;
       }
       await _persistAndNavigate(
-        messenger: messenger,
         successBloc: successBloc,
         navigator: navigator,
       );
@@ -380,7 +392,9 @@ class _SubscriptionBillPageState extends State<SubscriptionBillPage> {
       if (!skipPaystack && AppConfig.paystackCallbackUrl.isEmpty) {
         messenger.showSnackBar(
           const SnackBar(
-            content: Text(AppUserMessages.payment),
+            content: Text(
+              'Missing PAYSTACK_CALLBACK_URL. Set it in .env and ensure it matches your Paystack dashboard redirect/callback.',
+            ),
           ),
         );
       }
@@ -474,38 +488,44 @@ class _SubscriptionBillPageState extends State<SubscriptionBillPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF130522),
       body: _GradientBackground(
         child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-            child: SingleChildScrollView(
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    IconButton(
-                      icon: FigmaSvgIcon(
-                        FigmaIcons.back,
-                        size: 22,
-                        color: Colors.white,
-                      ),
-                      onPressed: () => Navigator.of(context).pop(),
-                    ),
-                    Expanded(
-                      child: Center(
-                        child: Text(
-                          'Subscription Bill',
-                          style: GoogleFonts.montserrat(
-                            color: Colors.white,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 48),
-                  ],
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 18,
                 ),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: FigmaSvgIcon(
+                              FigmaIcons.back,
+                              size: 22,
+                              color: Colors.white,
+                            ),
+                            onPressed: () => Navigator.of(context).pop(),
+                          ),
+                          Expanded(
+                            child: AppFitText(
+                              'Subscription Bill',
+                              style: GoogleFonts.montserrat(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 48),
+                        ],
+                      ),
                 const SizedBox(height: 20),
                 Text(
                   '${widget.plan.name} \nAccount',
@@ -600,17 +620,20 @@ class _SubscriptionBillPageState extends State<SubscriptionBillPage> {
                   ),
                   const SizedBox(height: 8),
                 ],
-                _isLoading
-                    ? const AutobusLoadingIndicator(size: 28)
-                    : _BottomCta(
-                        label: AppleIapIds.isSupported
-                            ? 'Subscribe'
-                            : 'Subscribe Now',
-                        onPressed: _handleSubscription,
-                      ),
-              ],
-            ),
-            ),
+                      _isLoading
+                          ? const AutobusLoadingIndicator(size: 28)
+                          : _BottomCta(
+                              label: AppleIapIds.isSupported
+                                  ? 'Subscribe'
+                                  : 'Subscribe Now',
+                              onPressed: _handleSubscription,
+                            ),
+                      const SizedBox(height: 12),
+                    ],
+                  ),
+                ),
+              );
+            },
           ),
         ),
       ),
@@ -732,7 +755,7 @@ class _BillingOptionTile extends StatelessWidget {
         ),
         child: Column(
           children: [
-            Text(
+            AppFitText(
               option.label,
               style: GoogleFonts.montserrat(
                 color: labelColor,
@@ -741,7 +764,7 @@ class _BillingOptionTile extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 2),
-            Text(
+            AppFitText(
               option.subtitle,
               style: GoogleFonts.montserrat(
                 color: labelColor.withOpacity(0.85),
@@ -750,7 +773,7 @@ class _BillingOptionTile extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 10),
-            Text(
+            AppFitText(
               priceLabel ?? '\$ ${option.price.toStringAsFixed(0)}',
               style: GoogleFonts.montserrat(
                 color: labelColor,
@@ -780,22 +803,23 @@ class _BottomCta extends StatelessWidget {
         child: Container(
           width: double.infinity,
           height: 60,
-          padding: const EdgeInsets.symmetric(horizontal: 24),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
             color: Colors.transparent,
             borderRadius: BorderRadius.circular(40),
             border: Border.all(color: Colors.white.withOpacity(0.7)),
           ),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const SizedBox(width: 34),
-              Text(
-                label,
-                style: GoogleFonts.montserrat(
-                  color: Colors.white,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
+              const SizedBox(width: 18),
+              Expanded(
+                child: AppFitText(
+                  label,
+                  style: GoogleFonts.montserrat(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
               const FigmaChevronTrail(),
@@ -814,6 +838,8 @@ class _GradientBackground extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      width: double.infinity,
+      height: double.infinity,
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [Color(0xFF130522), Color(0xFF2D0C51), Color(0xFF130522)],

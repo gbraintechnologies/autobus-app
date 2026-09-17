@@ -81,6 +81,21 @@ class ManageMarketing extends StatelessWidget {
                     );
                   },
                 ),
+                LightHubCard(
+                  scale: scale,
+                  title: 'Recent posts',
+                  subtitle: 'Published posts',
+                  icon: HomeFigmaIcons.recentCampaigns,
+                  iconGradient: HomeFigmaIcons.liveChatsGradient,
+                  onTap: () {
+                    Navigator.push<void>(
+                      context,
+                      MaterialPageRoute<void>(
+                        builder: (_) => const RecentPostsPage(),
+                      ),
+                    );
+                  },
+                ),
               ],
             ),
           ],

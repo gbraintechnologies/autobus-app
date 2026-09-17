@@ -1,20 +1,6 @@
 import 'dart:io';
 
 import 'package:autobus/barrel.dart';
-import 'package:autobus/common_design/light_screen_theme.dart';
-import 'package:autobus/common_design/widgets/ai_sparkle_icon.dart';
-import 'package:autobus/common_design/widgets/app_bottom_nav.dart';
-import 'package:autobus/common_design/widgets/app_screen_header.dart';
-import 'package:autobus/common_design/widgets/app_shell_navigation.dart';
-import 'package:autobus/common_design/widgets/credits_pill.dart';
-import 'package:autobus/common_design/widgets/light_list_card.dart';
-import 'package:autobus/common_design/widgets/light_screen_scaffold.dart';
-import 'package:autobus/features/intelligence/intelligence_files_page.dart';
-import 'package:autobus/features/intelligence/intelligence_intro_modal.dart';
-import 'package:autobus/features/intelligence/intelligence_my_ai_page.dart';
-import 'package:autobus/features/intelligence/intelligence_websites_page.dart';
-import 'package:autobus/icons/figma_icons.dart';
-import 'package:autobus/icons/home_figma_icons.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -63,183 +49,34 @@ class ManageIntelligence extends StatefulWidget {
 }
 
 class _ManageIntelligenceState extends State<ManageIntelligence> {
-  static const _surfaceColor = Color(0xFFF8FAFC);
-  static const _accentColor = Color(0xFF7F03B9);
-  static const _mutedColor = Color(0xFF64748B);
-  static const _valueColor = Color(0xFF6366F1);
-  static const _introSeenKey = 'intelligence.introSeen';
-
   bool _presenceRequested = false;
   bool _presenceLoading = true;
   bool _hasRagDocuments = false;
   List<Map<String, dynamic>> _ragFiles = const [];
   String? _presenceError;
-  bool _introRequested = false;
+  Map<String, String> _onboardingAnswers = const {};
+  bool _onboardingCompleted = false;
 
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeShowIntro());
-  }
-
-  Future<void> _maybeShowIntro() async {
-    if (_introRequested) return;
-    _introRequested = true;
-    final prefs = await SharedPreferences.getInstance();
-    if (prefs.getBool(_introSeenKey) == true) return;
-    if (!mounted) return;
-    await IntelligenceIntroModal.show(context);
-    await prefs.setBool(_introSeenKey, true);
-  }
-
-  void _openMyAi() {
-    Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(
-        builder: (_) => const IntelligenceMyAiPage(),
-      ),
-    );
-  }
-
-  Future<void> _showFilesSheet() async {
-    final action = await showModalBottomSheet<String>(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(21, 16, 21, 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  'Files',
-                  style: GoogleFonts.montserrat(
-                    color: Colors.black,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: FigmaSvgIcon(
-                    FigmaIcons.files,
-                    size: 22,
-                    color: _accentColor,
-                  ),
-                  title: Text(
-                    'Upload files',
-                    style: GoogleFonts.montserrat(fontWeight: FontWeight.w500),
-                  ),
-                  onTap: () => Navigator.pop(context, 'upload'),
-                ),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: FigmaSvgIcon(
-                    FigmaIcons.files,
-                    size: 22,
-                    color: _mutedColor,
-                  ),
-                  title: Text(
-                    'View files',
-                    style: GoogleFonts.montserrat(fontWeight: FontWeight.w500),
-                  ),
-                  onTap: () => Navigator.pop(context, 'view'),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-
-    if (!mounted || action == null) return;
-    if (action == 'upload') {
-      await _handleUploadFiles();
-    } else if (action == 'view') {
-      await Navigator.push<void>(
-        context,
-        MaterialPageRoute<void>(
-          builder: (_) => const IntelligenceFilesPage(),
-        ),
-      );
-      if (mounted) await _loadRagPresence();
-    }
-  }
-
-  Future<void> _showWebsitesSheet() async {
-    final action = await showModalBottomSheet<String>(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(21, 16, 21, 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  'Websites',
-                  style: GoogleFonts.montserrat(
-                    color: Colors.black,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: FigmaSvgIcon(
-                    FigmaIcons.website,
-                    size: 22,
-                    color: _accentColor,
-                  ),
-                  title: Text(
-                    'Index website',
-                    style: GoogleFonts.montserrat(fontWeight: FontWeight.w500),
-                  ),
-                  onTap: () => Navigator.pop(context, 'index'),
-                ),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: FigmaSvgIcon(
-                    FigmaIcons.website,
-                    size: 22,
-                    color: _mutedColor,
-                  ),
-                  title: Text(
-                    'View websites',
-                    style: GoogleFonts.montserrat(fontWeight: FontWeight.w500),
-                  ),
-                  onTap: () => Navigator.pop(context, 'view'),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-
-    if (!mounted || action == null) return;
-    if (action == 'index') {
-      await _handleIndexWebsite();
-    } else if (action == 'view') {
-      await Navigator.push<void>(
-        context,
-        MaterialPageRoute<void>(
-          builder: (_) => const IntelligenceWebsitesPage(),
-        ),
-      );
-      if (mounted) await _loadRagPresence();
-    }
+  Map<String, String> _answersFromOnboarding(Map<String, dynamic>? data) {
+    if (data == null) return {};
+    final profile = data['profile'];
+    if (profile is! Map) return {};
+    final map = Map<String, dynamic>.from(profile);
+    final raw = map['answers'] is Map
+        ? Map<String, dynamic>.from(map['answers'] as Map)
+        : map;
+    final out = <String, String>{};
+    raw.forEach((key, value) {
+      if (key == 'answers' ||
+          key == 'completed_at' ||
+          key == 'updated_at' ||
+          key == 'version') {
+        return;
+      }
+      final text = value?.toString().trim() ?? '';
+      if (text.isNotEmpty) out[key.toString()] = text;
+    });
+    return out;
   }
 
   Future<void> _loadRagPresence() async {
@@ -250,23 +87,45 @@ class _ManageIntelligenceState extends State<ManageIntelligence> {
     });
     try {
       final api = context.read<ApiService>();
-      final files = await api.listMyStorageFiles(
+      final filesFuture = api.listMyStorageFiles(
         folder: ApiService.chatbotStorageFolder,
       );
+      final onboardingFuture = api.getBusinessOnboarding();
+      final files = await filesFuture;
+      Map<String, dynamic>? onboarding;
+      try {
+        onboarding = await onboardingFuture;
+      } catch (_) {
+        onboarding = null;
+      }
       if (!mounted) return;
+      final answers = _answersFromOnboarding(onboarding);
       setState(() {
         _ragFiles = files;
         _hasRagDocuments = files.isNotEmpty;
+        _onboardingAnswers = answers;
+        _onboardingCompleted = onboarding?['completed'] == true || answers.isNotEmpty;
         _presenceLoading = false;
       });
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _presenceError = userFacingError(e, fallback: AppUserMessages.load);
+        _presenceError = userFacingError(e);
         _presenceLoading = false;
         _hasRagDocuments = false;
         _ragFiles = const [];
       });
+    }
+  }
+
+  Future<void> _openOnboardingEditor() async {
+    final updated = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (context) => const BusinessOnboarding(editMode: true),
+      ),
+    );
+    if (updated == true && mounted) {
+      await _loadRagPresence();
     }
   }
 
@@ -412,462 +271,400 @@ class _ManageIntelligenceState extends State<ManageIntelligence> {
   }
 
   String _uploadErrorMessage(Object e) {
-    return userFacingError(e, fallback: AppUserMessages.upload);
+    return userFacingError(e, action: 'uploading document');
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final scale = MediaQuery.sizeOf(context).width / appShellDesignWidth;
-    final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
+  Future<void> _openIndexedWebsite(String url) async {
+    final uri = Uri.tryParse(url);
+    if (uri == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Invalid URL', style: GoogleFonts.montserrat()),
+        ),
+      );
+      return;
+    }
+    if (!await canLaunchUrl(uri)) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Could not open website', style: GoogleFonts.montserrat()),
+        ),
+      );
+      return;
+    }
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
 
-    return AppShellScaffold(
-      destination: AppShellDestination.intelligence,
-      showAiFab: false,
-      onTabSelected: (tab) => AppShellNavigation.onTabSelected(context, tab),
-      onCenterNavTap: () => AppShellNavigation.openIntelligence(context),
-      onAiTap: () => AppShellNavigation.openChatbot(context),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          AppScreenHeader(
-            scale: scale,
-            title: 'Manage Intelligence',
-            leading: IntelligenceInfoButton(
-              scale: scale,
-              onTap: () => IntelligenceIntroModal.show(context),
+  List<Widget> _websitesSection(BuildContext context) {
+    final sites = _ragFiles.where(_ragDocIsWebsite).toList();
+    if (sites.isEmpty) {
+      return [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: const Color(0xFF3F1163),
+              width: 1,
             ),
-            trailing: CreditsPill(
-              scale: scale,
-              creditCategory: CreditCategory.llm,
-            ),
+            borderRadius: BorderRadius.circular(16),
           ),
-          Expanded(
-            child: RefreshIndicator(
-              color: _accentColor,
-              onRefresh: _loadRagPresence,
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: EdgeInsets.fromLTRB(
-                  21 * scale,
-                  16 * scale,
-                  21 * scale,
-                  120 * scale + bottomInset,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                Icons.language_outlined,
+                color: Colors.white.withValues(alpha: 0.65),
+                size: 22,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'No websites indexed yet. Use Index Website to add a URL — you can paste https://, http://, or www. addresses.',
+                  style: GoogleFonts.montserrat(
+                    color: Colors.white.withValues(alpha: 0.78),
+                    fontSize: 12,
+                    height: 1.45,
+                    fontWeight: FontWeight.w400,
+                  ),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    BlocBuilder<AuthBloc, AuthState>(
-                      builder: (context, state) {
-                        final user = state is Authenticated ? state.user : const {};
-                        final industry =
-                            (user['industry'] ?? 'Not set').toString();
-                        final serviceArea = (user['location'] ??
-                                user['address'] ??
-                                'Not set')
-                            .toString();
-                        final businessName = (user['company'] ??
-                                user['fullname'] ??
-                                'Not set')
-                            .toString();
+              ),
+            ],
+          ),
+        ),
+      ];
+    }
 
-                        return _IndexedFromOnboardingCard(
-                          scale: scale,
-                          industry: industry,
-                          serviceArea: serviceArea,
-                          businessName: businessName,
-                          onUpdate: () {
-                            Navigator.push<void>(
-                              context,
-                              MaterialPageRoute<void>(
-                                builder: (_) => const SettingsPage(),
-                              ),
-                            );
-                          },
-                        );
-                      },
+    const maxShown = 8;
+    final shown = sites.length > maxShown ? sites.sublist(0, maxShown) : sites;
+    final tiles = <Widget>[
+      for (final doc in shown)
+        Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () {
+                final u = _ragDocSourceUrl(doc);
+                if (u != null) _openIndexedWebsite(u);
+              },
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: const Color(0xFF3F1163),
+                    width: 1,
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.link_rounded,
+                      color: Colors.white.withValues(alpha: 0.85),
+                      size: 20,
                     ),
-                    SizedBox(height: 16 * scale),
-                    if (_presenceLoading)
-                      Padding(
-                        padding: EdgeInsets.symmetric(vertical: 8 * scale),
-                        child: Center(
-                          child: CircularProgressIndicator(color: _accentColor),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        _ragDocSourceUrl(doc) ?? '',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.montserrat(
+                          color: Colors.white.withValues(alpha: 0.92),
+                          fontSize: 13,
+                          height: 1.35,
                         ),
-                      )
-                    else if (_presenceError != null)
-                      _IntelligenceStatusBanner(
-                        scale: scale,
-                        message:
-                            'Could not verify your documents. Pull to refresh.\n${_shortPresenceError(_presenceError!)}',
-                        onRetry: _loadRagPresence,
-                      )
-                    else if (!_hasRagDocuments)
-                      _IntelligenceStatusBanner(
-                        scale: scale,
-                        message: 'You have not uploaded any business data yet.',
-                        icon: HomeFigmaIcons.warning,
-                        iconColor: const Color(0xFFE11D48),
                       ),
-                    SizedBox(height: 12 * scale),
-                    GridView.count(
-                      crossAxisCount: 2,
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      mainAxisSpacing: 10 * scale,
-                      crossAxisSpacing: 10 * scale,
-                      childAspectRatio: 149 / 148,
-                      children: [
-                        _IntelligenceToolCard(
-                          scale: scale,
-                          title: 'Files',
-                          subtitle: 'Upload/view files',
-                          iconAsset: FigmaIcons.files,
-                          gradient: const LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [Color(0xFF22D3EE), Color(0xFF0891B2)],
-                          ),
-                          onTap: _showFilesSheet,
-                        ),
-                        _IntelligenceToolCard(
-                          scale: scale,
-                          title: 'Websites',
-                          subtitle: 'View/index websites',
-                          iconAsset: FigmaIcons.website,
-                          gradient: const LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [Color(0xFFA3E635), Color(0xFF65A30D)],
-                          ),
-                          onTap: _showWebsitesSheet,
-                        ),
-                      ],
                     ),
-                    SizedBox(height: 10 * scale),
-                    _MyAiWideCard(scale: scale, onTap: _openMyAi),
+                    Icon(
+                      Icons.open_in_new_rounded,
+                      color: Colors.white.withValues(alpha: 0.45),
+                      size: 18,
+                    ),
                   ],
                 ),
               ),
             ),
           ),
-        ],
-      ),
-    );
-  }
-}
+        ),
+    ];
 
-class _IndexedFromOnboardingCard extends StatelessWidget {
-  final double scale;
-  final String industry;
-  final String serviceArea;
-  final String businessName;
-  final VoidCallback onUpdate;
-
-  const _IndexedFromOnboardingCard({
-    required this.scale,
-    required this.industry,
-    required this.serviceArea,
-    required this.businessName,
-    required this.onUpdate,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20 * scale),
-        border: Border.all(color: Colors.black, width: 1),
-      ),
-      padding: EdgeInsets.all(16 * scale),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              AiSparkleIcon(size: 28 * scale.clamp(0.9, 1.05)),
-              const Spacer(),
-              TextButton(
-                onPressed: onUpdate,
-                style: TextButton.styleFrom(
-                  foregroundColor: _ManageIntelligenceState._accentColor,
-                  padding: EdgeInsets.zero,
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    if (sites.length > maxShown) {
+      tiles.add(
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton(
+            onPressed: () async {
+              await Navigator.push<void>(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (context) => const IntelligenceHistoryPage(),
                 ),
-                child: Text(
-                  'Update',
-                  style: GoogleFonts.montserrat(
-                    fontSize: 13 * scale.clamp(0.9, 1.05),
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 8 * scale),
-          Text(
-            'Indexed from onboarding',
-            style: GoogleFonts.montserrat(
-              color: Colors.black,
-              fontSize: 14 * scale.clamp(0.9, 1.05),
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          SizedBox(height: 12 * scale),
-          _ProfileField(scale: scale, label: 'Industry', value: industry),
-          SizedBox(height: 6 * scale),
-          _ProfileField(scale: scale, label: 'Service Area', value: serviceArea),
-          SizedBox(height: 6 * scale),
-          _ProfileField(scale: scale, label: 'Business Name', value: businessName),
-        ],
-      ),
-    );
-  }
-}
-
-class _ProfileField extends StatelessWidget {
-  final double scale;
-  final String label;
-  final String value;
-
-  const _ProfileField({
-    required this.scale,
-    required this.label,
-    required this.value,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final baseStyle = GoogleFonts.montserrat(
-      fontSize: 12 * scale.clamp(0.85, 1.05),
-      fontWeight: FontWeight.w500,
-      height: 1.45,
-    );
-
-    return Text.rich(
-      TextSpan(
-        children: [
-          TextSpan(
-            text: '$label : ',
-            style: baseStyle.copyWith(color: Colors.black.withValues(alpha: 0.85)),
-          ),
-          TextSpan(
-            text: value,
-            style: baseStyle.copyWith(color: _ManageIntelligenceState._valueColor),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _IntelligenceStatusBanner extends StatelessWidget {
-  final double scale;
-  final String message;
-  final VoidCallback? onRetry;
-  final IconData icon;
-  final Color iconColor;
-
-  const _IntelligenceStatusBanner({
-    required this.scale,
-    required this.message,
-    this.onRetry,
-    this.icon = HomeFigmaIcons.cloudOff,
-    this.iconColor = const Color(0xFFD97706),
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 14 * scale, vertical: 12 * scale),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16 * scale),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          HomeSfIcon(icon: icon, color: iconColor, size: 22 * scale),
-          SizedBox(width: 10 * scale),
-          Expanded(
+              );
+              if (mounted) await _loadRagPresence();
+            },
             child: Text(
-              message,
+              'View all ${sites.length} websites',
               style: GoogleFonts.montserrat(
-                color: _ManageIntelligenceState._valueColor,
-                fontSize: 12 * scale.clamp(0.85, 1.05),
-                height: 1.45,
+                color: const Color(0xFFA855F7),
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
               ),
             ),
-          ),
-          if (onRetry != null)
-            IconButton(
-              onPressed: onRetry,
-              icon: HomeSfIcon(
-                icon: HomeFigmaIcons.refresh,
-                size: 20 * scale,
-                color: _ManageIntelligenceState._mutedColor,
-              ),
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _IntelligenceToolCard extends StatelessWidget {
-  final double scale;
-  final String title;
-  final String subtitle;
-  final String iconAsset;
-  final Gradient gradient;
-  final VoidCallback onTap;
-
-  const _IntelligenceToolCard({
-    required this.scale,
-    required this.title,
-    required this.subtitle,
-    required this.iconAsset,
-    required this.gradient,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white,
-      elevation: 2,
-      shadowColor: Colors.black.withValues(alpha: 0.06),
-      borderRadius: BorderRadius.circular(20 * scale),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20 * scale),
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(
-            14 * scale,
-            14 * scale,
-            14 * scale,
-            12 * scale,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 40 * scale,
-                height: 40 * scale,
-                decoration: BoxDecoration(
-                  gradient: gradient,
-                  borderRadius: BorderRadius.circular(12 * scale),
-                ),
-                alignment: Alignment.center,
-                child: FigmaSvgIcon(
-                  iconAsset,
-                  size: 22 * scale.clamp(0.9, 1.05),
-                  color: Colors.white,
-                ),
-              ),
-              SizedBox(height: 10 * scale),
-              Expanded(
-                child: Align(
-                  alignment: Alignment.bottomLeft,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.montserrat(
-                          color: Colors.black,
-                          fontSize: 14 * scale.clamp(0.9, 1.05),
-                          fontWeight: FontWeight.w600,
-                          height: 1.25,
-                        ),
-                      ),
-                      SizedBox(height: 4 * scale),
-                      Text(
-                        subtitle,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.montserrat(
-                          color: _ManageIntelligenceState._mutedColor,
-                          fontSize: 11 * scale.clamp(0.85, 1.05),
-                          fontWeight: FontWeight.w400,
-                          height: 1.3,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
           ),
         ),
-      ),
-    );
+      );
+    }
+
+    return tiles;
   }
-}
-
-class _MyAiWideCard extends StatelessWidget {
-  final double scale;
-  final VoidCallback onTap;
-
-  const _MyAiWideCard({required this.scale, required this.onTap});
-
-  static const _gradientBorder = LinearGradient(
-    begin: Alignment.centerLeft,
-    end: Alignment.centerRight,
-    colors: [Color(0xFF7F03B9), Color(0xFFEC4899)],
-  );
 
   @override
   Widget build(BuildContext context) {
-    final radius = 20 * scale;
-    final height = 56 * scale;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(radius),
-        child: Ink(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(radius),
-            gradient: _gradientBorder,
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const DecoratedBox(
+            decoration: ManageScreenStyle.homeDashboardBodyDecoration,
           ),
-          child: Container(
-            margin: const EdgeInsets.all(1),
-            height: height,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(radius - 1),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+          SafeArea(
+            child: Column(
               children: [
-                FigmaSvgIcon(
-                  FigmaIcons.aiMyAi,
-                  size: 35 * scale.clamp(0.9, 1.05),
+                const ManageScreenHeader(
+                  title: 'Manage Intelligence',
+                  creditCategory: CreditCategory.llm,
                 ),
-                SizedBox(width: 8 * scale),
-                Text(
-                  'My AI',
-                  style: GoogleFonts.montserrat(
-                    color: Colors.black,
-                    fontSize: 14 * scale.clamp(0.9, 1.05),
-                    fontWeight: FontWeight.w600,
+                // Welcome Section
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const SizedBox(height: 60),
+                          Text(
+                            'Welcome to Business Chat Intelligence',
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.montserrat(
+                              color: Colors.white,
+                              fontSize: 19,
+                              fontWeight: FontWeight.w500,
+                              letterSpacing: -0.3,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          Text(
+                            'Upload business information documents to train your AI assistant on your company\'s information. The AI can instantly answer customer questions, provide support, and deliver accurate responses based on your files — helping businesses automate communication and improve customer experience.',
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.montserrat(
+                              color: Colors.white.withValues(alpha: 0.9),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w300,
+                              height: 1.6,
+                            ),
+                          ),
+                          const SizedBox(height: 32),
+                          _OnboardingProfileCard(
+                            answers: _onboardingAnswers,
+                            completed: _onboardingCompleted,
+                            loading: _presenceLoading,
+                            onEdit: _openOnboardingEditor,
+                          ),
+                          const SizedBox(height: 24),
+                          if (_presenceLoading) ...[
+                            const SizedBox(height: 8),
+                            const Center(
+                              child:                               const AutobusLoadingIndicator(size: 28),
+                            ),
+                            const SizedBox(height: 24),
+                          ] else if (_presenceError != null) ...[
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.amber.withValues(alpha: 0.12),
+                                border: Border.all(
+                                  color: Colors.amber.withValues(alpha: 0.45),
+                                  width: 1.2,
+                                ),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Icon(
+                                    Icons.cloud_off_outlined,
+                                    color: Colors.amber.shade300,
+                                    size: 22,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      'Could not verify your documents. Pull to refresh after opening the screen again, or check your connection.\n${_shortPresenceError(_presenceError!)}',
+                                      style: GoogleFonts.montserrat(
+                                        color: Colors.white.withValues(
+                                          alpha: 0.88,
+                                        ),
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w400,
+                                        height: 1.45,
+                                      ),
+                                    ),
+                                  ),
+                                  IconButton(
+                                    onPressed: _loadRagPresence,
+                                    icon: Icon(
+                                      Icons.refresh,
+                                      color: Colors.white.withValues(
+                                        alpha: 0.85,
+                                      ),
+                                      size: 22,
+                                    ),
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(
+                                      minWidth: 32,
+                                      minHeight: 32,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 32),
+                          ] else if (!_hasRagDocuments) ...[
+                            Container(
+                              decoration: BoxDecoration(
+                                color: const Color(
+                                  0xFF581C87,
+                                ).withValues(alpha: 0.1),
+                                border: Border.all(
+                                  color: const Color(
+                                    0xFF9333EA,
+                                  ).withValues(alpha: 0.5),
+                                  width: 1.5,
+                                ),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.warning_rounded,
+                                    color: Colors.red.shade400,
+                                    size: 24,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      _onboardingCompleted
+                                          ? 'No files or websites yet — your chatbot still uses your onboarding answers'
+                                          : 'You have not uploaded any business data',
+                                      style: GoogleFonts.montserrat(
+                                        color: Colors.white.withValues(
+                                          alpha: 0.85,
+                                        ),
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w400,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ] else
+                            const SizedBox(height: 8),
+                          if (!_presenceLoading && _presenceError == null) ...[
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                'Websites',
+                                style: GoogleFonts.montserrat(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            ..._websitesSection(context),
+                          ],
+                          const SizedBox(height: 40),
+                          // Action Cards Grid
+                          GridView.count(
+                            crossAxisCount: 2,
+                            mainAxisSpacing: 16,
+                            crossAxisSpacing: 16,
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            childAspectRatio: 1.0,
+                            children: [
+                              _IntelligenceCard(
+                                icon: Icons.auto_awesome_outlined,
+                                title: 'My AI',
+                                onTap: () {
+                                  Navigator.push<void>(
+                                    context,
+                                    MaterialPageRoute<void>(
+                                      builder: (_) => const AutoBus(
+                                        title: 'My Ai',
+                                        webhookContext: 'my_ai_agent',
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                              _IntelligenceCard(
+                                icon: Icons.description_outlined,
+                                title: 'Upload Files',
+                                onTap: _handleUploadFiles,
+                              ),
+                              _IntelligenceCard(
+                                icon: Icons.language_outlined,
+                                title: 'Index Website',
+                                onTap: _handleIndexWebsite,
+                              ),
+                              _IntelligenceCard(
+                                icon: Icons.folder_open_outlined,
+                                title: 'View Sources',
+                                onTap: () async {
+                                  await Navigator.push<void>(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          const IntelligenceHistoryPage(),
+                                    ),
+                                  );
+                                  if (mounted) await _loadRagPresence();
+                                },
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 40),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ],
             ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -942,6 +739,7 @@ class _WebsiteUrlDialogState extends State<_WebsiteUrlDialog> {
               controller: _controller,
               autofocus: true,
               keyboardType: TextInputType.url,
+              onTapOutside: dismissAppKeyboard,
               style: GoogleFonts.montserrat(color: Colors.white, fontSize: 14),
               decoration: InputDecoration(
                 hintText: 'https://example.com or www.example.com',
@@ -1163,6 +961,46 @@ class _RagIndexProgressDialogState extends State<_RagIndexProgressDialog> {
   }
 }
 
+class _IntelligenceCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final VoidCallback onTap;
+
+  const _IntelligenceCard({
+    required this.icon,
+    required this.title,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border.all(color: const Color(0xFF3F1163), width: 1),
+          borderRadius: BorderRadius.circular(32),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: Colors.white, size: 28),
+            const SizedBox(height: 14),
+            Text(
+              title,
+              style: GoogleFonts.montserrat(
+                color: Colors.white.withValues(alpha: 0.9),
+                fontSize: 13,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class IntelligenceHistoryPage extends StatefulWidget {
   const IntelligenceHistoryPage({super.key});
 
@@ -1297,7 +1135,7 @@ class _IntelligenceHistoryPageState extends State<IntelligenceHistoryPage> {
           ),
           title: Text(
             isWebsite ? 'Indexed content' : 'Indexed text preview',
-            style: GoogleFonts.montserrat(color: Colors.white, fontSize: 18),
+            style: GoogleFonts.outfit(color: Colors.white, fontSize: 18),
           ),
           content: SizedBox(
             width: double.maxFinite,
@@ -1312,8 +1150,11 @@ class _IntelligenceHistoryPageState extends State<IntelligenceHistoryPage> {
                 }
                 if (snapshot.hasError) {
                   return Text(
-                    userFacingError(snapshot.error, fallback: AppUserMessages.load),
-                    style: GoogleFonts.montserrat(
+                    userFacingError(
+                      snapshot.error!,
+                      action: 'previewing file',
+                    ),
+                    style: GoogleFonts.outfit(
                       color: Colors.white.withValues(alpha: 0.75),
                       fontSize: 13,
                     ),
@@ -1323,7 +1164,7 @@ class _IntelligenceHistoryPageState extends State<IntelligenceHistoryPage> {
                 if (text.trim().isEmpty) {
                   return Text(
                     'No preview available.',
-                    style: GoogleFonts.montserrat(
+                    style: GoogleFonts.outfit(
                       color: Colors.white.withValues(alpha: 0.75),
                       fontSize: 13,
                     ),
@@ -1334,7 +1175,7 @@ class _IntelligenceHistoryPageState extends State<IntelligenceHistoryPage> {
                   child: SingleChildScrollView(
                     child: SelectableText(
                       text,
-                      style: GoogleFonts.montserrat(
+                      style: GoogleFonts.outfit(
                         color: Colors.white.withValues(alpha: 0.9),
                         fontSize: 13,
                         height: 1.45,
@@ -1354,14 +1195,14 @@ class _IntelligenceHistoryPageState extends State<IntelligenceHistoryPage> {
                 },
                 child: Text(
                   'Open original',
-                  style: GoogleFonts.montserrat(color: Colors.white70),
+                  style: GoogleFonts.outfit(color: Colors.white70),
                 ),
               ),
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(),
               child: Text(
                 'Close',
-                style: GoogleFonts.montserrat(color: const Color(0xFFA855F7)),
+                style: GoogleFonts.outfit(color: const Color(0xFFA855F7)),
               ),
             ),
           ],
@@ -1432,13 +1273,13 @@ class _IntelligenceHistoryPageState extends State<IntelligenceHistoryPage> {
           ),
           title: Text(
             'Clear intelligence?',
-            style: GoogleFonts.montserrat(color: Colors.white, fontSize: 18),
+            style: GoogleFonts.outfit(color: Colors.white, fontSize: 18),
           ),
           content: Text(
             'This removes all uploaded documents and websites from storage '
             'and from the search index. Chat history is kept. '
             'You can upload your data again afterwards.',
-            style: GoogleFonts.montserrat(
+            style: GoogleFonts.outfit(
               color: Colors.white.withValues(alpha: 0.8),
               fontSize: 14,
               height: 1.4,
@@ -1449,14 +1290,14 @@ class _IntelligenceHistoryPageState extends State<IntelligenceHistoryPage> {
               onPressed: () => Navigator.of(dialogContext).pop(false),
               child: Text(
                 'Cancel',
-                style: GoogleFonts.montserrat(color: Colors.white70),
+                style: GoogleFonts.outfit(color: Colors.white70),
               ),
             ),
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(true),
               child: Text(
                 'Clear all',
-                style: GoogleFonts.montserrat(color: const Color(0xFFFF6B6B)),
+                style: GoogleFonts.outfit(color: const Color(0xFFFF6B6B)),
               ),
             ),
           ],
@@ -1480,7 +1321,7 @@ class _IntelligenceHistoryPageState extends State<IntelligenceHistoryPage> {
   void _showSnack(String message) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message, style: GoogleFonts.montserrat())),
+      SnackBar(content: Text(message, style: GoogleFonts.outfit())),
     );
   }
 
@@ -1509,7 +1350,7 @@ class _IntelligenceHistoryPageState extends State<IntelligenceHistoryPage> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _loadError = userFacingError(e, fallback: AppUserMessages.load);
+        _loadError = userFacingError(e);
         _loading = false;
       });
     }
@@ -1532,7 +1373,7 @@ class _IntelligenceHistoryPageState extends State<IntelligenceHistoryPage> {
         _expandedIndex = null;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Deleted "$name"', style: GoogleFonts.montserrat())),
+        SnackBar(content: Text('Deleted "$name"', style: GoogleFonts.outfit())),
       );
     } catch (e) {
       if (!mounted) return;
@@ -1540,7 +1381,7 @@ class _IntelligenceHistoryPageState extends State<IntelligenceHistoryPage> {
         SnackBar(
           content: Text(
             userFacingError(e),
-            style: GoogleFonts.montserrat(),
+            style: GoogleFonts.outfit(),
           ),
         ),
       );
@@ -1549,88 +1390,103 @@ class _IntelligenceHistoryPageState extends State<IntelligenceHistoryPage> {
 
   @override
   Widget build(BuildContext context) {
-    final scale = MediaQuery.sizeOf(context).width / appShellDesignWidth;
-
-    return LightScreenScaffold(
-      title: 'Manage Intelligence',
-      creditCategory: CreditCategory.llm,
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Stack(
+        fit: StackFit.expand,
         children: [
-          if (!_loading && _loadError == null && _documents.isNotEmpty)
-            Padding(
-              padding: EdgeInsets.fromLTRB(20 * scale, 4 * scale, 20 * scale, 0),
-              child: Align(
-                alignment: Alignment.centerRight,
-                child: TextButton.icon(
-                  onPressed: _clearIntelligence,
-                  icon: HomeSfIcon(
-                    icon: HomeFigmaIcons.delete,
-                    color: Colors.red.shade400,
-                    size: 18 * scale.clamp(0.9, 1.05),
+          const DecoratedBox(
+            decoration: ManageScreenStyle.homeDashboardBodyDecoration,
+          ),
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const ManageScreenHeader(
+                    title: 'Manage Intelligence',
+                    creditCategory: CreditCategory.llm,
+                    padding: EdgeInsets.zero,
                   ),
-                  label: Text(
-                    'Clear intelligence',
-                    style: GoogleFonts.montserrat(
-                      color: Colors.red.shade400,
-                      fontSize: 13 * scale.clamp(0.9, 1.05),
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          Expanded(
-            child: _loading
-                ? Center(
-                    child: CircularProgressIndicator(color: LightScreenTheme.accent),
-                  )
-                : _loadError != null
-                    ? Center(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 28 * scale),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                _loadError!,
-                                textAlign: TextAlign.center,
-                                style: LightScreenTheme.emptyState(scale),
-                              ),
-                              SizedBox(height: 16 * scale),
-                              TextButton(
-                                onPressed: _loadDocuments,
-                                child: Text(
-                                  'Retry',
-                                  style: GoogleFonts.montserrat(
-                                    color: LightScreenTheme.accent,
-                                    fontSize: 14 * scale.clamp(0.9, 1.05),
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            ],
+                  if (!_loading &&
+                      _loadError == null &&
+                      _documents.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton.icon(
+                        onPressed: _clearIntelligence,
+                        icon: const Icon(
+                          Icons.delete_sweep_outlined,
+                          color: Color(0xFFFF6B6B),
+                          size: 18,
+                        ),
+                        label: Text(
+                          'Clear intelligence',
+                          style: GoogleFonts.outfit(
+                            color: const Color(0xFFFF6B6B),
+                            fontSize: 13,
                           ),
                         ),
-                      )
-                    : _documents.isEmpty
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 20),
+                  Expanded(
+                    child: _loading
+                        ? const Center(
+                            child:                             const AutobusLoadingIndicator(size: 32),
+                          )
+                        : _loadError != null
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                  ),
+                                  child: Text(
+                                    _loadError!,
+                                    textAlign: TextAlign.center,
+                                    style: GoogleFonts.outfit(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.75,
+                                      ),
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                TextButton(
+                                  onPressed: _loadDocuments,
+                                  child: Text(
+                                    'Retry',
+                                    style: GoogleFonts.outfit(
+                                      color: const Color(0xFFA855F7),
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        : _documents.isEmpty
                         ? Center(
                             child: Text(
                               'No documents or websites indexed yet',
-                              style: LightScreenTheme.emptyState(scale),
+                              style: GoogleFonts.outfit(
+                                color: Colors.white.withValues(alpha: 0.6),
+                                fontSize: 16,
+                              ),
                             ),
                           )
                         : RefreshIndicator(
-                            color: LightScreenTheme.accent,
+                            color: const Color(0xFFA855F7),
                             onRefresh: _loadDocuments,
                             child: ListView.builder(
                               physics: const AlwaysScrollableScrollPhysics(),
-                              padding: EdgeInsets.fromLTRB(
-                                20 * scale,
-                                8 * scale,
-                                20 * scale,
-                                24 * scale,
-                              ),
                               itemCount: _documents.length,
                               itemBuilder: (context, index) {
                                 final doc = _documents[index];
@@ -1641,201 +1497,359 @@ class _IntelligenceHistoryPageState extends State<IntelligenceHistoryPage> {
                                 final isExpanded = _expandedIndex == index;
 
                                 return Padding(
-                                  padding: EdgeInsets.only(bottom: 12 * scale),
-                                  child: LightListCard(
-                                    scale: scale,
-                                    padding: EdgeInsets.all(
-                                      isExpanded ? 24 * scale : 20 * scale,
-                                    ),
+                                  padding: const EdgeInsets.only(bottom: 16),
+                                  child: GestureDetector(
                                     onTap: () {
                                       setState(() {
-                                        _expandedIndex =
-                                            isExpanded ? null : index;
+                                        _expandedIndex = isExpanded
+                                            ? null
+                                            : index;
                                       });
                                     },
-                                    child: isExpanded
-                                        ? Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Row(
-                                                children: [
-                                                  FigmaSvgIcon(
-                                                    isWebsite
-                                                        ? FigmaIcons.website
-                                                        : FigmaIcons.files,
-                                                    size: 20 * scale.clamp(0.9, 1.05),
-                                                    color: LightScreenTheme.accent,
-                                                  ),
-                                                  SizedBox(width: 8 * scale),
-                                                  Expanded(
-                                                    child: Text(
+                                    child: AnimatedContainer(
+                                      duration: const Duration(
+                                        milliseconds: 300,
+                                      ),
+                                      padding: EdgeInsets.all(
+                                        isExpanded ? 32 : 24,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        border: Border.all(
+                                          color: const Color(0xFF3F1163),
+                                          width: 1,
+                                        ),
+                                        borderRadius: BorderRadius.circular(
+                                          isExpanded ? 38 : 30,
+                                        ),
+                                      ),
+                                      child: isExpanded
+                                          ? Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Row(
+                                                  children: [
+                                                    Icon(
                                                       isWebsite
-                                                          ? 'Website'
-                                                          : 'Document',
-                                                      style: LightScreenTheme
-                                                          .listSubtitle(scale),
+                                                          ? Icons.language
+                                                          : Icons
+                                                                .description_outlined,
+                                                      color: const Color(
+                                                        0xFFA855F7,
+                                                      ),
+                                                      size: 20,
+                                                    ),
+                                                    const SizedBox(width: 8),
+                                                    Expanded(
+                                                      child: Text(
+                                                        isWebsite
+                                                            ? 'Website'
+                                                            : 'Document',
+                                                        style:
+                                                            GoogleFonts.outfit(
+                                                              color: Colors
+                                                                  .white
+                                                                  .withValues(
+                                                                    alpha: 0.7,
+                                                                  ),
+                                                              fontSize: 12,
+                                                            ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                const SizedBox(height: 10),
+                                                Text(
+                                                  title,
+                                                  style: GoogleFonts.outfit(
+                                                    color: Colors.white,
+                                                    fontSize: 16,
+                                                    fontWeight: FontWeight.w400,
+                                                  ),
+                                                ),
+                                                if (subtitle.isNotEmpty) ...[
+                                                  const SizedBox(height: 12),
+                                                  Text(
+                                                    subtitle,
+                                                    style: GoogleFonts.outfit(
+                                                      color: Colors.white
+                                                          .withValues(
+                                                            alpha: 0.65,
+                                                          ),
+                                                      fontSize: 11,
+                                                      fontWeight:
+                                                          FontWeight.w300,
                                                     ),
                                                   ),
                                                 ],
-                                              ),
-                                              SizedBox(height: 10 * scale),
-                                              Text(
-                                                title,
-                                                style: LightScreenTheme.listTitle(
-                                                  scale,
-                                                ).copyWith(
-                                                  fontWeight: FontWeight.w500,
-                                                ),
-                                              ),
-                                              if (subtitle.isNotEmpty) ...[
-                                                SizedBox(height: 12 * scale),
-                                                Text(
-                                                  subtitle,
-                                                  style: LightScreenTheme
-                                                      .listSubtitle(scale),
-                                                ),
-                                              ],
-                                              SizedBox(height: 16 * scale),
-                                              if (isWebsite && sourceUrl != null)
-                                                Padding(
-                                                  padding: EdgeInsets.only(
-                                                    bottom: 8 * scale,
-                                                  ),
-                                                  child: SizedBox(
-                                                    width: double.infinity,
-                                                    child: TextButton(
-                                                      onPressed: () =>
-                                                          _openUrl(sourceUrl),
-                                                      child: Text(
-                                                        'Open website',
-                                                        style: GoogleFonts
-                                                            .montserrat(
-                                                          color: LightScreenTheme
-                                                              .accent,
-                                                          fontSize: 13 *
-                                                              scale.clamp(
-                                                                0.9,
-                                                                1.05,
+                                                const SizedBox(height: 16),
+                                                if (isWebsite &&
+                                                    sourceUrl != null)
+                                                  Padding(
+                                                    padding:
+                                                        const EdgeInsets.only(
+                                                          bottom: 8,
+                                                        ),
+                                                    child: SizedBox(
+                                                      width: double.infinity,
+                                                      child: TextButton(
+                                                        onPressed: () =>
+                                                            _openUrl(
+                                                              sourceUrl,
+                                                            ),
+                                                        child: Text(
+                                                          'Open website',
+                                                          style:
+                                                              GoogleFonts.outfit(
+                                                                color: const Color(
+                                                                  0xFFA855F7,
+                                                                ),
+                                                                fontSize: 13,
                                                               ),
-                                                          fontWeight:
-                                                              FontWeight.w500,
                                                         ),
                                                       ),
                                                     ),
                                                   ),
-                                                ),
-                                              SizedBox(
-                                                width: double.infinity,
-                                                child: TextButton(
-                                                  onPressed: () =>
-                                                      _viewScrapedContent(doc),
-                                                  child: Text(
-                                                    isWebsite
-                                                        ? 'View indexed content'
-                                                        : 'View indexed text',
-                                                    style: GoogleFonts.montserrat(
-                                                      color: LightScreenTheme.body,
-                                                      fontSize: 13 *
-                                                          scale.clamp(0.9, 1.05),
-                                                      fontWeight: FontWeight.w500,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                              if (!isWebsite)
                                                 SizedBox(
                                                   width: double.infinity,
                                                   child: TextButton(
                                                     onPressed: () =>
-                                                        _openFileUrl(doc),
+                                                        _viewScrapedContent(
+                                                          doc,
+                                                        ),
                                                     child: Text(
-                                                      'Open original',
-                                                      style: GoogleFonts
-                                                          .montserrat(
-                                                        color: LightScreenTheme
-                                                            .muted,
-                                                        fontSize: 13 *
-                                                            scale.clamp(
-                                                              0.9,
-                                                              1.05,
+                                                      isWebsite
+                                                          ? 'View indexed content'
+                                                          : 'View indexed text',
+                                                      style: GoogleFonts.outfit(
+                                                        color: Colors.white
+                                                            .withValues(
+                                                              alpha: 0.85,
                                                             ),
+                                                        fontSize: 13,
                                                       ),
                                                     ),
                                                   ),
                                                 ),
-                                              SizedBox(height: 4 * scale),
-                                              Center(
-                                                child: TextButton(
-                                                  onPressed: () =>
-                                                      _deleteAt(index),
-                                                  child: Text(
-                                                    isWebsite
-                                                        ? 'Remove website'
-                                                        : 'Delete file',
-                                                    style: GoogleFonts.montserrat(
-                                                      color: LightScreenTheme.muted,
-                                                      fontSize: 13 *
-                                                          scale.clamp(0.9, 1.05),
+                                                if (!isWebsite)
+                                                  SizedBox(
+                                                    width: double.infinity,
+                                                    child: TextButton(
+                                                      onPressed: () =>
+                                                          _openFileUrl(doc),
+                                                      child: Text(
+                                                        'Open original',
+                                                        style:
+                                                            GoogleFonts.outfit(
+                                                              color: Colors
+                                                                  .white
+                                                                  .withValues(
+                                                                    alpha: 0.75,
+                                                                  ),
+                                                              fontSize: 13,
+                                                            ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                const SizedBox(height: 4),
+                                                Center(
+                                                  child: TextButton(
+                                                    onPressed: () =>
+                                                        _deleteAt(index),
+                                                    child: Text(
+                                                      isWebsite
+                                                          ? 'Remove website'
+                                                          : 'Delete file',
+                                                      style: GoogleFonts.outfit(
+                                                        color: Colors.white
+                                                            .withValues(
+                                                              alpha: 0.75,
+                                                            ),
+                                                        fontSize: 13,
+                                                        fontWeight:
+                                                            FontWeight.w300,
+                                                      ),
                                                     ),
                                                   ),
                                                 ),
-                                              ),
-                                            ],
-                                          )
-                                        : Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Row(
-                                                children: [
-                                                  FigmaSvgIcon(
-                                                    isWebsite
-                                                        ? FigmaIcons.website
-                                                        : FigmaIcons.files,
-                                                    size: 18 * scale.clamp(0.9, 1.05),
-                                                    color: LightScreenTheme.accent,
-                                                  ),
-                                                  SizedBox(width: 8 * scale),
-                                                  Expanded(
-                                                    child: Text(
-                                                      title,
-                                                      maxLines: 2,
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                      style: LightScreenTheme
-                                                          .listTitle(scale)
-                                                          .copyWith(
-                                                            fontSize: 16 *
-                                                                scale.clamp(
-                                                                  0.9,
-                                                                  1.05,
-                                                                ),
-                                                            fontWeight:
-                                                                FontWeight.w500,
+                                              ],
+                                            )
+                                          : Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Row(
+                                                  children: [
+                                                    Icon(
+                                                      isWebsite
+                                                          ? Icons.language
+                                                          : Icons
+                                                                .description_outlined,
+                                                      color: const Color(
+                                                        0xFFA855F7,
+                                                      ),
+                                                      size: 18,
+                                                    ),
+                                                    const SizedBox(width: 8),
+                                                    Expanded(
+                                                      child: Text(
+                                                        title,
+                                                        maxLines: 2,
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                        style:
+                                                            GoogleFonts.outfit(
+                                                              color:
+                                                                  Colors.white,
+                                                              fontSize: 18,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w400,
+                                                            ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                if (subtitle.isNotEmpty) ...[
+                                                  const SizedBox(height: 6),
+                                                  Text(
+                                                    subtitle,
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    style: GoogleFonts.outfit(
+                                                      color: Colors.white
+                                                          .withValues(
+                                                            alpha: 0.45,
                                                           ),
+                                                      fontSize: 11,
+                                                      fontWeight:
+                                                          FontWeight.w300,
                                                     ),
                                                   ),
                                                 ],
-                                              ),
-                                              if (subtitle.isNotEmpty) ...[
-                                                SizedBox(height: 6 * scale),
-                                                Text(
-                                                  subtitle,
-                                                  maxLines: 1,
-                                                  overflow: TextOverflow.ellipsis,
-                                                  style: LightScreenTheme
-                                                      .listSubtitle(scale),
-                                                ),
                                               ],
-                                            ],
-                                          ),
+                                            ),
+                                    ),
                                   ),
                                 );
                               },
                             ),
                           ),
+                  ),
+                ],
+              ),
+            ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+const _onboardingLabels = <String, String>{
+  'business_name': 'Business name',
+  'business_description': 'About the business',
+  'target_customers': 'Target customers',
+  'products_services': 'Products & services',
+  'industry': 'Industry',
+  'service_area': 'Service area',
+  'differentiator': 'What makes you unique',
+  'chatbot_greeting': 'Chatbot greeting',
+};
+
+class _OnboardingProfileCard extends StatelessWidget {
+  const _OnboardingProfileCard({
+    required this.answers,
+    required this.completed,
+    required this.loading,
+    required this.onEdit,
+  });
+
+  final Map<String, String> answers;
+  final bool completed;
+  final bool loading;
+  final VoidCallback onEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    if (loading && answers.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: const Color(0xFF581C87).withValues(alpha: 0.18),
+        border: Border.all(
+          color: const Color(0xFF9333EA).withValues(alpha: 0.5),
+          width: 1.2,
+        ),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.auto_awesome,
+                color: Colors.white.withValues(alpha: 0.9),
+                size: 20,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  completed
+                      ? 'Indexed from onboarding'
+                      : 'Train your chatbot with a business profile',
+                  style: GoogleFonts.montserrat(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              TextButton(
+                onPressed: onEdit,
+                child: Text(
+                  completed ? 'Update' : 'Add',
+                  style: GoogleFonts.montserrat(
+                    color: const Color(0xFFA855F7),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (answers.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            ...answers.entries.take(4).map((e) {
+              final label = _onboardingLabels[e.key] ?? e.key;
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Text(
+                  '$label: ${e.value}',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.montserrat(
+                    color: Colors.white.withValues(alpha: 0.82),
+                    fontSize: 12,
+                    height: 1.35,
+                  ),
+                ),
+              );
+            }),
+          ] else
+            Text(
+              'These answers are indexed into Intelligence so customers get accurate replies before you upload files. Updating them replaces only this profile — not your documents or websites.',
+              style: GoogleFonts.montserrat(
+                color: Colors.white.withValues(alpha: 0.75),
+                fontSize: 12,
+                height: 1.4,
+              ),
+            ),
         ],
       ),
     );

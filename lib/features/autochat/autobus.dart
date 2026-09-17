@@ -3,6 +3,7 @@ import 'package:autobus/features/products/product_requirements_sheet.dart';
 import 'package:autobus/features/products/product_chat_image_attachments.dart';
 import 'package:autobus/features/products/product_form_images.dart';
 import 'dart:io';
+import 'package:http/http.dart' as http;
 import 'package:file_picker/file_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'services/autochat_repository.dart';
@@ -36,6 +37,9 @@ class AutoBus extends StatefulWidget {
         return 'email_agent';
       case 'sms':
         return 'chatbot_agent';
+      case 'my ai':
+      case 'my-ai':
+        return 'my_ai_agent';
       case 'interactions':
         return 'interactions_agent';
       default:
@@ -64,7 +68,10 @@ class _AutoBusState extends State<AutoBus> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return GestureDetector(
+      onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+      behavior: HitTestBehavior.translucent,
+      child: Scaffold(
       body: BlocListener<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is SessionExpired) {
@@ -75,7 +82,7 @@ class _AutoBusState extends State<AutoBus> {
               ),
             );
             Navigator.of(context).pushAndRemoveUntil(
-              MaterialPageRoute(builder: (_) => const AuthWrapper()),
+              MaterialPageRoute(builder: (_) => const LoggedOutGate()),
               (route) => false,
             );
           } else if (state is TokenRefreshFailed) {
@@ -85,12 +92,9 @@ class _AutoBusState extends State<AutoBus> {
                 backgroundColor: Colors.orange,
               ),
             );
-          } else if (state is TokenRefreshed) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Session refreshed'),
-                backgroundColor: Colors.green,
-              ),
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (_) => const LoggedOutGate()),
+              (route) => false,
             );
           }
         },
@@ -118,11 +122,15 @@ class _AutoBusState extends State<AutoBus> {
           },
         ),
       ),
+      ),
     );
   }
 
   Widget _buildAuthenticatedAutoBus(dynamic user) {
-    final repo = AutoChatRepository(client: context.read<ApiService>().httpClient);
+    final repo = AutoChatRepository(
+      client: http.Client(),
+      apiService: context.read<ApiService>(),
+    );
 
     final ctx =
         widget.webhookContext ??
@@ -277,7 +285,7 @@ class _AutoBusChatUIState extends State<_AutoBusChatUI> {
           if (!mounted) return;
           setState(() => _productImageBusy = false);
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(userFacingError(e, fallback: AppUserMessages.upload))),
+            SnackBar(content: Text(userFacingError(e, action: 'attaching product images'))),
           );
           return;
         }
@@ -445,7 +453,7 @@ class _AutoBusChatUIState extends State<_AutoBusChatUI> {
                 setSheetState(() {
                   uploading = false;
                   uploadSuccess = false;
-                  uploadError = userFacingError(e, fallback: AppUserMessages.upload);
+                  uploadError = userFacingError(e, action: 'uploading file');
                 });
               }
             }
@@ -512,6 +520,7 @@ class _AutoBusChatUIState extends State<_AutoBusChatUI> {
                           Expanded(
                             child: TextField(
                               controller: folderController,
+                              onTapOutside: dismissAppKeyboard,
                               decoration: InputDecoration(
                                 hintText: 'Folder (e.g. chatbot-files)',
                                 isDense: true,
@@ -895,6 +904,8 @@ class _AutoBusChatUIState extends State<_AutoBusChatUI> {
                           if (state is ChatLoadFailure) {
                             return ListView(
                               padding: const EdgeInsets.only(top: 8),
+                              keyboardDismissBehavior:
+                                  ScrollViewKeyboardDismissBehavior.onDrag,
                               children: [
                                 Align(
                                   alignment: Alignment.centerLeft,
@@ -918,6 +929,8 @@ class _AutoBusChatUIState extends State<_AutoBusChatUI> {
 
                           return ListView.builder(
                             padding: const EdgeInsets.only(top: 8),
+                            keyboardDismissBehavior:
+                                ScrollViewKeyboardDismissBehavior.onDrag,
                             itemCount: msgs.length,
                             itemBuilder: (context, index) {
                               final m = msgs[index];
@@ -979,6 +992,7 @@ class _AutoBusChatUIState extends State<_AutoBusChatUI> {
                       textInputAction: TextInputAction.newline,
                       minLines: 1,
                       maxLines: null,
+                      onTapOutside: dismissAppKeyboard,
                       decoration: InputDecoration(
                         hintText: "Type Your Command Autobus ...",
                         hintStyle: GoogleFonts.montserrat(
@@ -1133,7 +1147,7 @@ class _AutoBusChatUIState extends State<_AutoBusChatUI> {
             : null,
       ),
       child: Text(
-        text,
+        isUser ? text : stripAiMarkdown(text),
         style: GoogleFonts.montserrat(
           fontSize: 14,
           height: 1.35,

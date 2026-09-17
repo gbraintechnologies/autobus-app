@@ -22,9 +22,25 @@ String _liveChatSubtitleId(Map<String, dynamic> c) {
   return '';
 }
 
-String _liveChatSubtitlePhoneOrId(Map<String, dynamic> c) {
+String _liveChatCustomerLabel(Map<String, dynamic> c) {
+  final username = (c['customer_username'] ?? '').toString().trim();
   final phone = (c['customer_phone'] ?? '').toString().trim();
+  final displayName = (c['customer_display_name'] ?? c['user_fullname'] ?? '')
+      .toString()
+      .trim();
+  final handle = username.isEmpty
+      ? ''
+      : (username.startsWith('@') ? username : '@$username');
+  if (handle.isNotEmpty && phone.isNotEmpty) return '$handle · $phone';
+  if (handle.isNotEmpty) return handle;
   if (phone.isNotEmpty) return phone;
+  if (displayName.isNotEmpty) return displayName;
+  return '';
+}
+
+String _liveChatSubtitlePhoneOrId(Map<String, dynamic> c) {
+  final label = _liveChatCustomerLabel(c);
+  if (label.isNotEmpty) return label;
   return _liveChatSubtitleId(c);
 }
 
@@ -66,7 +82,9 @@ class _LiveChatsPageState extends State<LiveChatsPage> {
       context,
       MaterialPageRoute(
         builder: (_) => ConversationDetailScreen(
-          title: _liveChatTitle(c),
+          title: _liveChatCustomerLabel(c).isNotEmpty
+              ? _liveChatCustomerLabel(c)
+              : _liveChatTitle(c),
           mode: ConversationScreenMode.liveChat,
           sessionId: sid,
         ),

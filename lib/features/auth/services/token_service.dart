@@ -9,7 +9,24 @@ class TokenService {
   final FlutterSecureStorage _secureStorage;
 
   TokenService({FlutterSecureStorage? secureStorage})
-    : _secureStorage = secureStorage ?? const FlutterSecureStorage();
+    : _secureStorage =
+          secureStorage ??
+          const FlutterSecureStorage(
+            iOptions: IOSOptions(
+              accessibility: KeychainAccessibility.first_unlock,
+            ),
+          );
+
+  static const _storageTimeout = Duration(seconds: 2);
+
+  Future<String?> _readKey(String key) async {
+    try {
+      return await _secureStorage.read(key: key).timeout(_storageTimeout);
+    } catch (e) {
+      print('TokenService read timeout/error for $key: $e');
+      return null;
+    }
+  }
 
   /// Save token to secure storage
   Future<void> saveToken(TokenModel token) async {
@@ -30,13 +47,14 @@ class TokenService {
   /// Retrieve token from secure storage
   Future<TokenModel?> getToken() async {
     try {
-      final tokenJson = await _secureStorage.read(key: _tokenKey);
+      final tokenJson = await _readKey(_tokenKey);
       if (tokenJson == null) return null;
 
       final decoded = json.decode(tokenJson) as Map<String, dynamic>;
       return TokenModel.fromJson(decoded);
     } catch (e) {
-      throw Exception('Failed to retrieve token: $e');
+      print('Failed to retrieve token: $e');
+      return null;
     }
   }
 

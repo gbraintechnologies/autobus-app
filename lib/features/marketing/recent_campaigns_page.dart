@@ -154,6 +154,16 @@ class _RecentCampaignsPageState extends State<RecentCampaignsPage> {
   }
 
   void _openCampaign(Map<String, dynamic> m) {
+    final id = (m['id'] ?? '').toString();
+    if (id.isNotEmpty) {
+      Navigator.push<void>(
+        context,
+        MaterialPageRoute<void>(
+          builder: (_) => CampaignConversationPage(assetId: id),
+        ),
+      );
+      return;
+    }
     final scale = MediaQuery.sizeOf(context).width / appShellDesignWidth;
     showModalBottomSheet<void>(
       context: context,
@@ -392,6 +402,93 @@ class _RecentCampaignsPageState extends State<RecentCampaignsPage> {
                           },
                         ),
                 ),
+    );
+  }
+}
+
+/// Loads a saved campaign and shows the chat + media as it was created.
+class CampaignConversationPage extends StatefulWidget {
+  final String assetId;
+
+  const CampaignConversationPage({super.key, required this.assetId});
+
+  @override
+  State<CampaignConversationPage> createState() =>
+      _CampaignConversationPageState();
+}
+
+class _CampaignConversationPageState extends State<CampaignConversationPage> {
+  DigitalMarketingCampaign? _campaign;
+  bool _loading = true;
+  String? _loadError;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _load());
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _loadError = null;
+    });
+    try {
+      final api = context.read<ApiService>();
+      final asset = await api.getDigitalMarketingAsset(widget.assetId);
+      if (!mounted) return;
+      setState(() {
+        _campaign = DigitalMarketingCampaign.fromAsset(asset);
+        _loading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loadError = userFacingError(e);
+        _loading = false;
+        _campaign = null;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final campaign = _campaign;
+    if (campaign != null && !_loading && _loadError == null) {
+      return DigitalMarketingPage(campaign: campaign, readOnly: true);
+    }
+
+    return LightScreenScaffold(
+      title: 'Campaign conversation',
+      creditCategory: CreditCategory.imageGen,
+      body: _loading
+          ? Center(child: CircularProgressIndicator(color: LightScreenTheme.accent))
+          : Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 28),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      _loadError ?? 'Could not open this campaign',
+                      textAlign: TextAlign.center,
+                      style: LightScreenTheme.emptyState(1),
+                    ),
+                    const SizedBox(height: 16),
+                    TextButton(
+                      onPressed: _load,
+                      child: Text(
+                        'Retry',
+                        style: GoogleFonts.montserrat(
+                          color: LightScreenTheme.accent,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
     );
   }
 }

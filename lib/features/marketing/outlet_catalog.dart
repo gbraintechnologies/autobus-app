@@ -3,6 +3,9 @@ import 'package:autobus/icons/figma_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
+/// Prefix for Autobus Instagram Business Login accounts (not Postiz).
+const kAutobusIgPrefix = 'autobus-ig-';
+
 /// Marketing outlet shown on Link Social Media; matched to Postiz `identifier` values.
 class OutletOption {
   final String label;
@@ -13,8 +16,13 @@ class OutletOption {
   final String linkSubtitle;
   final Set<String> postizIdentifiers;
 
-  /// Postiz connect path slug (`facebook`, `instagram`, `whatsapp`, …).
+  /// Postiz connect path slug (`facebook`, `instagram`, `tiktok`, …).
   final String? connectSlug;
+
+  /// True when posting happens via the phone share sheet, not a linked account.
+  final bool shareOnDevice;
+
+  final String? helperText;
 
   const OutletOption({
     required this.label,
@@ -25,9 +33,12 @@ class OutletOption {
     required this.linkSubtitle,
     this.postizIdentifiers = const {},
     this.connectSlug,
+    this.shareOnDevice = false,
+    this.helperText,
   });
 
   bool matchesIntegration(PostizIntegration integration) {
+    if (shareOnDevice) return false;
     if (!integration.isActive) return false;
     if (postizIdentifiers.isEmpty) return false;
     return postizIdentifiers.contains(integration.identifier.toLowerCase());
@@ -65,7 +76,7 @@ class OutletCatalog {
       tileColor: Color(0xFFE60B51),
       linkSubtitle: 'Link instagram',
       postizIdentifiers: {'instagram', 'instagram-standalone'},
-      connectSlug: 'instagram',
+      connectSlug: 'instagram', // Autobus Business Login (inbox + posting)
     ),
     OutletOption(
       label: 'YouTube',
@@ -125,6 +136,7 @@ class OutletCatalog {
     final unlinked = <OutletOption>[];
 
     for (final outlet in all) {
+      if (outlet.shareOnDevice) continue;
       final matches =
           integrations.where((i) => outlet.matchesIntegration(i)).toList();
       if (matches.isNotEmpty) {

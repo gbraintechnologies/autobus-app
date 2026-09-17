@@ -15,6 +15,9 @@ class ThemeBloc extends Cubit<ThemeState> {
       fontFamily: montserrat.fontFamily,
       textTheme: GoogleFonts.montserratTextTheme(),
       scaffoldBackgroundColor: LightScreenTheme.background,
+      snackBarTheme: const SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+      ),
       appBarTheme: const AppBarTheme(
         elevation: 0,
         backgroundColor: Colors.white,

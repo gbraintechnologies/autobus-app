@@ -10,24 +10,28 @@ class RecoverAccount extends StatefulWidget {
 }
 
 class _RecoverAccountState extends State<RecoverAccount> {
-  final _phoneController = TextEditingController();
+  final _identifierController = TextEditingController();
+
+  bool _looksLikeEmail(String value) => value.contains('@');
 
   @override
   void dispose() {
-    _phoneController.dispose();
+    _identifierController.dispose();
     super.dispose();
   }
 
   void _continue() {
-    final phone = _phoneController.text.trim();
-    if (phone.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter your phone number')),
-      );
+    final identifier = _identifierController.text.trim();
+    if (identifier.isEmpty) {
+      showAppSnackBar(context, 'Please enter your email or phone number');
       return;
     }
 
-    context.read<AuthBloc>().add(CheckEmailExistsEvent(phone: phone));
+    if (_looksLikeEmail(identifier)) {
+      context.read<AuthBloc>().add(CheckEmailExistsEvent(email: identifier));
+    } else {
+      context.read<AuthBloc>().add(CheckEmailExistsEvent(phone: identifier));
+    }
   }
 
   @override
@@ -56,11 +60,9 @@ class _RecoverAccountState extends State<RecoverAccount> {
           } else if (state is AuthError &&
               (state.source == 'check_email' ||
                   state.source == 'send_reset_code')) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: Colors.red,
-              ),
+            showAppSnackBar(
+              context,
+              userFacingError(state.message, action: 'finding account'),
             );
           }
         },
@@ -69,6 +71,7 @@ class _RecoverAccountState extends State<RecoverAccount> {
             final isLoading = state is AuthLoading;
 
             return SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               padding: EdgeInsets.fromLTRB(
                 24 * scale,
                 8 * scale,
@@ -83,20 +86,20 @@ class _RecoverAccountState extends State<RecoverAccount> {
                   AuthScreenHeader(
                     scale: scale,
                     title: 'Reset Pin',
-                    subtitle: 'Enter your phone number',
+                    subtitle: 'Enter your email or phone number',
                   ),
                   SizedBox(height: 32 * scale),
-                  AuthFieldLabel(scale: scale, label: 'Phone'),
+                  AuthFieldLabel(scale: scale, label: 'Email or phone'),
                   SizedBox(height: 8 * scale),
                   AuthField(
                     width: fieldWidth,
                     height: fieldHeight,
                     scale: scale,
-                    icon: Icons.phone_outlined,
-                    controller: _phoneController,
+                    icon: Icons.person_outline,
+                    controller: _identifierController,
                     enabled: !isLoading,
-                    hintText: '0244123456',
-                    keyboardType: TextInputType.phone,
+                    hintText: 'name@example.com or phone number',
+                    keyboardType: TextInputType.emailAddress,
                     onSubmitted: (_) => _continue(),
                   ),
                   SizedBox(height: 32 * scale),

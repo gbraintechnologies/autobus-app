@@ -1,3 +1,4 @@
+import 'package:autobus/common_design/app_error.dart';
 import 'package:bloc/bloc.dart';
 import 'package:autobus/common_design/user_facing_error.dart';
 import 'chat_event.dart';
@@ -59,7 +60,9 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         return m;
       }).toList();
 
-      updated.add(botReply);
+      if (botReply.text.trim().isNotEmpty) {
+        updated.add(botReply);
+      }
       emit(ChatLoadSuccess(updated));
     } catch (e) {
       final friendly = userFacingError(e, fallback: AppUserMessages.load);

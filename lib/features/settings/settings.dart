@@ -4,7 +4,6 @@ import 'package:autobus/common_design/widgets/app_bottom_nav.dart';
 import 'package:autobus/common_design/widgets/light_screen_scaffold.dart';
 import 'package:autobus/icons/figma_icons.dart';
 import 'package:autobus/icons/home_figma_icons.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -20,59 +19,62 @@ class _SettingsPageState extends State<SettingsPage> {
   static const _deleteColor = Color(0xFFE60B51);
   static const _logoutColor = Color(0xFFE11D48);
 
-  double? _creditsRemaining;
+  Map<String, dynamic>? _credits;
   bool _creditsLoading = true;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _loadCredits());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadCreditsSummary());
   }
 
-  Future<void> _loadCredits() async {
+  Future<void> _loadCreditsSummary() async {
+    final auth = context.read<AuthBloc>().state;
+    if (auth is! Authenticated) {
+      if (mounted) {
+        setState(() {
+          _creditsLoading = false;
+          _credits = null;
+        });
+      }
+      return;
+    }
     try {
-      final data = await context.read<ApiService>().getMyCredits();
+      final api = context.read<ApiService>();
+      final s = await api.getMyCredits();
       if (!mounted) return;
       setState(() {
-        _creditsRemaining = _pickRemaining(data);
+        _credits = s;
         _creditsLoading = false;
       });
     } catch (_) {
       if (!mounted) return;
       setState(() {
-        _creditsRemaining = null;
+        _credits = null;
         _creditsLoading = false;
       });
     }
   }
 
-  double? _pickRemaining(Map<String, dynamic>? data) {
-    final credits = data?['credits'];
-    if (credits is! Map) return null;
-    final preferred = credits[CreditCategory.server] ?? credits[CreditCategory.llm];
-    if (preferred is Map) {
-      final rem = preferred['remaining'];
-      if (rem is num) return rem.toDouble();
-      return double.tryParse(rem?.toString() ?? '');
+  String _creditsTitle() {
+    if (_creditsLoading) return 'Loading…';
+    final wallet = _credits?['wallet'];
+    if (wallet is Map) {
+      final v = wallet['remaining'];
+      final remaining = v is num
+          ? v.toDouble()
+          : double.tryParse(v?.toString() ?? '') ?? 0;
+      final text = remaining == remaining.roundToDouble()
+          ? remaining.toStringAsFixed(0)
+          : remaining.toStringAsFixed(1);
+      return '$text credits';
     }
-    for (final value in credits.values) {
-      if (value is! Map) continue;
-      final rem = value['remaining'];
-      if (rem is num) return rem.toDouble();
-      final parsed = double.tryParse(rem?.toString() ?? '');
-      if (parsed != null) return parsed;
-    }
-    return null;
+    return 'Credits';
   }
 
-  String _creditsTitle() {
-    if (_creditsLoading) return '… credits';
-    if (_creditsRemaining == null) return '— credits';
-    final v = _creditsRemaining!;
-    final shown = v == v.roundToDouble()
-        ? v.toStringAsFixed(0)
-        : v.toStringAsFixed(1);
-    return '$shown credits';
+  String _creditsSubtitle() {
+    if (_creditsLoading) return ' ';
+    return 'Tap Credits below to buy more';
   }
 
   String _usernameFromState(AuthState state) {
@@ -80,11 +82,6 @@ class _SettingsPageState extends State<SettingsPage> {
       return state.user['fullname'] ?? state.user['email'] ?? 'User';
     }
     return 'Guest';
-  }
-
-  Future<void> _openUrl(String url) async {
-    final uri = Uri.parse(url);
-    await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
   void _openSubscription() {
@@ -95,7 +92,7 @@ class _SettingsPageState extends State<SettingsPage> {
         builder: (_) => const ManageSubscriptionPage(),
       ),
     ).then((_) {
-      if (mounted) _loadCredits();
+      if (mounted) _loadCreditsSummary();
     });
   }
 
@@ -107,14 +104,16 @@ class _SettingsPageState extends State<SettingsPage> {
       listener: (context, state) {
         if (state is Unauthenticated) {
           Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (_) => const LogorSign()),
+            MaterialPageRoute(builder: (_) => const LoggedOutGate()),
             (route) => false,
           );
         } else if (state is AuthError && state.source == 'logout') {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                state.message,
+                state.message.isNotEmpty
+                    ? userFacingError(state.message)
+                    : 'Error signing out',
                 style: GoogleFonts.montserrat(color: Colors.white),
               ),
               backgroundColor: Colors.red,
@@ -133,14 +132,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   _SettingsCard(
                     scale: scale,
                     color: _switchColor,
-                    onTap: () {
-                      Navigator.push<void>(
-                        context,
-                        MaterialPageRoute<void>(
-                          builder: (_) => const Profile(),
-                        ),
-                      );
-                    },
+                    onTap: () => showBusinessSwitcher(context),
                     child: Row(
                       children: [
                         FigmaSvgIcon(
@@ -162,7 +154,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                 ),
                               ),
                               Text(
-                                'Open your profile and business details',
+                                'Add, switch, or detach businesses on this login',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: GoogleFonts.montserrat(
@@ -201,7 +193,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                 ),
                               ),
                               Text(
-                                'Tap to by more credits',
+                                _creditsSubtitle(),
                                 style: GoogleFonts.montserrat(
                                   color: _rowText,
                                   fontSize: 12 * scale.clamp(0.9, 1.05),
@@ -252,7 +244,15 @@ class _SettingsPageState extends State<SettingsPage> {
                             InkWell(
                               onTap: isLoading
                                   ? null
-                                  : () => _handleDeleteAccount(context),
+                                  : () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) =>
+                                              const DeleteAccountPage(),
+                                        ),
+                                      );
+                                    },
                               child: Padding(
                                 padding: EdgeInsets.symmetric(vertical: 10 * scale),
                                 child: Align(
@@ -330,99 +330,13 @@ class _SettingsPageState extends State<SettingsPage> {
           MaterialPageRoute(builder: (_) => const HelpPage()),
         );
       }),
-      SettingsMenuItem('Terms and Condition', FigmaIcons.documents, () {
-        _openUrl(AppConfig.termsOfServiceUrl);
+      SettingsMenuItem('Terms and Conditions', FigmaIcons.documents, () {
+        openAuthLegalUrl(AppConfig.termsOfServiceUrl);
       }),
       SettingsMenuItem('Privacy Policy', FigmaIcons.documents, () {
-        _openUrl(AppConfig.privacyPolicyUrl);
+        openAuthLegalUrl(AppConfig.privacyPolicyUrl);
       }),
     ];
-  }
-
-  void _handleDeleteAccount(BuildContext context) {
-    showDialog<void>(
-      context: context,
-      builder: (BuildContext context) {
-        return Dialog(
-          elevation: 0,
-          backgroundColor: Colors.transparent,
-          insetPadding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(18),
-            ),
-            padding: const EdgeInsets.fromLTRB(18, 18, 18, 14),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Delete account?',
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.montserrat(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Contact support to permanently delete your Autobus account.',
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.montserrat(
-                    fontSize: 13.5,
-                    height: 1.35,
-                    fontWeight: FontWeight.w400,
-                    color: Colors.black54,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: Text(
-                          'Cancel',
-                          style: GoogleFonts.montserrat(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                          launchUrl(
-                            Uri(
-                              scheme: 'mailto',
-                              path: 'support@useautobus.com',
-                              query: 'subject=Delete account request',
-                            ),
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: _deleteColor,
-                          foregroundColor: Colors.white,
-                        ),
-                        child: Text(
-                          'Contact',
-                          style: GoogleFonts.montserrat(
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
   }
 
   void _handleLogout(BuildContext context) {

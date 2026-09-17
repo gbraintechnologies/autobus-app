@@ -51,7 +51,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
       final totalTxn = transactions.length;
       final totalAmount = transactions.fold<double>(
         0,
-        (sum, t) => sum + ((t['amount'] as num?)?.toDouble() ?? 0),
+        (sum, t) => sum + (parseJsonDouble(t['amount']) ?? 0),
       );
 
       final now = DateTime.now();
@@ -96,7 +96,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
           .length;
       final invoicedValue = orderInvoices.fold<double>(
         0,
-        (sum, b) => sum + ((b['amount'] as num?)?.toDouble() ?? 0),
+        (sum, b) => sum + (parseJsonDouble(b['amount']) ?? 0),
       );
 
       setState(() {
@@ -508,9 +508,9 @@ class MetricData {
 
   factory MetricData.fromJson(Map<String, dynamic> json) {
     return MetricData(
-      json['title'] as String,
-      json['value'] as int,
-      (json['percentageChange'] as num).toDouble(),
+      (json['title'] ?? '').toString(),
+      parseJsonInt(json['value']) ?? 0,
+      parseJsonDouble(json['percentageChange']) ?? 0,
     );
   }
 
