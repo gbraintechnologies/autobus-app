@@ -131,9 +131,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
                   ),
                   child: Text(
                     _error!,
-                    style: GoogleFonts.montserrat(
+                    style: GoogleFonts.poppins(
                       color: Colors.red,
-                      fontSize: 12 * scale.clamp(0.9, 1.05),
+                      fontSize: 12,
                     ),
                   ),
                 ),

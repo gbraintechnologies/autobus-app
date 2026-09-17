@@ -46,7 +46,7 @@ class UserAvatar extends StatelessWidget {
         final fontSize = (size * 0.35).clamp(12, 20).toDouble();
         final initialsColor =
             onLightBackground ? CustColors.mainCol : Colors.white;
-        final textStyle = GoogleFonts.montserrat(
+        final textStyle = GoogleFonts.poppins(
           color: initialsColor,
           fontWeight: FontWeight.w600,
           fontSize: fontSize,

@@ -77,7 +77,7 @@ class _ManageSenderEmailPageState extends State<ManageSenderEmailPage> {
         SnackBar(
           content: Text(
             'From email saved. Emails will send as $saved.',
-            style: GoogleFonts.montserrat(),
+            style: GoogleFonts.poppins(),
           ),
         ),
       );
@@ -121,7 +121,7 @@ class _ManageSenderEmailPageState extends State<ManageSenderEmailPage> {
                               children: [
                                 Text(
                                   'Add the From address Autobus uses when sending email on your behalf. Use an Autobus address such as noreply@useautobus.com.',
-                                  style: GoogleFonts.montserrat(
+                                  style: GoogleFonts.poppins(
                                     color: Colors.white.withValues(alpha: 0.7),
                                     fontSize: 13,
                                     fontWeight: FontWeight.w300,
@@ -132,7 +132,7 @@ class _ManageSenderEmailPageState extends State<ManageSenderEmailPage> {
                                 if (_loadError != null) ...[
                                   Text(
                                     _loadError!,
-                                    style: GoogleFonts.montserrat(
+                                    style: GoogleFonts.poppins(
                                       color: Colors.amber.shade200,
                                       fontSize: 12,
                                     ),
@@ -145,13 +145,13 @@ class _ManageSenderEmailPageState extends State<ManageSenderEmailPage> {
                                   keyboardType: TextInputType.emailAddress,
                                   autocorrect: false,
                                   onTapOutside: dismissAppKeyboard,
-                                  style: GoogleFonts.montserrat(
+                                  style: GoogleFonts.poppins(
                                     color: Colors.white,
                                     fontSize: 14,
                                   ),
                                   decoration: InputDecoration(
                                     hintText: 'noreply@useautobus.com',
-                                    hintStyle: GoogleFonts.montserrat(
+                                    hintStyle: GoogleFonts.poppins(
                                       color: Colors.white.withValues(alpha: 0.35),
                                       fontSize: 14,
                                     ),
@@ -182,7 +182,7 @@ class _ManageSenderEmailPageState extends State<ManageSenderEmailPage> {
                                 const SizedBox(height: 12),
                                 Text(
                                   'You can enter noreply, noreply@useautobus.com, or noreply.useautobus.com. Replies go to your profile email.',
-                                  style: GoogleFonts.montserrat(
+                                  style: GoogleFonts.poppins(
                                     color: Colors.white.withValues(alpha: 0.5),
                                     fontSize: 12,
                                     height: 1.45,
@@ -192,7 +192,7 @@ class _ManageSenderEmailPageState extends State<ManageSenderEmailPage> {
                                   const SizedBox(height: 16),
                                   Text(
                                     'Currently sending from $_savedEmail',
-                                    style: GoogleFonts.montserrat(
+                                    style: GoogleFonts.poppins(
                                       color: const Color(0xFF22C55E),
                                       fontSize: 12,
                                       fontWeight: FontWeight.w500,
@@ -218,7 +218,7 @@ class _ManageSenderEmailPageState extends State<ManageSenderEmailPage> {
                                       ? const AutobusLoadingIndicator(size: 22)
                                       : Text(
                                           'Save from email',
-                                          style: GoogleFonts.montserrat(
+                                          style: GoogleFonts.poppins(
                                             color: Colors.white,
                                             fontSize: 15,
                                             fontWeight: FontWeight.w500,

@@ -349,14 +349,14 @@ class _ManageSubscriptionPageState extends State<ManageSubscriptionPage> {
       context: context,
       builder: (ctx) {
         return AlertDialog(
-          title: Text('Cancel subscription?', style: GoogleFonts.montserrat()),
+          title: Text('Cancel subscription?', style: GoogleFonts.poppins()),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 'You will lose access to subscription features when the current period ends, depending on server policy.',
-                style: GoogleFonts.montserrat(fontSize: 13, height: 1.35),
+                style: GoogleFonts.poppins(fontSize: 13, height: 1.35),
               ),
               const SizedBox(height: 12),
               TextField(
@@ -440,8 +440,8 @@ class _ManageSubscriptionPageState extends State<ManageSubscriptionPage> {
                   padding: EdgeInsets.symmetric(vertical: 24 * scale),
                   child: Text(
                     'No credit purchases yet.',
-                    style: GoogleFonts.montserrat(
-                      fontSize: 13 * scale.clamp(0.9, 1.05),
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
                       color: _historyMuted,
                     ),
                   ),
@@ -457,8 +457,8 @@ class _ManageSubscriptionPageState extends State<ManageSubscriptionPage> {
                       _isAppleIap
                           ? 'Manage on Apple ID'
                           : 'Cancel subscription',
-                      style: GoogleFonts.montserrat(
-                        fontSize: 13 * scale.clamp(0.9, 1.05),
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
                         fontWeight: FontWeight.w600,
                         color: Colors.red.shade700,
                       ),
@@ -496,9 +496,9 @@ class _ManageSubscriptionPageState extends State<ManageSubscriptionPage> {
               textAlign: TextAlign.center,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.montserrat(
+              style: GoogleFonts.poppins(
                 color: Colors.white,
-                fontSize: 14 * scale,
+                fontSize: 14,
                 fontWeight: FontWeight.w500,
                 height: 20 / 14,
               ),
@@ -512,9 +512,9 @@ class _ManageSubscriptionPageState extends State<ManageSubscriptionPage> {
                 _remainingLabel,
                 textAlign: TextAlign.center,
                 maxLines: 1,
-                style: GoogleFonts.montserrat(
+                style: GoogleFonts.poppins(
                   color: Colors.white,
-                  fontSize: 48 * scale,
+                  fontSize: 48,
                   fontWeight: FontWeight.w700,
                   height: 1,
                 ),
@@ -529,9 +529,9 @@ class _ManageSubscriptionPageState extends State<ManageSubscriptionPage> {
               textAlign: TextAlign.center,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.montserrat(
+              style: GoogleFonts.poppins(
                 color: Colors.white,
-                fontSize: 12 * scale,
+                fontSize: 12,
                 fontWeight: FontWeight.w400,
                 height: 20 / 12,
               ),
@@ -600,9 +600,9 @@ class _ManageSubscriptionPageState extends State<ManageSubscriptionPage> {
             SizedBox(height: 4 * scale),
             Text(
               label,
-              style: GoogleFonts.montserrat(
+              style: GoogleFonts.poppins(
                 color: _actionInk,
-                fontSize: 13 * scale.clamp(0.9, 1.05),
+                        fontSize: 13,
                 fontWeight: FontWeight.w400,
               ),
             ),
@@ -617,8 +617,8 @@ class _ManageSubscriptionPageState extends State<ManageSubscriptionPage> {
       children: [
         Text(
           'History',
-          style: GoogleFonts.montserrat(
-            fontSize: 16 * scale.clamp(0.9, 1.05),
+          style: GoogleFonts.poppins(
+            fontSize: 16,
             fontWeight: FontWeight.w600,
             color: Colors.black,
           ),
@@ -648,8 +648,8 @@ class _ManageSubscriptionPageState extends State<ManageSubscriptionPage> {
               children: [
                 Text(
                   item.title,
-                  style: GoogleFonts.montserrat(
-                    fontSize: 14 * scale.clamp(0.9, 1.05),
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
                     fontWeight: FontWeight.w500,
                     color: const Color(0xFF161616),
                   ),
@@ -657,8 +657,8 @@ class _ManageSubscriptionPageState extends State<ManageSubscriptionPage> {
                 if (item.at != null)
                   Text(
                     _formatHistoryDate(item.at),
-                    style: GoogleFonts.montserrat(
-                      fontSize: 12 * scale.clamp(0.9, 1.05),
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
                       fontWeight: FontWeight.w400,
                       color: _historyMuted,
                     ),
@@ -666,8 +666,8 @@ class _ManageSubscriptionPageState extends State<ManageSubscriptionPage> {
                 if (item.creditsLabel != null)
                   Text(
                     item.creditsLabel!,
-                    style: GoogleFonts.montserrat(
-                      fontSize: 12 * scale.clamp(0.9, 1.05),
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
                       fontWeight: FontWeight.w400,
                       color: _historyCredits,
                     ),
@@ -678,8 +678,8 @@ class _ManageSubscriptionPageState extends State<ManageSubscriptionPage> {
           if (item.amount != null)
             Text(
               _formatMoney(item.amount!),
-              style: GoogleFonts.montserrat(
-                fontSize: 14 * scale.clamp(0.9, 1.05),
+              style: GoogleFonts.poppins(
+                fontSize: 14,
                 fontWeight: FontWeight.w600,
                 color: _pricePurple,
               ),

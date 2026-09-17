@@ -233,7 +233,7 @@ class _GrowthWidget extends StatelessWidget {
         children: [
           Text(
             'Growth',
-            style: GoogleFonts.montserrat(
+            style: GoogleFonts.poppins(
               fontSize: 14,
               fontWeight: FontWeight.w500,
               color: Colors.black87,
@@ -264,7 +264,7 @@ class _GrowthWidget extends StatelessWidget {
                     ),
                     Text(
                       '${percentage.toInt()}%',
-                      style: GoogleFonts.montserrat(
+                      style: GoogleFonts.poppins(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                         color: Colors.black87,
@@ -280,7 +280,7 @@ class _GrowthWidget extends StatelessWidget {
                 children: [
                   Text(
                     'Progress',
-                    style: GoogleFonts.montserrat(
+                    style: GoogleFonts.poppins(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
                       color: Colors.black87,
@@ -289,7 +289,7 @@ class _GrowthWidget extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     month,
-                    style: GoogleFonts.montserrat(
+                    style: GoogleFonts.poppins(
                       fontSize: 12,
                       fontWeight: FontWeight.w400,
                       color: Colors.black54,
@@ -329,7 +329,7 @@ class _AverageWidget extends StatelessWidget {
         children: [
           Text(
             'Average',
-            style: GoogleFonts.montserrat(
+            style: GoogleFonts.poppins(
               fontSize: 14,
               fontWeight: FontWeight.w500,
               color: Colors.black87,
@@ -357,7 +357,7 @@ class _AverageWidget extends StatelessWidget {
                     children: [
                       Text(
                         'RMA',
-                        style: GoogleFonts.montserrat(
+                        style: GoogleFonts.poppins(
                           fontSize: 11,
                           fontWeight: FontWeight.w400,
                           color: Colors.black54,
@@ -366,7 +366,7 @@ class _AverageWidget extends StatelessWidget {
                       const SizedBox(width: 16),
                       Text(
                         'VAL',
-                        style: GoogleFonts.montserrat(
+                        style: GoogleFonts.poppins(
                           fontSize: 11,
                           fontWeight: FontWeight.w400,
                           color: Colors.black54,
@@ -382,7 +382,7 @@ class _AverageWidget extends StatelessWidget {
                     children: [
                       Text(
                         rmaValue.toString(),
-                        style: GoogleFonts.montserrat(
+                        style: GoogleFonts.poppins(
                           fontSize: 24,
                           fontWeight: FontWeight.w600,
                           color: Colors.black87,
@@ -391,7 +391,7 @@ class _AverageWidget extends StatelessWidget {
                       const SizedBox(width: 24),
                       Text(
                         valValue.toString(),
-                        style: GoogleFonts.montserrat(
+                        style: GoogleFonts.poppins(
                           fontSize: 24,
                           fontWeight: FontWeight.w600,
                           color: Colors.black87,
@@ -436,7 +436,7 @@ class _MetricCard extends StatelessWidget {
           // Title
           Text(
             metric.title,
-            style: GoogleFonts.montserrat(
+            style: GoogleFonts.poppins(
               fontSize: 12,
               fontWeight: FontWeight.w500,
               color: Colors.black87,
@@ -457,7 +457,7 @@ class _MetricCard extends StatelessWidget {
               // Main Value
               Text(
                 metric.value.toString(),
-                style: GoogleFonts.montserrat(
+                style: GoogleFonts.poppins(
                   fontSize: 24,
                   fontWeight: FontWeight.w600,
                   color: Colors.black87,
@@ -476,7 +476,7 @@ class _MetricCard extends StatelessWidget {
                   children: [
                     Text(
                       '${isPositive ? '+' : ''}${metric.percentageChange.toStringAsFixed(2)}%',
-                      style: GoogleFonts.montserrat(
+                      style: GoogleFonts.poppins(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
                         color: changeColor,

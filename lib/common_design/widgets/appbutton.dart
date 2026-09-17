@@ -22,7 +22,7 @@ class AppButton extends StatelessWidget {
       onPressed: onPressed,
       child: AppFitText(
         buttonText,
-        style: GoogleFonts.montserrat(
+        style: GoogleFonts.poppins(
           color: Colors.white,
           fontSize: 16,
           fontWeight: FontWeight.w400,

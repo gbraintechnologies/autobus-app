@@ -247,7 +247,7 @@ class _BuyCreditsPageState extends State<BuyCreditsPage> {
                     child: AppFitText(
                       'Credits',
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.montserrat(
+                      style: GoogleFonts.poppins(
                         fontSize: 22,
                         fontWeight: FontWeight.w400,
                       ),
@@ -267,7 +267,7 @@ class _BuyCreditsPageState extends State<BuyCreditsPage> {
                         children: [
                           Text(
                             'You have ${_walletLabel()} credits',
-                            style: GoogleFonts.montserrat(
+                            style: GoogleFonts.poppins(
                               fontSize: 22,
                               fontWeight: FontWeight.w800,
                             ),
@@ -275,7 +275,7 @@ class _BuyCreditsPageState extends State<BuyCreditsPage> {
                           const SizedBox(height: 6),
                           Text(
                             'Choose a pack to add more. Tap a pack to read about it, then pay.',
-                            style: GoogleFonts.montserrat(
+                            style: GoogleFonts.poppins(
                               fontSize: 13,
                               color: Colors.black54,
                               height: 1.35,
@@ -358,7 +358,7 @@ class _PackTile extends StatelessWidget {
                         children: [
                           Text(
                             pack.name,
-                            style: GoogleFonts.montserrat(
+                            style: GoogleFonts.poppins(
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
                             ),
@@ -366,7 +366,7 @@ class _PackTile extends StatelessWidget {
                           const SizedBox(height: 2),
                           Text(
                             '${pack.credits.toStringAsFixed(0)} credits',
-                            style: GoogleFonts.montserrat(
+                            style: GoogleFonts.poppins(
                               fontSize: 13,
                               color: Colors.black54,
                             ),
@@ -376,7 +376,7 @@ class _PackTile extends StatelessWidget {
                     ),
                     Text(
                       price,
-                      style: GoogleFonts.montserrat(
+                      style: GoogleFonts.poppins(
                         fontSize: 16,
                         fontWeight: FontWeight.w800,
                         color: CustColors.mainCol,
@@ -388,7 +388,7 @@ class _PackTile extends StatelessWidget {
                   const SizedBox(height: 12),
                   Text(
                     pack.details.isNotEmpty ? pack.details : pack.description,
-                    style: GoogleFonts.montserrat(
+                    style: GoogleFonts.poppins(
                       fontSize: 13,
                       height: 1.4,
                       color: Colors.black87,
@@ -397,7 +397,7 @@ class _PackTile extends StatelessWidget {
                   const SizedBox(height: 10),
                   Text(
                     'About $videos videos or $images images. Video generation uses 4 credits.',
-                    style: GoogleFonts.montserrat(
+                    style: GoogleFonts.poppins(
                       fontSize: 12,
                       color: Colors.black45,
                       height: 1.35,
@@ -423,7 +423,7 @@ class _PackTile extends StatelessWidget {
                           ? const AutobusLoadingIndicator(size: 22)
                           : Text(
                               payLabel,
-                              style: GoogleFonts.montserrat(
+                              style: GoogleFonts.poppins(
                                 fontWeight: FontWeight.w700,
                               ),
                             ),

@@ -122,7 +122,7 @@ class _ViewProductsPageState extends State<ViewProductsPage> {
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Deleted "$name"', style: GoogleFonts.montserrat()),
+          content: Text('Deleted "$name"', style: GoogleFonts.poppins()),
         ),
       );
     } catch (e) {
@@ -131,7 +131,7 @@ class _ViewProductsPageState extends State<ViewProductsPage> {
         SnackBar(
           content: Text(
             userFacingError(e),
-            style: GoogleFonts.montserrat(),
+            style: GoogleFonts.poppins(),
           ),
         ),
       );
@@ -184,9 +184,9 @@ class _ViewProductsPageState extends State<ViewProductsPage> {
               children: [
                 Text(
                   _productPriceLabel(p),
-                  style: GoogleFonts.montserrat(
+                  style: GoogleFonts.poppins(
                     color: LightScreenTheme.accent,
-                    fontSize: 15 * scale.clamp(0.9, 1.05),
+                    fontSize: 15,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -267,9 +267,9 @@ class _ViewProductsPageState extends State<ViewProductsPage> {
                 onPressed: _loadAll,
                 child: Text(
                   'Retry',
-                  style: GoogleFonts.montserrat(
+                  style: GoogleFonts.poppins(
                     color: LightScreenTheme.accent,
-                    fontSize: 14 * scale.clamp(0.9, 1.05),
+                    fontSize: 14,
                   ),
                 ),
               ),
@@ -314,9 +314,9 @@ class _ViewProductsPageState extends State<ViewProductsPage> {
                             onPressed: () => _deleteAt(index),
                             child: Text(
                               'Delete file',
-                              style: GoogleFonts.montserrat(
+                              style: GoogleFonts.poppins(
                                 color: LightScreenTheme.muted,
-                                fontSize: 13 * scale.clamp(0.9, 1.05),
+                                fontSize: 13,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -377,9 +377,9 @@ class _ViewProductsPageState extends State<ViewProductsPage> {
                       onPressed: _loadAll,
                       child: Text(
                         'Retry',
-                        style: GoogleFonts.montserrat(
+                        style: GoogleFonts.poppins(
                           color: LightScreenTheme.accent,
-                          fontSize: 16 * scale.clamp(0.9, 1.05),
+                          fontSize: 16,
                         ),
                       ),
                     ),

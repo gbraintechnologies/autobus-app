@@ -334,7 +334,7 @@ class _AutoBusChatUIState extends State<_AutoBusChatUI> {
           Expanded(
             child: Text(
               label,
-              style: GoogleFonts.montserrat(
+              style: GoogleFonts.poppins(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
                 color: fg,
@@ -482,7 +482,7 @@ class _AutoBusChatUIState extends State<_AutoBusChatUI> {
                           Expanded(
                             child: Text(
                               'Choose a file',
-                              style: GoogleFonts.montserrat(
+                              style: GoogleFonts.poppins(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w500,
                                 color: _purple,
@@ -505,7 +505,7 @@ class _AutoBusChatUIState extends State<_AutoBusChatUI> {
                                 : const Icon(Icons.upload_file_rounded),
                             label: Text(
                               uploading ? 'Uploading…' : 'Upload file',
-                              style: GoogleFonts.montserrat(
+                              style: GoogleFonts.poppins(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
                                 color: _purple,
@@ -535,7 +535,7 @@ class _AutoBusChatUIState extends State<_AutoBusChatUI> {
                                   borderSide: BorderSide.none,
                                 ),
                               ),
-                              style: GoogleFonts.montserrat(
+                              style: GoogleFonts.poppins(
                                 fontSize: 12,
                                 color: _purple,
                                 fontWeight: FontWeight.w500,
@@ -568,7 +568,7 @@ class _AutoBusChatUIState extends State<_AutoBusChatUI> {
                           alignment: Alignment.centerLeft,
                           child: Text(
                             uploadError!,
-                            style: GoogleFonts.montserrat(
+                            style: GoogleFonts.poppins(
                               fontSize: 12,
                               color: Colors.red,
                               fontWeight: FontWeight.w500,
@@ -592,7 +592,7 @@ class _AutoBusChatUIState extends State<_AutoBusChatUI> {
                                 alignment: Alignment.topLeft,
                                 child: Text(
                                   'Could not load files. ${snap.error}',
-                                  style: GoogleFonts.montserrat(
+                                  style: GoogleFonts.poppins(
                                     fontSize: 12,
                                     color: Colors.red,
                                   ),
@@ -606,7 +606,7 @@ class _AutoBusChatUIState extends State<_AutoBusChatUI> {
                                 alignment: Alignment.topLeft,
                                 child: Text(
                                   'No files found in "${folder.isEmpty ? 'chatbot-files' : folder}".',
-                                  style: GoogleFonts.montserrat(
+                                  style: GoogleFonts.poppins(
                                     fontSize: 12,
                                     color: _purple.withValues(alpha: 0.65),
                                   ),
@@ -662,7 +662,7 @@ class _AutoBusChatUIState extends State<_AutoBusChatUI> {
                                     name.isEmpty ? 'Unnamed file' : name,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: GoogleFonts.montserrat(
+                                    style: GoogleFonts.poppins(
                                       fontSize: 13,
                                       color: _purple,
                                       fontWeight: FontWeight.w500,
@@ -676,7 +676,7 @@ class _AutoBusChatUIState extends State<_AutoBusChatUI> {
                                               : ''),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: GoogleFonts.montserrat(
+                                    style: GoogleFonts.poppins(
                                       fontSize: 11,
                                       color: _purple.withValues(alpha: 0.55),
                                     ),
@@ -869,7 +869,7 @@ class _AutoBusChatUIState extends State<_AutoBusChatUI> {
                     ),
                     Text(
                       title,
-                      style: GoogleFonts.montserrat(
+                      style: GoogleFonts.poppins(
                         fontSize: 20,
                         fontWeight: FontWeight.w400,
                         color: _purple,
@@ -995,7 +995,7 @@ class _AutoBusChatUIState extends State<_AutoBusChatUI> {
                       onTapOutside: dismissAppKeyboard,
                       decoration: InputDecoration(
                         hintText: "Type Your Command Autobus ...",
-                        hintStyle: GoogleFonts.montserrat(
+                        hintStyle: GoogleFonts.poppins(
                           color: _purple.withValues(alpha: 0.55),
                           fontSize: 14,
                           fontWeight: FontWeight.w400,
@@ -1004,7 +1004,7 @@ class _AutoBusChatUIState extends State<_AutoBusChatUI> {
                         isDense: true,
                         contentPadding: EdgeInsets.zero,
                       ),
-                      style: GoogleFonts.montserrat(
+                      style: GoogleFonts.poppins(
                         color: _purple,
                         fontSize: 14,
                         fontWeight: FontWeight.w400,
@@ -1148,7 +1148,7 @@ class _AutoBusChatUIState extends State<_AutoBusChatUI> {
       ),
       child: Text(
         isUser ? text : stripAiMarkdown(text),
-        style: GoogleFonts.montserrat(
+        style: GoogleFonts.poppins(
           fontSize: 14,
           height: 1.35,
           color: isUser ? _purple : Colors.white,

@@ -128,7 +128,7 @@ class _ManageReportsState extends State<ManageReports> {
               children: [
                 Text(
                   'Filter by period',
-                  style: GoogleFonts.montserrat(
+                  style: GoogleFonts.poppins(
                     color: Colors.black,
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -141,7 +141,7 @@ class _ManageReportsState extends State<ManageReports> {
                     contentPadding: EdgeInsets.zero,
                     title: Text(
                       period.label,
-                      style: GoogleFonts.montserrat(
+                      style: GoogleFonts.poppins(
                         color: isSelected ? _accentColor : Colors.black87,
                         fontWeight:
                             isSelected ? FontWeight.w600 : FontWeight.w400,
@@ -250,9 +250,9 @@ class _ManageReportsState extends State<ManageReports> {
                             SizedBox(height: 24 * scale),
                             Text(
                               'Detailed reports',
-                              style: GoogleFonts.montserrat(
+                              style: GoogleFonts.poppins(
                                 color: Colors.black,
-                                fontSize: 16 * scale.clamp(0.9, 1.1),
+                                fontSize: 16,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -319,18 +319,18 @@ class _RevenueHeroCard extends StatelessWidget {
               children: [
                 Text(
                   'Revenue',
-                  style: GoogleFonts.montserrat(
+                  style: GoogleFonts.poppins(
                     color: Colors.black,
-                    fontSize: 14 * scale.clamp(0.9, 1.05),
+                    fontSize: 14,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
                 SizedBox(height: 4 * scale),
                 Text(
                   revenue,
-                  style: GoogleFonts.montserrat(
+                  style: GoogleFonts.poppins(
                     color: Colors.black,
-                    fontSize: 18 * scale.clamp(0.9, 1.05),
+                    fontSize: 18,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -476,9 +476,9 @@ class _MetricTile extends StatelessWidget {
             data.label,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.montserrat(
+            style: GoogleFonts.poppins(
               color: Colors.black,
-              fontSize: 12 * scale.clamp(0.85, 1.0),
+              fontSize: 12,
               fontWeight: FontWeight.w500,
               height: 1.2,
             ),
@@ -488,9 +488,9 @@ class _MetricTile extends StatelessWidget {
             data.value,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.montserrat(
+            style: GoogleFonts.poppins(
               color: Colors.black,
-              fontSize: 16 * scale.clamp(0.9, 1.05),
+              fontSize: 16,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -500,9 +500,9 @@ class _MetricTile extends StatelessWidget {
               data.subtitle!,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.montserrat(
+              style: GoogleFonts.poppins(
                 color: data.subtitleColor ?? Colors.black54,
-                fontSize: 11 * scale.clamp(0.85, 1.0),
+                fontSize: 11,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -688,9 +688,9 @@ class _ReportGradientCard extends StatelessWidget {
               const Spacer(),
               Text(
                 title,
-                style: GoogleFonts.montserrat(
+                style: GoogleFonts.poppins(
                   color: Colors.white,
-                  fontSize: 12 * scale.clamp(0.85, 1.0),
+                  fontSize: 12,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -698,9 +698,9 @@ class _ReportGradientCard extends StatelessWidget {
                 subtitle,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.montserrat(
+                style: GoogleFonts.poppins(
                   color: Colors.white.withValues(alpha: 0.92),
-                  fontSize: 11 * scale.clamp(0.85, 1.0),
+                  fontSize: 11,
                   fontWeight: FontWeight.w400,
                 ),
               ),
@@ -733,7 +733,7 @@ class _AnalyticsErrorBanner extends StatelessWidget {
           Expanded(
             child: Text(
               message,
-              style: GoogleFonts.montserrat(
+              style: GoogleFonts.poppins(
                 color: const Color(0xFF881337),
                 fontSize: 12,
               ),

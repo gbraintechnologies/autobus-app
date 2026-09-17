@@ -172,9 +172,9 @@ class _HomeState extends State<Home> {
                           Text(
                             'Hello $displayName',
                             textAlign: TextAlign.center,
-                            style: GoogleFonts.montserrat(
+                            style: GoogleFonts.poppins(
                               color: Colors.black,
-                              fontSize: 16 * scale.clamp(0.9, 1.05),
+                              fontSize: 16,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -182,9 +182,9 @@ class _HomeState extends State<Home> {
                           Text(
                             'Here\u2019s what\u2019s happening in your\nbusiness today..',
                             textAlign: TextAlign.center,
-                            style: GoogleFonts.montserrat(
+                            style: GoogleFonts.poppins(
                               color: Colors.black,
-                              fontSize: 20 * scale.clamp(0.9, 1.05),
+                              fontSize: 20,
                               fontWeight: FontWeight.w600,
                               height: 1.4,
                               decoration: TextDecoration.underline,
@@ -201,9 +201,9 @@ class _HomeState extends State<Home> {
                   SizedBox(height: 11 * scale),
                   Text(
                     'Tools',
-                    style: GoogleFonts.montserrat(
+                    style: GoogleFonts.poppins(
                       color: Colors.black,
-                      fontSize: 16 * scale.clamp(0.9, 1.05),
+                      fontSize: 16,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -374,9 +374,9 @@ class _HomeToolCard extends StatelessWidget {
                     title,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.montserrat(
+                    style: GoogleFonts.poppins(
                       color: Colors.black,
-                      fontSize: 14 * scale.clamp(0.9, 1.05),
+                      fontSize: 14,
                       fontWeight: FontWeight.w600,
                       height: 1.25,
                     ),

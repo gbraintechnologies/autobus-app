@@ -18,7 +18,16 @@ class LightScreenTheme {
   static const field = Color(0xFFFAFAFA);
   static const warning = Color(0xFFE27C00);
 
+  /// Figma type on 402-wide frames, used as Flutter logical pixels.
+  /// Do not multiply these by screen `scale` — layout can scale, type cannot.
   static const headerTitleSize = 16.0;
+  static const typeDisplay = 24.0;
+  static const typeHeadline = 20.0;
+  static const typeTitle = 16.0;
+  static const typeBody = 14.0;
+  static const typeLabel = 13.0;
+  static const typeCaption = 12.0;
+  static const typeMicro = 11.0;
   static const pageHorizontal = 20.0;
   static const hubPageTop = 30.0;
   static const pageBottom = 32.0;
@@ -43,35 +52,35 @@ class LightScreenTheme {
         pageBottom * scale,
       );
 
-  static TextStyle hubTitle(double scale) => GoogleFonts.montserrat(
+  static TextStyle hubTitle(double scale) => GoogleFonts.poppins(
         color: Colors.black,
-        fontSize: 16 * scale.clamp(0.9, 1.05),
+        fontSize: typeTitle,
         fontWeight: FontWeight.w600,
         height: 1.3,
       );
 
-  static TextStyle hubBody(double scale) => GoogleFonts.montserrat(
+  static TextStyle hubBody(double scale) => GoogleFonts.poppins(
         color: body,
-        fontSize: 13 * scale.clamp(0.9, 1.05),
+        fontSize: typeLabel,
         fontWeight: FontWeight.w400,
         height: 1.5,
       );
 
-  static TextStyle listTitle(double scale) => GoogleFonts.montserrat(
+  static TextStyle listTitle(double scale) => GoogleFonts.poppins(
         color: Colors.black,
-        fontSize: 14 * scale.clamp(0.9, 1.05),
+        fontSize: typeBody,
         fontWeight: FontWeight.w600,
       );
 
-  static TextStyle listSubtitle(double scale) => GoogleFonts.montserrat(
+  static TextStyle listSubtitle(double scale) => GoogleFonts.poppins(
         color: muted,
-        fontSize: 12 * scale.clamp(0.9, 1.05),
+        fontSize: typeCaption,
         fontWeight: FontWeight.w400,
       );
 
-  static TextStyle emptyState(double scale) => GoogleFonts.montserrat(
+  static TextStyle emptyState(double scale) => GoogleFonts.poppins(
         color: body,
-        fontSize: 14 * scale.clamp(0.9, 1.05),
+        fontSize: typeBody,
         fontWeight: FontWeight.w400,
       );
 }

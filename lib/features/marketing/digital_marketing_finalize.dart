@@ -89,7 +89,7 @@ class _FinalizePostPageState extends State<_FinalizePostPage> {
               Text(
                 'Post your campaign',
                 textAlign: TextAlign.center,
-                style: GoogleFonts.montserrat(
+                style: GoogleFonts.poppins(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                   color: Colors.black87,
@@ -99,7 +99,7 @@ class _FinalizePostPageState extends State<_FinalizePostPage> {
               Text(
                 'Share from this phone, or publish and schedule your post',
                 textAlign: TextAlign.center,
-                style: GoogleFonts.montserrat(
+                style: GoogleFonts.poppins(
                   fontSize: 12,
                   color: Colors.black45,
                   height: 1.35,
@@ -170,7 +170,7 @@ class _FinalizePostPageState extends State<_FinalizePostPage> {
                               Expanded(
                                 child: Text(
                                   'Time  ·  ${_selectedTime.format(context)}',
-                                  style: GoogleFonts.montserrat(
+                                  style: GoogleFonts.poppins(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w500,
                                   ),
@@ -178,7 +178,7 @@ class _FinalizePostPageState extends State<_FinalizePostPage> {
                               ),
                               Text(
                                 'Change',
-                                style: GoogleFonts.montserrat(
+                                style: GoogleFonts.poppins(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
                                   color: _kHeaderPurple,
@@ -200,7 +200,7 @@ class _FinalizePostPageState extends State<_FinalizePostPage> {
                                     SnackBar(
                                       content: Text(
                                         'Pick a date first',
-                                        style: GoogleFonts.montserrat(fontSize: 13),
+                                        style: GoogleFonts.poppins(fontSize: 13),
                                       ),
                                     ),
                                   );
@@ -216,7 +216,7 @@ class _FinalizePostPageState extends State<_FinalizePostPage> {
                         child: Text(
                           'Select at least one platform on the previous screen.',
                           textAlign: TextAlign.center,
-                          style: GoogleFonts.montserrat(
+                          style: GoogleFonts.poppins(
                             fontSize: 13,
                             color: Colors.black45,
                           ),
@@ -242,7 +242,7 @@ class _FinalizePostPageState extends State<_FinalizePostPage> {
                         child: Text(
                           _publishStatus.isEmpty ? 'Working…' : _publishStatus,
                           textAlign: TextAlign.center,
-                          style: GoogleFonts.montserrat(
+                          style: GoogleFonts.poppins(
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
                           ),
@@ -298,7 +298,7 @@ class _FinalizePostPageState extends State<_FinalizePostPage> {
                   children: [
                     Text(
                       title,
-                      style: GoogleFonts.montserrat(
+                      style: GoogleFonts.poppins(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                       ),
@@ -306,7 +306,7 @@ class _FinalizePostPageState extends State<_FinalizePostPage> {
                     const SizedBox(height: 4),
                     Text(
                       subtitle,
-                      style: GoogleFonts.montserrat(
+                      style: GoogleFonts.poppins(
                         fontSize: 12,
                         color: Colors.black45,
                         height: 1.35,
@@ -449,7 +449,7 @@ class _FinalizePostPageState extends State<_FinalizePostPage> {
           SnackBar(
             content: Text(
               'Complete the Post to TikTok settings first.',
-              style: GoogleFonts.montserrat(fontSize: 13),
+              style: GoogleFonts.poppins(fontSize: 13),
             ),
           ),
         );
@@ -471,7 +471,7 @@ class _FinalizePostPageState extends State<_FinalizePostPage> {
           SnackBar(
             content: Text(
               'YouTube needs a title (at least 2 characters).',
-              style: GoogleFonts.montserrat(fontSize: 13),
+              style: GoogleFonts.poppins(fontSize: 13),
             ),
           ),
         );
@@ -491,7 +491,7 @@ class _FinalizePostPageState extends State<_FinalizePostPage> {
           SnackBar(
             content: Text(
               'YouTube needs an MP4 video. Photos cannot be posted to YouTube.',
-              style: GoogleFonts.montserrat(fontSize: 13),
+              style: GoogleFonts.poppins(fontSize: 13),
             ),
           ),
         );
@@ -764,7 +764,7 @@ class _FinalizePostPageState extends State<_FinalizePostPage> {
         SnackBar(
           content: Text(
             userFacingError(e, action: 'publishing campaign'),
-            style: GoogleFonts.montserrat(color: Colors.white, fontSize: 13),
+            style: GoogleFonts.poppins(color: Colors.white, fontSize: 13),
           ),
           backgroundColor: Colors.red,
           behavior: SnackBarBehavior.floating,

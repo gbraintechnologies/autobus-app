@@ -1,6 +1,5 @@
 import 'package:autobus/barrel.dart';
 import 'package:autobus/icons/figma_icons.dart';
-import 'package:autobus/icons/home_figma_icons.dart';
 
 /// First-run onboarding — Figma ONBOARDING 402×874.
 class OnboardingPage extends StatelessWidget {
@@ -23,9 +22,9 @@ class OnboardingPage extends StatelessWidget {
     final imageHeight = 226 * scale;
     final buttonWidth = 333 * scale;
     final buttonHeight = 64 * scale;
-    final titleSize = (20 * scale).clamp(18.0, 22.0);
-    final bodySize = (14 * scale).clamp(13.0, 16.0);
-    final ctaSize = (16 * scale).clamp(15.0, 18.0);
+    const titleSize = 20.0;
+    const bodySize = 14.0;
+    const ctaSize = 16.0;
 
     return Scaffold(
       backgroundColor: _backgroundColor,
@@ -47,7 +46,7 @@ class OnboardingPage extends StatelessWidget {
               Text(
                 'Run your whole business\nfrom one app',
                 textAlign: TextAlign.center,
-                style: GoogleFonts.montserrat(
+                style: GoogleFonts.poppins(
                   fontSize: titleSize,
                   fontWeight: FontWeight.w600,
                   height: 1.5,
@@ -59,7 +58,7 @@ class OnboardingPage extends StatelessWidget {
                 'Chats, orders, marketing, and an AI that knows your '
                 'business — all in one place.',
                 textAlign: TextAlign.center,
-                style: GoogleFonts.montserrat(
+                style: GoogleFonts.poppins(
                   fontSize: bodySize,
                   fontWeight: FontWeight.w400,
                   height: 1.55,
@@ -82,7 +81,7 @@ class OnboardingPage extends StatelessWidget {
                         children: [
                           Text(
                             'Get started',
-                            style: GoogleFonts.montserrat(
+                            style: GoogleFonts.poppins(
                               fontSize: ctaSize,
                               fontWeight: FontWeight.w600,
                               color: Colors.white,

@@ -98,7 +98,7 @@ class _PinUnlockPageState extends State<PinUnlockPage> {
                     Text(
                       'Welcome back',
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.montserrat(
+                      style: GoogleFonts.poppins(
                         color: Colors.black87,
                         fontSize: 15,
                         fontWeight: FontWeight.w400,
@@ -108,7 +108,7 @@ class _PinUnlockPageState extends State<PinUnlockPage> {
                     Text(
                       _greeting,
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.montserrat(
+                      style: GoogleFonts.poppins(
                         color: Colors.black,
                         fontSize: 26,
                         fontWeight: FontWeight.w600,
@@ -120,7 +120,7 @@ class _PinUnlockPageState extends State<PinUnlockPage> {
                       Text(
                         widget.identifier,
                         textAlign: TextAlign.center,
-                        style: GoogleFonts.montserrat(
+                        style: GoogleFonts.poppins(
                           color: Colors.black45,
                           fontSize: 13,
                           fontWeight: FontWeight.w400,
@@ -130,7 +130,7 @@ class _PinUnlockPageState extends State<PinUnlockPage> {
                     Text(
                       'Enter your PIN',
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.montserrat(
+                      style: GoogleFonts.poppins(
                         color: Colors.black87,
                         fontSize: 13,
                         fontWeight: FontWeight.w400,
@@ -158,7 +158,7 @@ class _PinUnlockPageState extends State<PinUnlockPage> {
                         },
                         child: Text(
                           'Forgot PIN?',
-                          style: GoogleFonts.montserrat(
+                          style: GoogleFonts.poppins(
                             color: Colors.black87,
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
@@ -180,7 +180,7 @@ class _PinUnlockPageState extends State<PinUnlockPage> {
                         child: Text(
                           'Not you? Sign in with another account',
                           textAlign: TextAlign.center,
-                          style: GoogleFonts.montserrat(
+                          style: GoogleFonts.poppins(
                             color: CustColors.mainCol,
                             fontSize: 13,
                             fontWeight: FontWeight.w600,

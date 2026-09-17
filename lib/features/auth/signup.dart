@@ -64,8 +64,8 @@ class _SignupState extends State<Signup> {
   }
 
   Widget _ghanaCardField(double scale, bool enabled) {
-    final style = GoogleFonts.montserrat(
-      fontSize: 14 * scale.clamp(0.9, 1.05),
+    final style = GoogleFonts.poppins(
+      fontSize: 14,
       color: Colors.black87,
     );
 

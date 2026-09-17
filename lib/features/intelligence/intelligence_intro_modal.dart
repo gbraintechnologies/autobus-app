@@ -51,9 +51,9 @@ class IntelligenceIntroModal extends StatelessWidget {
                 Text(
                   'Welcome to Business Chat Intelligence',
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.montserrat(
+                  style: GoogleFonts.poppins(
                     color: Colors.black,
-                    fontSize: 16 * scale.clamp(0.9, 1.05),
+                    fontSize: 16,
                     fontWeight: FontWeight.w600,
                     height: 1.35,
                   ),
@@ -62,9 +62,9 @@ class IntelligenceIntroModal extends StatelessWidget {
                 Text(
                   'Upload files and index websites so your AI can answer using your business information.',
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.montserrat(
+                  style: GoogleFonts.poppins(
                     color: Colors.black,
-                    fontSize: 14 * scale.clamp(0.9, 1.05),
+                    fontSize: 14,
                     fontWeight: FontWeight.w400,
                     height: 1.45,
                   ),
@@ -135,9 +135,9 @@ class _IntroSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text.rich(
       TextSpan(
-        style: GoogleFonts.montserrat(
+        style: GoogleFonts.poppins(
           color: Colors.black,
-          fontSize: 14 * scale.clamp(0.9, 1.05),
+          fontSize: 14,
           fontWeight: FontWeight.w400,
           height: 1.45,
         ),

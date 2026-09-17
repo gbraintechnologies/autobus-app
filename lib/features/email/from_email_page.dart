@@ -72,7 +72,7 @@ class _FromEmailPageState extends State<FromEmailPage> {
         SnackBar(
           content: Text(
             'From email saved',
-            style: GoogleFonts.montserrat(),
+            style: GoogleFonts.poppins(),
           ),
         ),
       );
@@ -83,7 +83,7 @@ class _FromEmailPageState extends State<FromEmailPage> {
         SnackBar(
           content: Text(
             userFacingError(e),
-            style: GoogleFonts.montserrat(),
+            style: GoogleFonts.poppins(),
           ),
           backgroundColor: Colors.red.shade700,
         ),
@@ -96,7 +96,7 @@ class _FromEmailPageState extends State<FromEmailPage> {
   InputDecoration _fieldDecoration(String hint) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: GoogleFonts.montserrat(
+      hintStyle: GoogleFonts.poppins(
         color: _hintColor,
         fontSize: 14,
         fontWeight: FontWeight.w400,
@@ -159,18 +159,18 @@ class _FromEmailPageState extends State<FromEmailPage> {
                           if (_loadError != null) ...[
                             Text(
                               _loadError!,
-                              style: GoogleFonts.montserrat(
+                              style: GoogleFonts.poppins(
                                 color: Colors.red.shade700,
-                                fontSize: 13 * scale.clamp(0.9, 1.05),
+                                fontSize: 13,
                               ),
                             ),
                             SizedBox(height: 12 * scale),
                           ],
                           Text(
                             'Set the email address customers will see when you send messages from Autobus.',
-                            style: GoogleFonts.montserrat(
+                            style: GoogleFonts.poppins(
                               color: _bodyColor,
-                              fontSize: 13 * scale.clamp(0.9, 1.05),
+                              fontSize: 13,
                               fontWeight: FontWeight.w400,
                               height: 1.5,
                             ),
@@ -183,9 +183,9 @@ class _FromEmailPageState extends State<FromEmailPage> {
                               cursorColor: _buttonColor,
                               keyboardType: TextInputType.emailAddress,
                               autocorrect: false,
-                              style: GoogleFonts.montserrat(
+                              style: GoogleFonts.poppins(
                                 color: Colors.black,
-                                fontSize: 14 * scale.clamp(0.9, 1.05),
+                                fontSize: 14,
                               ),
                               decoration: _fieldDecoration('noreply@autobus.com'),
                               validator: (value) {
@@ -206,9 +206,9 @@ class _FromEmailPageState extends State<FromEmailPage> {
                           SizedBox(height: 20 * scale),
                           Text(
                             'Use a recognizable address so customers know who the message is from and can reply with confidence.',
-                            style: GoogleFonts.montserrat(
+                            style: GoogleFonts.poppins(
                               color: _bodyColor,
-                              fontSize: 13 * scale.clamp(0.9, 1.05),
+                              fontSize: 13,
                               fontWeight: FontWeight.w400,
                               height: 1.5,
                             ),
@@ -248,9 +248,9 @@ class _FromEmailPageState extends State<FromEmailPage> {
                       )
                     : Text(
                         'Save from email',
-                        style: GoogleFonts.montserrat(
+                        style: GoogleFonts.poppins(
                           color: Colors.white,
-                          fontSize: 16 * scale.clamp(0.9, 1.05),
+                          fontSize: 16,
                           fontWeight: FontWeight.w600,
                         ),
                       ),

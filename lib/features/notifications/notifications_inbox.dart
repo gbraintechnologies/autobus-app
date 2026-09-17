@@ -45,7 +45,7 @@ class _NotificationsInboxPageState extends State<NotificationsInboxPage> {
         SnackBar(
           content: Text(
             'Could not mark notification as read',
-            style: GoogleFonts.montserrat(fontWeight: FontWeight.w400),
+            style: GoogleFonts.poppins(fontWeight: FontWeight.w400),
           ),
         ),
       );
@@ -171,8 +171,8 @@ class _NotificationsInboxPageState extends State<NotificationsInboxPage> {
                               )
                             : Text(
                                 'Mark read',
-                                style: GoogleFonts.montserrat(
-                                  fontSize: 11 * scale.clamp(0.9, 1.05),
+                                style: GoogleFonts.poppins(
+                                  fontSize: 11,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),

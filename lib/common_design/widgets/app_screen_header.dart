@@ -57,9 +57,9 @@ class AppScreenHeader extends StatelessWidget {
                     maxLines: 1,
                     softWrap: false,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.montserrat(
+                    style: GoogleFonts.poppins(
                       color: Colors.black,
-                      fontSize: titleFontSize * headerScale,
+                      fontSize: titleFontSize,
                       fontWeight: FontWeight.w600,
                       height: 1.2,
                     ),

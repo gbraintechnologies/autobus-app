@@ -117,7 +117,7 @@ class _CreditAvatarState extends State<CreditAvatar> {
                 children: [
                   Text(
                     _displayValue(),
-                    style: GoogleFonts.montserrat(
+                    style: GoogleFonts.poppins(
                       color: Colors.white,
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
@@ -126,7 +126,7 @@ class _CreditAvatarState extends State<CreditAvatar> {
                   ),
                   Text(
                     short,
-                    style: GoogleFonts.montserrat(
+                    style: GoogleFonts.poppins(
                       color: Colors.white54,
                       fontSize: 9,
                       height: 1.0,

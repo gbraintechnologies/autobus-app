@@ -2,9 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-/// Icons exported from the Auto-Bus Figma file (NEW DESIGNS).
+/// Icons exported from the linked Auto-Bus Figma file (NEW DESIGNS).
+///
+/// Source: https://www.figma.com/design/vDEDLxCPolEKtncF1Brucp/Auto-Bus?node-id=3229-10
 class FigmaIcons {
   FigmaIcons._();
+
+  static const figmaFileUrl =
+      'https://www.figma.com/design/vDEDLxCPolEKtncF1Brucp/Auto-Bus';
+  static const figmaNewDesignsUrl =
+      'https://www.figma.com/design/vDEDLxCPolEKtncF1Brucp/Auto-Bus?node-id=3229-10';
+  static const figmaFileKey = 'vDEDLxCPolEKtncF1Brucp';
+
 
   static const back = 'assets/icons/figma/back.svg';
   static const switchBusiness = 'assets/icons/figma/switch.svg';

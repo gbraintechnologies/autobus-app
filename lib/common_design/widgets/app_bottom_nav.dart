@@ -262,9 +262,9 @@ class _NavTabButton extends StatelessWidget {
             SizedBox(height: 4 * scale),
             Text(
               label,
-              style: GoogleFonts.montserrat(
+              style: GoogleFonts.poppins(
                 color: color,
-                fontSize: 12 * scale.clamp(0.85, 1.05),
+                fontSize: 12,
                 fontWeight: active ? FontWeight.w600 : FontWeight.w500,
               ),
             ),

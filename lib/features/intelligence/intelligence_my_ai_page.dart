@@ -151,7 +151,7 @@ class _IntelligenceMyAiChatBodyState extends State<_IntelligenceMyAiChatBody> {
                   size: 22,
                   color: Color(0xFF475569),
                 ),
-                title: Text('Photo', style: GoogleFonts.montserrat()),
+                title: Text('Photo', style: GoogleFonts.poppins()),
                 onTap: () => Navigator.pop(ctx, 'photo'),
               ),
               ListTile(
@@ -160,7 +160,7 @@ class _IntelligenceMyAiChatBodyState extends State<_IntelligenceMyAiChatBody> {
                   size: 22,
                   color: Color(0xFF475569),
                 ),
-                title: Text('Video', style: GoogleFonts.montserrat()),
+                title: Text('Video', style: GoogleFonts.poppins()),
                 onTap: () => Navigator.pop(ctx, 'video'),
               ),
             ],
@@ -445,9 +445,9 @@ class _MyAiMessageRow extends StatelessWidget {
       ),
       child: Text(
         text,
-        style: GoogleFonts.montserrat(
+        style: GoogleFonts.poppins(
           color: isUser ? Colors.white : _bubbleTextColor,
-          fontSize: 14 * scale.clamp(0.9, 1.05),
+          fontSize: 14,
           fontWeight: FontWeight.w400,
           height: 1.4,
         ),
@@ -456,9 +456,9 @@ class _MyAiMessageRow extends StatelessWidget {
 
     final timestampWidget = Text(
       pending ? 'Sending…' : failed ? "Couldn't send" : timestamp,
-      style: GoogleFonts.montserrat(
+      style: GoogleFonts.poppins(
         color: _timestampColor,
-        fontSize: 12 * scale.clamp(0.85, 1.0),
+        fontSize: 12,
         fontWeight: FontWeight.w400,
       ),
     );
@@ -621,9 +621,9 @@ class _MyAiInputBar extends StatelessWidget {
                   maxLines: 4,
                   textInputAction: TextInputAction.send,
                   onSubmitted: canSend ? (_) => onSend() : null,
-                  style: GoogleFonts.montserrat(
+                  style: GoogleFonts.poppins(
                     color: const Color(0xFF475569),
-                    fontSize: 14 * scale.clamp(0.9, 1.05),
+                    fontSize: 14,
                   ),
                   decoration: InputDecoration(
                     hintText: listening
@@ -631,9 +631,9 @@ class _MyAiInputBar extends StatelessWidget {
                         : attaching
                         ? 'Uploading…'
                         : 'Type your message...',
-                    hintStyle: GoogleFonts.montserrat(
+                    hintStyle: GoogleFonts.poppins(
                       color: _timestampColor,
-                      fontSize: 14 * scale.clamp(0.9, 1.05),
+                      fontSize: 14,
                     ),
                     border: InputBorder.none,
                     isDense: true,

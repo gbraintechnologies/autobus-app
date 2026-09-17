@@ -269,7 +269,7 @@ class _AgentModeViewState extends State<_AgentModeView> {
             leading: Icon(icon, color: Colors.white70),
             title: Text(
               label,
-              style: GoogleFonts.montserrat(color: Colors.white),
+              style: GoogleFonts.poppins(color: Colors.white),
             ),
             onTap: () => Navigator.pop(context, value),
           );
@@ -449,7 +449,7 @@ class _AgentModeViewState extends State<_AgentModeView> {
             IgnorePointer(
               child: Text(
                 'Agentic mode',
-                style: GoogleFonts.montserrat(
+                style: GoogleFonts.poppins(
                   color: Colors.white,
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
@@ -483,7 +483,7 @@ class _AgentModeViewState extends State<_AgentModeView> {
             const SizedBox(width: 6),
             Text(
               label,
-              style: GoogleFonts.montserrat(
+              style: GoogleFonts.poppins(
                 color: Colors.white,
                 fontSize: 12,
                 fontWeight: FontWeight.w400,
@@ -514,7 +514,7 @@ class _AgentModeViewState extends State<_AgentModeView> {
                 const SizedBox(width: 10),
                 Text(
                   _listening ? 'Listening…' : 'Working… this can take a minute',
-                  style: GoogleFonts.montserrat(
+                  style: GoogleFonts.poppins(
                     color: Colors.white54,
                     fontSize: 13,
                   ),
@@ -579,7 +579,7 @@ class _AgentModeViewState extends State<_AgentModeView> {
                       if (bubble.text.trim().isNotEmpty)
                         Text(
                           stripAiMarkdown(bubble.text),
-                          style: GoogleFonts.montserrat(
+                          style: GoogleFonts.poppins(
                             color: Colors.white.withValues(
                               alpha: bubble.failed ? 0.75 : 1,
                             ),
@@ -620,7 +620,7 @@ class _AgentModeViewState extends State<_AgentModeView> {
                   children: [
                     Text(
                       spec.title,
-                      style: GoogleFonts.montserrat(
+                      style: GoogleFonts.poppins(
                         color: Colors.white,
                         fontSize: 15,
                         fontWeight: FontWeight.w500,
@@ -629,7 +629,7 @@ class _AgentModeViewState extends State<_AgentModeView> {
                     const SizedBox(height: 6),
                     Text(
                       spec.summary,
-                      style: GoogleFonts.montserrat(
+                      style: GoogleFonts.poppins(
                         color: Colors.white70,
                         fontSize: 13,
                         height: 1.35,
@@ -675,7 +675,7 @@ class _AgentModeViewState extends State<_AgentModeView> {
                         padding: const EdgeInsets.only(top: 10),
                         child: Text(
                           'Decision sent',
-                          style: GoogleFonts.montserrat(
+                          style: GoogleFonts.poppins(
                             color: Colors.white38,
                             fontSize: 12,
                           ),
@@ -719,7 +719,7 @@ class _AgentModeViewState extends State<_AgentModeView> {
               children: [
                 Text(
                   spec.prompt,
-                  style: GoogleFonts.montserrat(
+                  style: GoogleFonts.poppins(
                     color: Colors.white,
                     fontSize: 14,
                     height: 1.35,
@@ -748,7 +748,7 @@ class _AgentModeViewState extends State<_AgentModeView> {
                             ),
                             child: Text(
                               choice.label,
-                              style: GoogleFonts.montserrat(
+                              style: GoogleFonts.poppins(
                                 color: Colors.white,
                                 fontSize: 12,
                               ),
@@ -771,7 +771,7 @@ class _AgentModeViewState extends State<_AgentModeView> {
                     padding: const EdgeInsets.only(top: 10),
                     child: Text(
                       'Received',
-                      style: GoogleFonts.montserrat(
+                      style: GoogleFonts.poppins(
                         color: Colors.white38,
                         fontSize: 12,
                       ),
@@ -802,7 +802,7 @@ class _AgentModeViewState extends State<_AgentModeView> {
         ),
         child: Text(
           label,
-          style: GoogleFonts.montserrat(
+          style: GoogleFonts.poppins(
             color: Colors.white,
             fontSize: 13,
             fontWeight: FontWeight.w500,
@@ -861,7 +861,7 @@ class _AgentModeViewState extends State<_AgentModeView> {
                         child: Center(
                           child: Text(
                             'Could not load image',
-                            style: GoogleFonts.montserrat(
+                            style: GoogleFonts.poppins(
                               color: Colors.white54,
                               fontSize: 12,
                             ),
@@ -899,7 +899,7 @@ class _AgentModeViewState extends State<_AgentModeView> {
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.right,
-                  style: GoogleFonts.montserrat(
+                  style: GoogleFonts.poppins(
                     color: Colors.white70,
                     fontSize: 12,
                   ),
@@ -1005,7 +1005,7 @@ class _AgentModeViewState extends State<_AgentModeView> {
                           const SizedBox(width: 6),
                           Text(
                             item.name ?? item.kind,
-                            style: GoogleFonts.montserrat(
+                            style: GoogleFonts.poppins(
                               color: Colors.white,
                               fontSize: 11,
                             ),
@@ -1039,7 +1039,7 @@ class _AgentModeViewState extends State<_AgentModeView> {
                 keyboardType: TextInputType.multiline,
                 textInputAction: TextInputAction.newline,
                 onTapOutside: dismissAppKeyboard,
-                style: GoogleFonts.montserrat(
+                style: GoogleFonts.poppins(
                   color: Colors.white,
                   fontSize: 14,
                 ),
@@ -1047,7 +1047,7 @@ class _AgentModeViewState extends State<_AgentModeView> {
                   hintText: _listening
                       ? 'Listening…'
                       : 'Tell Autobus what to do…',
-                  hintStyle: GoogleFonts.montserrat(
+                  hintStyle: GoogleFonts.poppins(
                     color: Colors.white38,
                     fontSize: 14,
                   ),
@@ -1140,7 +1140,7 @@ class _AgentInlineVideoState extends State<_AgentInlineVideo> {
           child: Center(
             child: Text(
               'Could not load video',
-              style: GoogleFonts.montserrat(color: Colors.white54, fontSize: 12),
+              style: GoogleFonts.poppins(color: Colors.white54, fontSize: 12),
             ),
           ),
         ),

@@ -94,7 +94,7 @@ class _DigitalMarketingSelectionState extends State<DigitalMarketingSelection> {
 
             'Please select a content type',
 
-            style: GoogleFonts.montserrat(),
+            style: GoogleFonts.poppins(),
 
           ),
 
@@ -176,7 +176,7 @@ class _DigitalMarketingSelectionState extends State<DigitalMarketingSelection> {
 
                     style: LightScreenTheme.hubTitle(scale).copyWith(
 
-                      fontSize: 18 * scale.clamp(0.9, 1.05),
+                      fontSize: 18,
 
                     ),
 
@@ -192,7 +192,7 @@ class _DigitalMarketingSelectionState extends State<DigitalMarketingSelection> {
 
                     style: LightScreenTheme.hubBody(scale).copyWith(
 
-                      fontSize: 13 * scale.clamp(0.9, 1.05),
+                      fontSize: 13,
 
                       color: LightScreenTheme.muted,
 
@@ -340,11 +340,11 @@ class _DigitalMarketingSelectionState extends State<DigitalMarketingSelection> {
 
                                             : 'Text',
 
-                                    style: GoogleFonts.montserrat(
+                                    style: GoogleFonts.poppins(
 
                                       color: _green,
 
-                                      fontSize: 11 * scale.clamp(0.9, 1.05),
+                                      fontSize: 11,
 
                                       fontWeight: FontWeight.w600,
 
@@ -418,11 +418,11 @@ class _DigitalMarketingSelectionState extends State<DigitalMarketingSelection> {
 
                       'Continue',
 
-                      style: GoogleFonts.montserrat(
+                      style: GoogleFonts.poppins(
 
                         color: Colors.white,
 
-                        fontSize: 16 * scale.clamp(0.9, 1.05),
+                        fontSize: 16,
 
                         fontWeight: FontWeight.w500,
 

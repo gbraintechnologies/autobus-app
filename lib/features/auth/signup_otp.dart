@@ -108,9 +108,9 @@ class _SignupOtpState extends State<SignupOtp> {
                             },
                       child: RichText(
                         text: TextSpan(
-                          style: GoogleFonts.montserrat(
+                          style: GoogleFonts.poppins(
                             color: AuthScreenTokens.labelColor,
-                            fontSize: 13 * scale.clamp(0.9, 1.05),
+                            fontSize: 13,
                           ),
                           children: [
                             const TextSpan(text: "Didn't receive code? "),

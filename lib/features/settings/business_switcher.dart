@@ -69,7 +69,7 @@ class BusinessSwitcherSheet extends StatelessWidget {
                 const SizedBox(height: 16),
                 Text(
                   'Your businesses',
-                  style: GoogleFonts.montserrat(
+                  style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                   ),
@@ -77,7 +77,7 @@ class BusinessSwitcherSheet extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   'Switch without signing out. Each business keeps its own data.',
-                  style: GoogleFonts.montserrat(
+                  style: GoogleFonts.poppins(
                     fontSize: 12,
                     color: Colors.black54,
                   ),
@@ -102,7 +102,7 @@ class BusinessSwitcherSheet extends StatelessWidget {
                           backgroundColor: CustColors.mainCol.withValues(alpha: 0.12),
                           child: Text(
                             businessDisplayName(item).substring(0, 1).toUpperCase(),
-                            style: GoogleFonts.montserrat(
+                            style: GoogleFonts.poppins(
                               color: CustColors.mainCol,
                               fontWeight: FontWeight.w600,
                             ),
@@ -110,7 +110,7 @@ class BusinessSwitcherSheet extends StatelessWidget {
                         ),
                         title: Text(
                           businessDisplayName(item),
-                          style: GoogleFonts.montserrat(
+                          style: GoogleFonts.poppins(
                             fontWeight: FontWeight.w600,
                             fontSize: 14,
                           ),
@@ -120,7 +120,7 @@ class BusinessSwitcherSheet extends StatelessWidget {
                             item['email']?.toString() ?? '',
                             if (isManager) 'Primary login',
                           ].where((s) => s.isNotEmpty).join(' · '),
-                          style: GoogleFonts.montserrat(fontSize: 12),
+                          style: GoogleFonts.poppins(fontSize: 12),
                         ),
                         trailing: isActive
                             ? Icon(Icons.check_circle, color: CustColors.mainCol)
@@ -151,14 +151,14 @@ class BusinessSwitcherSheet extends StatelessWidget {
                   ),
                   title: Text(
                     'Add a business',
-                    style: GoogleFonts.montserrat(
+                    style: GoogleFonts.poppins(
                       fontWeight: FontWeight.w600,
                       fontSize: 14,
                     ),
                   ),
                   subtitle: Text(
                     'Create another account attached to this login',
-                    style: GoogleFonts.montserrat(fontSize: 12),
+                    style: GoogleFonts.poppins(fontSize: 12),
                   ),
                   onTap: () {
                     Navigator.pop(context);
@@ -178,7 +178,7 @@ class BusinessSwitcherSheet extends StatelessWidget {
                   ),
                   title: Text(
                     'Manage businesses',
-                    style: GoogleFonts.montserrat(
+                    style: GoogleFonts.poppins(
                       fontWeight: FontWeight.w600,
                       fontSize: 14,
                     ),
@@ -229,7 +229,7 @@ class BusinessSwitchScrim extends StatelessWidget {
                 Text(
                   'Switching business',
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.montserrat(
+                  style: GoogleFonts.poppins(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
                     color: Colors.black87,
@@ -239,7 +239,7 @@ class BusinessSwitchScrim extends StatelessWidget {
                 Text(
                   name.isEmpty ? 'Loading this account…' : 'Opening $name',
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.montserrat(
+                  style: GoogleFonts.poppins(
                     fontSize: 12,
                     height: 1.35,
                     color: Colors.black54,

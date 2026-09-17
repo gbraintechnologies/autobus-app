@@ -1,0 +1,20 @@
+---
+description: Use the Auto-Bus Figma file as the UI source of truth
+alwaysApply: true
+---
+
+# Figma source
+
+This app is linked to the Auto-Bus Figma file. Treat it as the design source of truth.
+
+- File: [Auto-Bus](https://www.figma.com/design/vDEDLxCPolEKtncF1Brucp/Auto-Bus)
+- File key: `vDEDLxCPolEKtncF1Brucp`
+- Light UI page: [NEW DESIGNS](https://www.figma.com/design/vDEDLxCPolEKtncF1Brucp/Auto-Bus?node-id=3229-10) (`3229:10`)
+- Project map: `figma.json`
+
+When changing UI, icons, colors, type, or layout:
+
+1. Read from this Figma file (do not invent a different design).
+2. Font is Poppins. Use Figma px as Flutter logical pixels (`LightScreenTheme.typeTitle` = 16, body 14, label 13, caption 12). Do not multiply font sizes by screen `scale`.
+3. Use exported assets in `assets/icons/figma/` and `assets/img/figma/`.
+4. Render icons with `FigmaSvgIcon` / `FigmaIcons`, not SF Symbol stand-ins, when a Figma SVG exists.

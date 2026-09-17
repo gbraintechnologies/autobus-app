@@ -30,7 +30,7 @@ class TransparentCtaButton extends StatelessWidget {
             Expanded(
               child: AppFitText(
                 label,
-                style: GoogleFonts.montserrat(
+                style: GoogleFonts.poppins(
                   color: Colors.white,
                   fontSize: 15,
                   fontWeight: FontWeight.w600,

@@ -114,7 +114,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 state.message.isNotEmpty
                     ? userFacingError(state.message)
                     : 'Error signing out',
-                style: GoogleFonts.montserrat(color: Colors.white),
+                style: GoogleFonts.poppins(color: Colors.white),
               ),
               backgroundColor: Colors.red,
             ),
@@ -147,9 +147,9 @@ class _SettingsPageState extends State<SettingsPage> {
                             children: [
                               Text(
                                 'Switch Business',
-                                style: GoogleFonts.montserrat(
+                                style: GoogleFonts.poppins(
                                   color: Colors.white,
-                                  fontSize: 14 * scale.clamp(0.9, 1.05),
+                                  fontSize: 14,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -157,9 +157,9 @@ class _SettingsPageState extends State<SettingsPage> {
                                 'Add, switch, or detach businesses on this login',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: GoogleFonts.montserrat(
+                                style: GoogleFonts.poppins(
                                   color: _switchSubtitle,
-                                  fontSize: 12 * scale.clamp(0.9, 1.05),
+                                  fontSize: 12,
                                   fontWeight: FontWeight.w400,
                                 ),
                               ),
@@ -186,17 +186,17 @@ class _SettingsPageState extends State<SettingsPage> {
                             children: [
                               Text(
                                 _creditsTitle(),
-                                style: GoogleFonts.montserrat(
+                                style: GoogleFonts.poppins(
                                   color: Colors.black,
-                                  fontSize: 14 * scale.clamp(0.9, 1.05),
+                                  fontSize: 14,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
                               Text(
                                 _creditsSubtitle(),
-                                style: GoogleFonts.montserrat(
+                                style: GoogleFonts.poppins(
                                   color: _rowText,
-                                  fontSize: 12 * scale.clamp(0.9, 1.05),
+                                  fontSize: 12,
                                   fontWeight: FontWeight.w400,
                                 ),
                               ),
@@ -259,9 +259,9 @@ class _SettingsPageState extends State<SettingsPage> {
                                   alignment: Alignment.centerLeft,
                                   child: Text(
                                     'Delete account',
-                                    style: GoogleFonts.montserrat(
+                                    style: GoogleFonts.poppins(
                                       color: _deleteColor,
-                                      fontSize: 14 * scale.clamp(0.9, 1.05),
+                                      fontSize: 14,
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),
@@ -278,11 +278,11 @@ class _SettingsPageState extends State<SettingsPage> {
                                   alignment: Alignment.centerLeft,
                                   child: Text(
                                     isLoading ? 'Logging out...' : 'Logout',
-                                    style: GoogleFonts.montserrat(
+                                    style: GoogleFonts.poppins(
                                       color: isLoading
                                           ? Colors.grey
                                           : _logoutColor,
-                                      fontSize: 14 * scale.clamp(0.9, 1.05),
+                                      fontSize: 14,
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),
@@ -381,7 +381,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 Text(
                   'Log out?',
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.montserrat(
+                  style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: Colors.black87,
@@ -391,7 +391,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 Text(
                   'You can log back in at any time.',
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.montserrat(
+                  style: GoogleFonts.poppins(
                     fontSize: 13.5,
                     height: 1.35,
                     fontWeight: FontWeight.w400,
@@ -419,7 +419,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         ),
                         child: Text(
                           'Cancel',
-                          style: GoogleFonts.montserrat(
+                          style: GoogleFonts.poppins(
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -445,7 +445,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         ),
                         child: Text(
                           'Continue',
-                          style: GoogleFonts.montserrat(
+                          style: GoogleFonts.poppins(
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -533,9 +533,9 @@ class _SettingsMenuTile extends StatelessWidget {
               Expanded(
                 child: Text(
                   item.title,
-                  style: GoogleFonts.montserrat(
+                  style: GoogleFonts.poppins(
                     color: _SettingsPageState._rowText,
-                    fontSize: 14 * scale.clamp(0.9, 1.05),
+                                      fontSize: 14,
                     fontWeight: FontWeight.w500,
                   ),
                 ),

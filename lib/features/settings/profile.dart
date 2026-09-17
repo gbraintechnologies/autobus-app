@@ -181,7 +181,7 @@ class _ProfileState extends State<Profile> {
               Expanded(
                 child: Text(
                   'Profile completion',
-                  style: GoogleFonts.montserrat(
+                  style: GoogleFonts.poppins(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                     color: Colors.black,
@@ -190,7 +190,7 @@ class _ProfileState extends State<Profile> {
               ),
               Text(
                 '$pct%',
-                style: GoogleFonts.montserrat(
+                style: GoogleFonts.poppins(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
                   color: CustColors.mainCol,
@@ -211,7 +211,7 @@ class _ProfileState extends State<Profile> {
           const SizedBox(height: 10),
           Text(
             '${info.completed} of ${info.total} fields completed',
-            style: GoogleFonts.montserrat(
+            style: GoogleFonts.poppins(
               fontSize: 11,
               fontWeight: FontWeight.w400,
               color: Colors.black.withValues(alpha: 0.65),
@@ -235,7 +235,7 @@ class _ProfileState extends State<Profile> {
                     ),
                     child: Text(
                       m,
-                      style: GoogleFonts.montserrat(
+                      style: GoogleFonts.poppins(
                         fontSize: 11,
                         fontWeight: FontWeight.w500,
                         color: CustColors.mainCol,
@@ -254,7 +254,7 @@ class _ProfileState extends State<Profile> {
                     ),
                     child: Text(
                       '+$missingExtra more',
-                      style: GoogleFonts.montserrat(
+                      style: GoogleFonts.poppins(
                         fontSize: 11,
                         fontWeight: FontWeight.w500,
                         color: Colors.black.withValues(alpha: 0.65),
@@ -504,9 +504,9 @@ class _ProfileState extends State<Profile> {
                       ),
                       child: Text(
                         _error!,
-                        style: GoogleFonts.montserrat(
+                        style: GoogleFonts.poppins(
                           color: Colors.red,
-                          fontSize: 13 * scale.clamp(0.9, 1.05),
+                          fontSize: 13,
                         ),
                       ),
                     ),
@@ -759,7 +759,7 @@ class _ProfileState extends State<Profile> {
           Text(
             title,
             textAlign: TextAlign.center,
-            style: GoogleFonts.montserrat(
+            style: GoogleFonts.poppins(
               color: Colors.black,
               fontSize: 18,
               fontWeight: FontWeight.w500,
@@ -769,7 +769,7 @@ class _ProfileState extends State<Profile> {
           Text(
             subtitle,
             textAlign: TextAlign.center,
-            style: GoogleFonts.montserrat(
+            style: GoogleFonts.poppins(
               color: Colors.black.withOpacity(0.6),
               fontSize: 12,
               fontWeight: FontWeight.w300,
@@ -780,7 +780,7 @@ class _ProfileState extends State<Profile> {
             onPressed: _uploadingPhoto ? null : _pickAndUploadPhoto,
             child: Text(
               _uploadingPhoto ? 'Uploading...' : 'Change profile photo',
-              style: GoogleFonts.montserrat(
+              style: GoogleFonts.poppins(
                 color: CustColors.mainCol,
                 fontSize: 13,
                 fontWeight: FontWeight.w400,
@@ -898,7 +898,7 @@ class _ProfileState extends State<Profile> {
       labelText: label,
       helperText: helperText,
       hintText: hintText,
-      hintStyle: GoogleFonts.montserrat(
+      hintStyle: GoogleFonts.poppins(
         color: Colors.black.withOpacity(0.35),
         fontSize: 14,
         fontWeight: FontWeight.w400,

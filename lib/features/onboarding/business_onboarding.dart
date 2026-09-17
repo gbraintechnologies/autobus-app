@@ -321,7 +321,7 @@ class _BusinessOnboardingState extends State<BusinessOnboarding> {
                 const SizedBox(height: 16),
                 Text(
                   question.placeholder.isEmpty ? 'Choose a category' : question.placeholder,
-                  style: GoogleFonts.montserrat(
+                  style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                   ),
@@ -329,7 +329,7 @@ class _BusinessOnboardingState extends State<BusinessOnboarding> {
                 const SizedBox(height: 6),
                 Text(
                   'Pick the closest match for your business.',
-                  style: GoogleFonts.montserrat(
+                  style: GoogleFonts.poppins(
                     fontSize: 12,
                     color: Colors.black54,
                   ),
@@ -350,7 +350,7 @@ class _BusinessOnboardingState extends State<BusinessOnboarding> {
                         contentPadding: const EdgeInsets.symmetric(horizontal: 4),
                         title: Text(
                           option,
-                          style: GoogleFonts.montserrat(
+                          style: GoogleFonts.poppins(
                             fontSize: 14,
                             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                             color: isSelected ? CustColors.mainCol : Colors.black87,
@@ -485,7 +485,7 @@ class _BusinessOnboardingState extends State<BusinessOnboarding> {
                 _loading
                     ? 'Preparing your questions…'
                     : 'Question ${_step + 1} of $total',
-                style: GoogleFonts.montserrat(
+                style: GoogleFonts.poppins(
                   color: Colors.black54,
                   fontSize: 12,
                   fontWeight: FontWeight.w400,
@@ -496,7 +496,7 @@ class _BusinessOnboardingState extends State<BusinessOnboarding> {
                 widget.editMode
                     ? 'Updating these answers replaces only your business-profile knowledge. Uploaded files and websites stay indexed.'
                     : 'Answer a few questions so your chatbot can talk about your business — even before you upload documents or a website.',
-                style: GoogleFonts.montserrat(
+                style: GoogleFonts.poppins(
                   color: Colors.black87,
                   fontSize: 13,
                   fontWeight: FontWeight.w300,
@@ -521,7 +521,7 @@ class _BusinessOnboardingState extends State<BusinessOnboarding> {
                       onPressed: _submitting ? null : _submit,
                       child: Text(
                         'Save and finish',
-                        style: GoogleFonts.montserrat(
+                        style: GoogleFonts.poppins(
                           color: CustColors.mainCol,
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
@@ -549,7 +549,7 @@ class _BusinessOnboardingState extends State<BusinessOnboarding> {
             Text(
               _loadError!,
               textAlign: TextAlign.center,
-              style: GoogleFonts.montserrat(fontSize: 13, height: 1.4),
+              style: GoogleFonts.poppins(fontSize: 13, height: 1.4),
             ),
             const SizedBox(height: 16),
             AppButton(onPressed: _load, buttonText: 'Try again'),
@@ -567,7 +567,7 @@ class _BusinessOnboardingState extends State<BusinessOnboarding> {
         children: [
           Text(
             q.prompt,
-            style: GoogleFonts.montserrat(
+            style: GoogleFonts.poppins(
               color: Colors.black,
               fontSize: 22,
               fontWeight: FontWeight.w500,
@@ -578,7 +578,7 @@ class _BusinessOnboardingState extends State<BusinessOnboarding> {
             const SizedBox(height: 10),
             Text(
               q.hint,
-              style: GoogleFonts.montserrat(
+              style: GoogleFonts.poppins(
                 color: Colors.black54,
                 fontSize: 13,
                 fontWeight: FontWeight.w300,
@@ -605,7 +605,7 @@ class _BusinessOnboardingState extends State<BusinessOnboarding> {
               onSubmitted: (_) => _goNext(),
               decoration: InputDecoration(
                 hintText: q.placeholder,
-                hintStyle: GoogleFonts.montserrat(
+                hintStyle: GoogleFonts.poppins(
                   color: Colors.black38,
                   fontSize: 14,
                   fontWeight: FontWeight.w400,
@@ -617,7 +617,7 @@ class _BusinessOnboardingState extends State<BusinessOnboarding> {
                   borderSide: BorderSide(color: CustColors.mainCol, width: 1.6),
                 ),
               ),
-              style: GoogleFonts.montserrat(
+              style: GoogleFonts.poppins(
                 fontSize: 15,
                 fontWeight: FontWeight.w400,
                 height: 1.4,
@@ -628,7 +628,7 @@ class _BusinessOnboardingState extends State<BusinessOnboarding> {
               padding: const EdgeInsets.only(top: 10),
               child: Text(
                 'Optional',
-                style: GoogleFonts.montserrat(
+                style: GoogleFonts.poppins(
                   color: Colors.black38,
                   fontSize: 12,
                 ),
@@ -676,7 +676,7 @@ class _IndustrySelectField extends StatelessWidget {
               Expanded(
                 child: Text(
                   hasValue ? value : placeholder,
-                  style: GoogleFonts.montserrat(
+                  style: GoogleFonts.poppins(
                     color: hasValue ? Colors.black87 : Colors.black38,
                     fontSize: 15,
                     fontWeight: hasValue ? FontWeight.w500 : FontWeight.w400,

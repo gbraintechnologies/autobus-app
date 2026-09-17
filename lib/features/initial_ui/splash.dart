@@ -65,7 +65,7 @@ class _SplashPgeState extends State<SplashPge> {
                           child: Center(
                             child: Text(
                               "Your",
-                              style: GoogleFonts.montserrat(
+                              style: GoogleFonts.poppins(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w400,
                                 color: textCol,
@@ -80,7 +80,7 @@ class _SplashPgeState extends State<SplashPge> {
                           child: Center(
                             child: Text(
                               "Autonomous",
-                              style: GoogleFonts.montserrat(
+                              style: GoogleFonts.poppins(
                                 fontSize: 28,
                                 fontWeight: FontWeight.w600,
                                 color: textCol,
@@ -95,7 +95,7 @@ class _SplashPgeState extends State<SplashPge> {
                           child: Center(
                             child: Text(
                               "Business operations assistant!",
-                              style: GoogleFonts.montserrat(
+                              style: GoogleFonts.poppins(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w400,
                                 color: textCol,
@@ -121,7 +121,7 @@ class _SplashPgeState extends State<SplashPge> {
                               ),
                               child: Text(
                                 "Get Started",
-                                style: GoogleFonts.montserrat(
+                                style: GoogleFonts.poppins(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
                                 ),

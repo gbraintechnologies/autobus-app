@@ -161,7 +161,7 @@ class _LiveChatsPageState extends State<LiveChatsPage> {
 
     final emptyStyle = LightScreenTheme.hubBody(scale).copyWith(
       color: const Color(0xFF4E4E4E),
-      fontSize: 13 * scale.clamp(0.9, 1.05),
+      fontSize: 13,
     );
 
     return LightScreenScaffold(

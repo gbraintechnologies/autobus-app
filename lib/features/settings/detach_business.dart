@@ -108,7 +108,7 @@ class _DetachBusinessPageState extends State<DetachBusinessPage> {
                   const SizedBox(height: 24),
                   Text(
                     widget.name,
-                    style: GoogleFonts.montserrat(
+                    style: GoogleFonts.poppins(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                     ),
@@ -116,7 +116,7 @@ class _DetachBusinessPageState extends State<DetachBusinessPage> {
                   const SizedBox(height: 6),
                   Text(
                     'We’ll send a code to ${widget.email}. After you set a password, this business leaves your switcher and can be signed into separately.',
-                    style: GoogleFonts.montserrat(
+                    style: GoogleFonts.poppins(
                       fontSize: 13,
                       height: 1.4,
                       color: Colors.black54,
@@ -126,7 +126,7 @@ class _DetachBusinessPageState extends State<DetachBusinessPage> {
                   if (_codeSent) ...[
                     Text(
                       'Code',
-                      style: GoogleFonts.montserrat(
+                      style: GoogleFonts.poppins(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
                       ),
@@ -138,14 +138,14 @@ class _DetachBusinessPageState extends State<DetachBusinessPage> {
                       textInputAction: TextInputAction.next,
                       decoration: InputDecoration(
                         hintText: 'Enter the code',
-                        hintStyle: GoogleFonts.montserrat(color: Colors.black38, fontSize: 14),
+                        hintStyle: GoogleFonts.poppins(color: Colors.black38, fontSize: 14),
                         border: const UnderlineInputBorder(),
                       ),
                     ),
                     const SizedBox(height: 24),
                     Text(
                       'New password',
-                      style: GoogleFonts.montserrat(
+                      style: GoogleFonts.poppins(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
                       ),

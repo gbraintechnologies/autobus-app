@@ -332,7 +332,7 @@ class _RecentPostsPageState extends State<RecentPostsPage> {
           ),
           child: Text(
             label,
-            style: GoogleFonts.montserrat(
+            style: GoogleFonts.poppins(
               fontSize: 12,
               fontWeight: FontWeight.w600,
               color: Colors.white.withValues(alpha: selected ? 1 : 0.75),
@@ -405,7 +405,7 @@ class _RecentPostsPageState extends State<RecentPostsPage> {
                 ),
                 child: Text(
                   badge,
-                  style: GoogleFonts.montserrat(
+                  style: GoogleFonts.poppins(
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
                     color: color,

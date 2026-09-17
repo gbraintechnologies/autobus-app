@@ -27,7 +27,7 @@ class ManageScreenStyle {
     ),
   );
 
-  static TextStyle headerTitleStyle() => GoogleFonts.montserrat(
+  static TextStyle headerTitleStyle() => GoogleFonts.poppins(
     color: Colors.white,
     fontSize: 22,
     fontWeight: FontWeight.w300,

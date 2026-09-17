@@ -71,7 +71,7 @@ class CustomerMessageComposeHeader extends StatelessWidget {
                 ),
                 Text(
                   title,
-                  style: GoogleFonts.montserrat(
+                  style: GoogleFonts.poppins(
                     fontSize: 20,
                     fontWeight: FontWeight.w400,
                     color: purple,
@@ -117,7 +117,7 @@ class CustomerMessageComposeHeader extends StatelessWidget {
                                 child: Text(
                                   '${selectedIds.length}',
                                   textAlign: TextAlign.center,
-                                  style: GoogleFonts.montserrat(
+                                  style: GoogleFonts.poppins(
                                     color: Colors.white,
                                     fontSize: 10,
                                     fontWeight: FontWeight.w600,
@@ -147,7 +147,7 @@ class CustomerMessageComposeHeader extends StatelessWidget {
                   return Chip(
                     label: Text(
                       _nameForId(id),
-                      style: GoogleFonts.montserrat(
+                      style: GoogleFonts.poppins(
                         fontSize: 12,
                         color: purple,
                       ),
@@ -169,7 +169,7 @@ class CustomerMessageComposeHeader extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Text(
               'Tap contacts to choose recipients',
-              style: GoogleFonts.montserrat(
+              style: GoogleFonts.poppins(
                 fontSize: 12,
                 color: purple.withValues(alpha: 0.55),
               ),
@@ -199,7 +199,7 @@ void showCustomerMessageResultsDialog(
       backgroundColor: Colors.white,
       title: Text(
         '$channelLabel sent',
-        style: GoogleFonts.montserrat(
+        style: GoogleFonts.poppins(
           color: CustomerMessageComposeHeader.purple,
           fontWeight: FontWeight.w600,
         ),
@@ -212,7 +212,7 @@ void showCustomerMessageResultsDialog(
           children: [
             Text(
               '$sent of $total delivered${failed > 0 ? ', $failed failed' : ''}.',
-              style: GoogleFonts.montserrat(
+              style: GoogleFonts.poppins(
                 fontSize: 13,
                 color: CustomerMessageComposeHeader.purple,
               ),
@@ -242,7 +242,7 @@ void showCustomerMessageResultsDialog(
                         Expanded(
                           child: Text(
                             '$name: $msg',
-                            style: GoogleFonts.montserrat(
+                            style: GoogleFonts.poppins(
                               fontSize: 12,
                               color: CustomerMessageComposeHeader.purple,
                             ),
@@ -262,7 +262,7 @@ void showCustomerMessageResultsDialog(
           onPressed: () => Navigator.pop(ctx),
           child: Text(
             'OK',
-            style: GoogleFonts.montserrat(
+            style: GoogleFonts.poppins(
               color: CustColors.logolight,
               fontWeight: FontWeight.w600,
             ),
