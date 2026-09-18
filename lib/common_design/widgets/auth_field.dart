@@ -44,7 +44,7 @@ class AuthField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const fontSize = 14.0;
+    const fontSize = 13.0;
 
     return Center(
       child: Container(

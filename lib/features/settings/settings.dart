@@ -149,8 +149,8 @@ class _SettingsPageState extends State<SettingsPage> {
                                 'Switch Business',
                                 style: GoogleFonts.poppins(
                                   color: Colors.white,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
                               Text(
@@ -159,7 +159,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                 overflow: TextOverflow.ellipsis,
                                 style: GoogleFonts.poppins(
                                   color: _switchSubtitle,
-                                  fontSize: 12,
+                                  fontSize: 11,
                                   fontWeight: FontWeight.w400,
                                 ),
                               ),
@@ -188,15 +188,15 @@ class _SettingsPageState extends State<SettingsPage> {
                                 _creditsTitle(),
                                 style: GoogleFonts.poppins(
                                   color: Colors.black,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
                               Text(
                                 _creditsSubtitle(),
                                 style: GoogleFonts.poppins(
                                   color: _rowText,
-                                  fontSize: 12,
+                                  fontSize: 11,
                                   fontWeight: FontWeight.w400,
                                 ),
                               ),
@@ -261,7 +261,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                     'Delete account',
                                     style: GoogleFonts.poppins(
                                       color: _deleteColor,
-                                      fontSize: 14,
+                                      fontSize: 13,
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),
@@ -282,7 +282,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                       color: isLoading
                                           ? Colors.grey
                                           : _logoutColor,
-                                      fontSize: 14,
+                                      fontSize: 13,
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),
@@ -382,8 +382,8 @@ class _SettingsPageState extends State<SettingsPage> {
                   'Log out?',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
                     color: Colors.black87,
                   ),
                 ),
@@ -535,7 +535,7 @@ class _SettingsMenuTile extends StatelessWidget {
                   item.title,
                   style: GoogleFonts.poppins(
                     color: _SettingsPageState._rowText,
-                                      fontSize: 14,
+                    fontSize: 13,
                     fontWeight: FontWeight.w500,
                   ),
                 ),

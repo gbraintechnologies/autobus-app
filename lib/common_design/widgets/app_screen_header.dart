@@ -16,7 +16,7 @@ class AppScreenHeader extends StatelessWidget {
     required this.title,
     required this.leading,
     this.trailing,
-    this.titleFontSize = 16,
+    this.titleFontSize = 15,
   });
 
   static const infoCircleColor = Color(0xFFECECF0);
@@ -60,7 +60,7 @@ class AppScreenHeader extends StatelessWidget {
                     style: GoogleFonts.poppins(
                       color: Colors.black,
                       fontSize: titleFontSize,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w500,
                       height: 1.2,
                     ),
                   ),

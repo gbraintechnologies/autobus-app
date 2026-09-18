@@ -111,7 +111,7 @@ class _CreditsPillState extends State<CreditsPill> {
                     overflow: TextOverflow.ellipsis,
                     style: GoogleFonts.poppins(
                       color: CreditsPill.textColor,
-                      fontSize: 11.5,
+                      fontSize: 11,
                       fontWeight: FontWeight.w500,
                       height: 1,
                     ),

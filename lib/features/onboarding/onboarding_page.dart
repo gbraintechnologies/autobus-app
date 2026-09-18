@@ -22,9 +22,9 @@ class OnboardingPage extends StatelessWidget {
     final imageHeight = 226 * scale;
     final buttonWidth = 333 * scale;
     final buttonHeight = 64 * scale;
-    const titleSize = 20.0;
-    const bodySize = 14.0;
-    const ctaSize = 16.0;
+    const titleSize = 18.0;
+    const bodySize = 13.0;
+    const ctaSize = 15.0;
 
     return Scaffold(
       backgroundColor: _backgroundColor,
@@ -48,7 +48,7 @@ class OnboardingPage extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: GoogleFonts.poppins(
                   fontSize: titleSize,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w500,
                   height: 1.5,
                   color: Colors.black,
                 ),

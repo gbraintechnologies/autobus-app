@@ -18,13 +18,13 @@
     "designWidth": 402,
     "note": "Figma px maps 1:1 to Flutter logical pixels. Do not scale type with screen width.",
     "sizes": {
-      "display": 24,
-      "headline": 20,
-      "title": 16,
-      "body": 14,
-      "label": 13,
-      "caption": 12,
-      "micro": 11
+      "display": 22,
+      "headline": 18,
+      "title": 15,
+      "body": 13,
+      "label": 12,
+      "caption": 11,
+      "micro": 10
     }
   }
 }

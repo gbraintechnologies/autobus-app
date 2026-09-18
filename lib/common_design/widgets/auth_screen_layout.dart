@@ -78,7 +78,7 @@ class AuthScreenHeader extends StatelessWidget {
     return Column(
       children: [
         const AutobusBranding(
-          wordmarkFontSize: 22,
+          wordmarkFontSize: 20,
           markCircleSize: 30,
           spacing: 12,
         ),
@@ -88,8 +88,8 @@ class AuthScreenHeader extends StatelessWidget {
           textAlign: TextAlign.center,
           style: GoogleFonts.poppins(
             color: Colors.black,
-            fontSize: 24,
-            fontWeight: FontWeight.w600,
+            fontSize: 22,
+            fontWeight: FontWeight.w500,
           ),
         ),
         if (subtitle != null) ...[
@@ -101,7 +101,7 @@ class AuthScreenHeader extends StatelessWidget {
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
                 color: AuthScreenTokens.labelColor,
-                fontSize: 14,
+                fontSize: 13,
                 fontWeight: FontWeight.w400,
                 height: 1.45,
               ),
@@ -178,7 +178,7 @@ class AuthPrimaryButton extends StatelessWidget {
                       label,
                       style: GoogleFonts.poppins(
                         color: Colors.white,
-                        fontSize: 16,
+                        fontSize: 15,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -223,7 +223,7 @@ class AuthLinkText extends StatelessWidget {
             action,
             style: GoogleFonts.poppins(
               color: AuthScreenTokens.accentColor,
-              fontSize: 16,
+              fontSize: 15,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -316,7 +316,7 @@ class _AuthOtpInputState extends State<AuthOtpInput> {
               keyboardType: TextInputType.number,
               maxLength: 1,
               style: GoogleFonts.poppins(
-                fontSize: 22,
+                fontSize: 20,
                 fontWeight: FontWeight.w600,
                 color: Colors.black,
                 height: 1.0,

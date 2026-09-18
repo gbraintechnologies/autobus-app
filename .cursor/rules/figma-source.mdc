@@ -15,6 +15,6 @@ This app is linked to the Auto-Bus Figma file. Treat it as the design source of 
 When changing UI, icons, colors, type, or layout:
 
 1. Read from this Figma file (do not invent a different design).
-2. Font is Poppins. Use Figma px as Flutter logical pixels (`LightScreenTheme.typeTitle` = 16, body 14, label 13, caption 12). Do not multiply font sizes by screen `scale`.
+2. Font is Poppins. Type sits 1px under Figma (`LightScreenTheme.typeTitle` = 15, body 13, label 12, caption 11) so Poppins does not look oversized. Do not multiply font sizes by screen `scale`. Headings use `FontWeight.w500`.
 3. Use exported assets in `assets/icons/figma/` and `assets/img/figma/`.
 4. Render icons with `FigmaSvgIcon` / `FigmaIcons`, not SF Symbol stand-ins, when a Figma SVG exists.

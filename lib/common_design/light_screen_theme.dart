@@ -18,16 +18,16 @@ class LightScreenTheme {
   static const field = Color(0xFFFAFAFA);
   static const warning = Color(0xFFE27C00);
 
-  /// Figma type on 402-wide frames, used as Flutter logical pixels.
-  /// Do not multiply these by screen `scale` — layout can scale, type cannot.
-  static const headerTitleSize = 16.0;
-  static const typeDisplay = 24.0;
-  static const typeHeadline = 20.0;
-  static const typeTitle = 16.0;
-  static const typeBody = 14.0;
-  static const typeLabel = 13.0;
-  static const typeCaption = 12.0;
-  static const typeMicro = 11.0;
+  /// Optical type scale. Poppins reads a bit larger/heavier than the comps,
+  /// so these sit 1px under the Figma values.
+  static const headerTitleSize = 15.0;
+  static const typeDisplay = 22.0;
+  static const typeHeadline = 18.0;
+  static const typeTitle = 15.0;
+  static const typeBody = 13.0;
+  static const typeLabel = 12.0;
+  static const typeCaption = 11.0;
+  static const typeMicro = 10.0;
   static const pageHorizontal = 20.0;
   static const hubPageTop = 30.0;
   static const pageBottom = 32.0;
@@ -55,7 +55,7 @@ class LightScreenTheme {
   static TextStyle hubTitle(double scale) => GoogleFonts.poppins(
         color: Colors.black,
         fontSize: typeTitle,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w500,
         height: 1.3,
       );
 
@@ -69,7 +69,7 @@ class LightScreenTheme {
   static TextStyle listTitle(double scale) => GoogleFonts.poppins(
         color: Colors.black,
         fontSize: typeBody,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w500,
       );
 
   static TextStyle listSubtitle(double scale) => GoogleFonts.poppins(

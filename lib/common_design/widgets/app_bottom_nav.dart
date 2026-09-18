@@ -264,8 +264,8 @@ class _NavTabButton extends StatelessWidget {
               label,
               style: GoogleFonts.poppins(
                 color: color,
-                fontSize: 12,
-                fontWeight: active ? FontWeight.w600 : FontWeight.w500,
+                fontSize: 11,
+                fontWeight: active ? FontWeight.w500 : FontWeight.w400,
               ),
             ),
           ],

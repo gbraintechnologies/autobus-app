@@ -174,7 +174,7 @@ class _HomeState extends State<Home> {
                             textAlign: TextAlign.center,
                             style: GoogleFonts.poppins(
                               color: Colors.black,
-                              fontSize: 16,
+                              fontSize: 15,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -184,8 +184,8 @@ class _HomeState extends State<Home> {
                             textAlign: TextAlign.center,
                             style: GoogleFonts.poppins(
                               color: Colors.black,
-                              fontSize: 20,
-                              fontWeight: FontWeight.w600,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w500,
                               height: 1.4,
                               decoration: TextDecoration.underline,
                               decorationColor: Colors.black,
@@ -203,8 +203,8 @@ class _HomeState extends State<Home> {
                     'Tools',
                     style: GoogleFonts.poppins(
                       color: Colors.black,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                   SizedBox(height: 12 * scale),
@@ -376,8 +376,8 @@ class _HomeToolCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: GoogleFonts.poppins(
                       color: Colors.black,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
                       height: 1.25,
                     ),
                   ),
