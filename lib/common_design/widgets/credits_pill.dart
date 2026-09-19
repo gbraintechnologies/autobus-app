@@ -109,9 +109,9 @@ class _CreditsPillState extends State<CreditsPill> {
                     maxLines: 1,
                     softWrap: false,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.montserrat(
+                    style: GoogleFonts.poppins(
                       color: CreditsPill.textColor,
-                      fontSize: 11.5 * headerScale,
+                      fontSize: 11,
                       fontWeight: FontWeight.w500,
                       height: 1,
                     ),

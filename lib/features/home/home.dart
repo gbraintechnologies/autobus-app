@@ -172,9 +172,9 @@ class _HomeState extends State<Home> {
                           Text(
                             'Hello $displayName',
                             textAlign: TextAlign.center,
-                            style: GoogleFonts.montserrat(
+                            style: GoogleFonts.poppins(
                               color: Colors.black,
-                              fontSize: 16 * scale.clamp(0.9, 1.05),
+                              fontSize: 15,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -182,10 +182,10 @@ class _HomeState extends State<Home> {
                           Text(
                             'Here\u2019s what\u2019s happening in your\nbusiness today..',
                             textAlign: TextAlign.center,
-                            style: GoogleFonts.montserrat(
+                            style: GoogleFonts.poppins(
                               color: Colors.black,
-                              fontSize: 20 * scale.clamp(0.9, 1.05),
-                              fontWeight: FontWeight.w600,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w500,
                               height: 1.4,
                               decoration: TextDecoration.underline,
                               decorationColor: Colors.black,
@@ -201,10 +201,10 @@ class _HomeState extends State<Home> {
                   SizedBox(height: 11 * scale),
                   Text(
                     'Tools',
-                    style: GoogleFonts.montserrat(
+                    style: GoogleFonts.poppins(
                       color: Colors.black,
-                      fontSize: 16 * scale.clamp(0.9, 1.05),
-                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                   SizedBox(height: 12 * scale),
@@ -374,10 +374,10 @@ class _HomeToolCard extends StatelessWidget {
                     title,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.montserrat(
+                    style: GoogleFonts.poppins(
                       color: Colors.black,
-                      fontSize: 14 * scale.clamp(0.9, 1.05),
-                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
                       height: 1.25,
                     ),
                   ),

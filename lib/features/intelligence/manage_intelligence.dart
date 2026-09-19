@@ -190,7 +190,7 @@ class _ManageIntelligenceState extends State<ManageIntelligence> {
             successCount == 1
                 ? 'Document uploaded and indexed.'
                 : '$successCount documents uploaded and indexed.',
-            style: GoogleFonts.montserrat(),
+            style: GoogleFonts.poppins(),
           ),
         ),
       );
@@ -200,7 +200,7 @@ class _ManageIntelligenceState extends State<ManageIntelligence> {
         SnackBar(
           content: Text(
             _uploadErrorMessage(e),
-            style: GoogleFonts.montserrat(),
+            style: GoogleFonts.poppins(),
           ),
         ),
       );
@@ -228,7 +228,7 @@ class _ManageIntelligenceState extends State<ManageIntelligence> {
         SnackBar(
           content: Text(
             'Website content scraped and indexed.',
-            style: GoogleFonts.montserrat(),
+            style: GoogleFonts.poppins(),
           ),
         ),
       );
@@ -238,7 +238,7 @@ class _ManageIntelligenceState extends State<ManageIntelligence> {
         SnackBar(
           content: Text(
             _uploadErrorMessage(e),
-            style: GoogleFonts.montserrat(),
+            style: GoogleFonts.poppins(),
           ),
         ),
       );
@@ -280,7 +280,7 @@ class _ManageIntelligenceState extends State<ManageIntelligence> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Invalid URL', style: GoogleFonts.montserrat()),
+          content: Text('Invalid URL', style: GoogleFonts.poppins()),
         ),
       );
       return;
@@ -289,7 +289,7 @@ class _ManageIntelligenceState extends State<ManageIntelligence> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Could not open website', style: GoogleFonts.montserrat()),
+          content: Text('Could not open website', style: GoogleFonts.poppins()),
         ),
       );
       return;
@@ -323,7 +323,7 @@ class _ManageIntelligenceState extends State<ManageIntelligence> {
               Expanded(
                 child: Text(
                   'No websites indexed yet. Use Index Website to add a URL — you can paste https://, http://, or www. addresses.',
-                  style: GoogleFonts.montserrat(
+                  style: GoogleFonts.poppins(
                     color: Colors.white.withValues(alpha: 0.78),
                     fontSize: 12,
                     height: 1.45,
@@ -377,7 +377,7 @@ class _ManageIntelligenceState extends State<ManageIntelligence> {
                         _ragDocSourceUrl(doc) ?? '',
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.montserrat(
+                        style: GoogleFonts.poppins(
                           color: Colors.white.withValues(alpha: 0.92),
                           fontSize: 13,
                           height: 1.35,
@@ -413,7 +413,7 @@ class _ManageIntelligenceState extends State<ManageIntelligence> {
             },
             child: Text(
               'View all ${sites.length} websites',
-              style: GoogleFonts.montserrat(
+              style: GoogleFonts.poppins(
                 color: const Color(0xFFA855F7),
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
@@ -456,7 +456,7 @@ class _ManageIntelligenceState extends State<ManageIntelligence> {
                           Text(
                             'Welcome to Business Chat Intelligence',
                             textAlign: TextAlign.center,
-                            style: GoogleFonts.montserrat(
+                            style: GoogleFonts.poppins(
                               color: Colors.white,
                               fontSize: 19,
                               fontWeight: FontWeight.w500,
@@ -467,7 +467,7 @@ class _ManageIntelligenceState extends State<ManageIntelligence> {
                           Text(
                             'Upload business information documents to train your AI assistant on your company\'s information. The AI can instantly answer customer questions, provide support, and deliver accurate responses based on your files — helping businesses automate communication and improve customer experience.',
                             textAlign: TextAlign.center,
-                            style: GoogleFonts.montserrat(
+                            style: GoogleFonts.poppins(
                               color: Colors.white.withValues(alpha: 0.9),
                               fontSize: 14,
                               fontWeight: FontWeight.w300,
@@ -515,7 +515,7 @@ class _ManageIntelligenceState extends State<ManageIntelligence> {
                                   Expanded(
                                     child: Text(
                                       'Could not verify your documents. Pull to refresh after opening the screen again, or check your connection.\n${_shortPresenceError(_presenceError!)}',
-                                      style: GoogleFonts.montserrat(
+                                      style: GoogleFonts.poppins(
                                         color: Colors.white.withValues(
                                           alpha: 0.88,
                                         ),
@@ -575,7 +575,7 @@ class _ManageIntelligenceState extends State<ManageIntelligence> {
                                       _onboardingCompleted
                                           ? 'No files or websites yet — your chatbot still uses your onboarding answers'
                                           : 'You have not uploaded any business data',
-                                      style: GoogleFonts.montserrat(
+                                      style: GoogleFonts.poppins(
                                         color: Colors.white.withValues(
                                           alpha: 0.85,
                                         ),
@@ -594,7 +594,7 @@ class _ManageIntelligenceState extends State<ManageIntelligence> {
                               alignment: Alignment.centerLeft,
                               child: Text(
                                 'Websites',
-                                style: GoogleFonts.montserrat(
+                                style: GoogleFonts.poppins(
                                   color: Colors.white,
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
@@ -719,7 +719,7 @@ class _WebsiteUrlDialogState extends State<_WebsiteUrlDialog> {
           children: [
             Text(
               'Index website',
-              style: GoogleFonts.montserrat(
+              style: GoogleFonts.poppins(
                 color: Colors.white,
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -728,7 +728,7 @@ class _WebsiteUrlDialogState extends State<_WebsiteUrlDialog> {
             const SizedBox(height: 8),
             Text(
               'We will scrape the public page and add its text to your business knowledge base.',
-              style: GoogleFonts.montserrat(
+              style: GoogleFonts.poppins(
                 color: Colors.white.withValues(alpha: 0.75),
                 fontSize: 12,
                 height: 1.45,
@@ -740,10 +740,10 @@ class _WebsiteUrlDialogState extends State<_WebsiteUrlDialog> {
               autofocus: true,
               keyboardType: TextInputType.url,
               onTapOutside: dismissAppKeyboard,
-              style: GoogleFonts.montserrat(color: Colors.white, fontSize: 14),
+              style: GoogleFonts.poppins(color: Colors.white, fontSize: 14),
               decoration: InputDecoration(
                 hintText: 'https://example.com or www.example.com',
-                hintStyle: GoogleFonts.montserrat(
+                hintStyle: GoogleFonts.poppins(
                   color: Colors.white.withValues(alpha: 0.4),
                   fontSize: 13,
                 ),
@@ -777,7 +777,7 @@ class _WebsiteUrlDialogState extends State<_WebsiteUrlDialog> {
                   onPressed: () => Navigator.of(context).pop(),
                   child: Text(
                     'Cancel',
-                    style: GoogleFonts.montserrat(
+                    style: GoogleFonts.poppins(
                       color: Colors.white.withValues(alpha: 0.7),
                     ),
                   ),
@@ -790,7 +790,7 @@ class _WebsiteUrlDialogState extends State<_WebsiteUrlDialog> {
                   ),
                   child: Text(
                     'Index',
-                    style: GoogleFonts.montserrat(fontWeight: FontWeight.w600),
+                    style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
                   ),
                 ),
               ],
@@ -915,7 +915,7 @@ class _RagIndexProgressDialogState extends State<_RagIndexProgressDialog> {
             Text(
               _statusHeadline(),
               textAlign: TextAlign.center,
-              style: GoogleFonts.montserrat(
+              style: GoogleFonts.poppins(
                 color: Colors.white,
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -928,7 +928,7 @@ class _RagIndexProgressDialogState extends State<_RagIndexProgressDialog> {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.center,
-                style: GoogleFonts.montserrat(
+                style: GoogleFonts.poppins(
                   color: Colors.white.withValues(alpha: 0.55),
                   fontSize: 11,
                 ),
@@ -948,7 +948,7 @@ class _RagIndexProgressDialogState extends State<_RagIndexProgressDialog> {
             Text(
               '$_progress% · $_message',
               textAlign: TextAlign.center,
-              style: GoogleFonts.montserrat(
+              style: GoogleFonts.poppins(
                 color: Colors.white.withValues(alpha: 0.8),
                 fontSize: 12,
                 height: 1.4,
@@ -988,7 +988,7 @@ class _IntelligenceCard extends StatelessWidget {
             const SizedBox(height: 14),
             Text(
               title,
-              style: GoogleFonts.montserrat(
+              style: GoogleFonts.poppins(
                 color: Colors.white.withValues(alpha: 0.9),
                 fontSize: 13,
                 fontWeight: FontWeight.w400,
@@ -1803,7 +1803,7 @@ class _OnboardingProfileCard extends StatelessWidget {
                   completed
                       ? 'Indexed from onboarding'
                       : 'Train your chatbot with a business profile',
-                  style: GoogleFonts.montserrat(
+                  style: GoogleFonts.poppins(
                     color: Colors.white,
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
@@ -1814,7 +1814,7 @@ class _OnboardingProfileCard extends StatelessWidget {
                 onPressed: onEdit,
                 child: Text(
                   completed ? 'Update' : 'Add',
-                  style: GoogleFonts.montserrat(
+                  style: GoogleFonts.poppins(
                     color: const Color(0xFFA855F7),
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
@@ -1833,7 +1833,7 @@ class _OnboardingProfileCard extends StatelessWidget {
                   '$label: ${e.value}',
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.montserrat(
+                  style: GoogleFonts.poppins(
                     color: Colors.white.withValues(alpha: 0.82),
                     fontSize: 12,
                     height: 1.35,
@@ -1844,7 +1844,7 @@ class _OnboardingProfileCard extends StatelessWidget {
           ] else
             Text(
               'These answers are indexed into Intelligence so customers get accurate replies before you upload files. Updating them replaces only this profile — not your documents or websites.',
-              style: GoogleFonts.montserrat(
+              style: GoogleFonts.poppins(
                 color: Colors.white.withValues(alpha: 0.75),
                 fontSize: 12,
                 height: 1.4,

@@ -65,8 +65,8 @@ class _SplashPgeState extends State<SplashPge> {
                           child: Center(
                             child: Text(
                               "Your",
-                              style: GoogleFonts.montserrat(
-                                fontSize: 16,
+                              style: GoogleFonts.poppins(
+                                fontSize: 15,
                                 fontWeight: FontWeight.w400,
                                 color: textCol,
                               ),
@@ -80,9 +80,9 @@ class _SplashPgeState extends State<SplashPge> {
                           child: Center(
                             child: Text(
                               "Autonomous",
-                              style: GoogleFonts.montserrat(
-                                fontSize: 28,
-                                fontWeight: FontWeight.w600,
+                              style: GoogleFonts.poppins(
+                                fontSize: 24,
+                                fontWeight: FontWeight.w500,
                                 color: textCol,
                               ),
                             ),
@@ -95,8 +95,8 @@ class _SplashPgeState extends State<SplashPge> {
                           child: Center(
                             child: Text(
                               "Business operations assistant!",
-                              style: GoogleFonts.montserrat(
-                                fontSize: 14,
+                              style: GoogleFonts.poppins(
+                                fontSize: 13,
                                 fontWeight: FontWeight.w400,
                                 color: textCol,
                               ),
@@ -121,8 +121,8 @@ class _SplashPgeState extends State<SplashPge> {
                               ),
                               child: Text(
                                 "Get Started",
-                                style: GoogleFonts.montserrat(
-                                  fontSize: 16,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 15,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),

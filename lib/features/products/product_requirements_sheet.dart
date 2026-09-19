@@ -97,7 +97,7 @@ class ProductRequirementsSheet extends StatelessWidget {
                     Expanded(
                       child: Text(
                         'Product information',
-                        style: GoogleFonts.montserrat(
+                        style: GoogleFonts.poppins(
                           color: LightScreenTheme.title,
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
@@ -110,7 +110,7 @@ class ProductRequirementsSheet extends StatelessWidget {
                 const SizedBox(height: 8),
                 Text(
                   'When you add a product, provide the fields below. Describe your item to the assistant in this chat.',
-                  style: GoogleFonts.montserrat(
+                  style: GoogleFonts.poppins(
                     color: LightScreenTheme.body,
                     fontSize: 13,
                     fontWeight: FontWeight.w400,
@@ -151,7 +151,7 @@ class ProductRequirementsSheet extends StatelessWidget {
                   ),
                   child: Text(
                     'Got it',
-                    style: GoogleFonts.montserrat(
+                    style: GoogleFonts.poppins(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                     ),
@@ -191,7 +191,7 @@ class _ProductFieldSection extends StatelessWidget {
       children: [
         Text(
           title,
-          style: GoogleFonts.montserrat(
+          style: GoogleFonts.poppins(
             color: LightScreenTheme.muted,
             fontSize: 11,
             fontWeight: FontWeight.w600,
@@ -254,7 +254,7 @@ class _ProductFieldRow extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: GoogleFonts.montserrat(
+                  style: GoogleFonts.poppins(
                     color: LightScreenTheme.title,
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
@@ -263,7 +263,7 @@ class _ProductFieldRow extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   detail,
-                  style: GoogleFonts.montserrat(
+                  style: GoogleFonts.poppins(
                     color: LightScreenTheme.body,
                     fontSize: 12,
                     fontWeight: FontWeight.w400,

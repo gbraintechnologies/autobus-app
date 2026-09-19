@@ -64,11 +64,11 @@ class _ViewCustomersPageState extends State<ViewCustomersPage> {
         backgroundColor: LightScreenTheme.surface,
         title: Text(
           'Delete customer?',
-          style: GoogleFonts.montserrat(color: Colors.black),
+          style: GoogleFonts.poppins(color: Colors.black),
         ),
         content: Text(
           'Remove $name from your contacts? This cannot be undone.',
-          style: GoogleFonts.montserrat(
+          style: GoogleFonts.poppins(
             color: LightScreenTheme.body,
             fontSize: 14,
           ),
@@ -78,14 +78,14 @@ class _ViewCustomersPageState extends State<ViewCustomersPage> {
             onPressed: () => Navigator.pop(ctx, false),
             child: Text(
               'Cancel',
-              style: GoogleFonts.montserrat(color: LightScreenTheme.muted),
+              style: GoogleFonts.poppins(color: LightScreenTheme.muted),
             ),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             child: Text(
               'Delete',
-              style: GoogleFonts.montserrat(color: Colors.red.shade400),
+              style: GoogleFonts.poppins(color: Colors.red.shade400),
             ),
           ),
         ],
@@ -97,7 +97,7 @@ class _ViewCustomersPageState extends State<ViewCustomersPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Deleted $name', style: GoogleFonts.montserrat()),
+          content: Text('Deleted $name', style: GoogleFonts.poppins()),
         ),
       );
       _load();
@@ -107,7 +107,7 @@ class _ViewCustomersPageState extends State<ViewCustomersPage> {
         SnackBar(
           content: Text(
             userFacingError(e),
-            style: GoogleFonts.montserrat(),
+            style: GoogleFonts.poppins(),
           ),
           backgroundColor: Colors.red.shade700,
         ),

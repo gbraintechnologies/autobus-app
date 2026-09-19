@@ -118,7 +118,7 @@ class PinDigitInputState extends State<PinDigitInput> {
             child: Text(
               filled ? '•' : ' ',
               textAlign: TextAlign.center,
-              style: GoogleFonts.montserrat(
+              style: GoogleFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.w500,
               ),

@@ -88,10 +88,10 @@ class LightHubCard extends StatelessWidget {
                         title,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.montserrat(
+                        style: GoogleFonts.poppins(
                           color: Colors.black,
-                          fontSize: 14 * scale.clamp(0.9, 1.05),
-                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
                           height: 1.25,
                         ),
                       ),
@@ -101,9 +101,9 @@ class LightHubCard extends StatelessWidget {
                           subtitle!,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.montserrat(
+                          style: GoogleFonts.poppins(
                             color: subtitleColor ?? LightScreenTheme.muted,
-                            fontSize: 12 * scale.clamp(0.85, 1.05),
+                            fontSize: 11,
                             fontWeight: FontWeight.w400,
                             height: 1.3,
                           ),

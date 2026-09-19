@@ -116,9 +116,9 @@ class _ManageProductsState extends State<ManageProducts> {
                 ),
                 child: Text(
                   'Could not verify your product catalogue.\n${_shortError(_loadError!)}',
-                  style: GoogleFonts.montserrat(
+                  style: GoogleFonts.poppins(
                     color: const Color(0xFF4E4E4E),
-                    fontSize: 14 * scale.clamp(0.9, 1.05),
+                    fontSize: 14,
                     fontWeight: FontWeight.w400,
                     height: 1.45,
                   ),
@@ -132,9 +132,9 @@ class _ManageProductsState extends State<ManageProducts> {
                 iconColor: const Color(0xFFE3800E),
                 child: Text(
                   'You have no product in your catalogue',
-                  style: GoogleFonts.montserrat(
+                  style: GoogleFonts.poppins(
                     color: const Color(0xFF4E4E4E),
-                    fontSize: 14 * scale.clamp(0.9, 1.05),
+                    fontSize: 14,
                     fontWeight: FontWeight.w400,
                   ),
                 ),

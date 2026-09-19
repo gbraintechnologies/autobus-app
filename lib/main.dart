@@ -20,7 +20,7 @@ void main() async {
   // Don't block first frame on font CDN or StoreKit/Keychain.
   try {
     await GoogleFonts.pendingFonts([
-      GoogleFonts.montserrat(),
+      GoogleFonts.poppins(),
     ]).timeout(const Duration(seconds: 2));
     print('✓ Google Fonts loaded');
   } catch (_) {

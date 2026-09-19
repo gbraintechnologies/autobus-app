@@ -122,7 +122,7 @@ class _IntelligenceFilesPageState extends State<IntelligenceFilesPage> {
             successCount == 1
                 ? 'Document uploaded and indexed.'
                 : '$successCount documents uploaded and indexed.',
-            style: GoogleFonts.montserrat(),
+            style: GoogleFonts.poppins(),
           ),
         ),
       );
@@ -132,7 +132,7 @@ class _IntelligenceFilesPageState extends State<IntelligenceFilesPage> {
         SnackBar(
           content: Text(
             _uploadErrorMessage(e),
-            style: GoogleFonts.montserrat(),
+            style: GoogleFonts.poppins(),
           ),
         ),
       );
@@ -246,7 +246,7 @@ class _IntelligenceFilesPageState extends State<IntelligenceFilesPage> {
                   name.isEmpty ? 'File' : name,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.montserrat(
+                  style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                   ),
@@ -254,12 +254,12 @@ class _IntelligenceFilesPageState extends State<IntelligenceFilesPage> {
                 const SizedBox(height: 12),
                 ListTile(
                   leading: const Icon(Icons.open_in_new_outlined),
-                  title: Text('Open file', style: GoogleFonts.montserrat()),
+                  title: Text('Open file', style: GoogleFonts.poppins()),
                   onTap: () => Navigator.pop(context, 'open'),
                 ),
                 ListTile(
                   leading: const Icon(Icons.delete_outline),
-                  title: Text('Delete file', style: GoogleFonts.montserrat()),
+                  title: Text('Delete file', style: GoogleFonts.poppins()),
                   onTap: () => Navigator.pop(context, 'delete'),
                 ),
               ],
@@ -279,7 +279,7 @@ class _IntelligenceFilesPageState extends State<IntelligenceFilesPage> {
   void _showSnack(String message) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message, style: GoogleFonts.montserrat())),
+      SnackBar(content: Text(message, style: GoogleFonts.poppins())),
     );
   }
 
@@ -324,9 +324,9 @@ class _IntelligenceFilesPageState extends State<IntelligenceFilesPage> {
                         SizedBox(height: 40 * scale),
                         Text(
                           'Uploaded files',
-                          style: GoogleFonts.montserrat(
+                          style: GoogleFonts.poppins(
                             color: Colors.black,
-                            fontSize: 16 * scale.clamp(0.9, 1.1),
+                            fontSize: 16,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -346,7 +346,7 @@ class _IntelligenceFilesPageState extends State<IntelligenceFilesPage> {
                                 Text(
                                   _loadError!,
                                   textAlign: TextAlign.center,
-                                  style: GoogleFonts.montserrat(
+                                  style: GoogleFonts.poppins(
                                     color: const Color(0xFF64748B),
                                     fontSize: 14,
                                   ),
@@ -355,7 +355,7 @@ class _IntelligenceFilesPageState extends State<IntelligenceFilesPage> {
                                   onPressed: _loadFiles,
                                   child: Text(
                                     'Retry',
-                                    style: GoogleFonts.montserrat(
+                                    style: GoogleFonts.poppins(
                                       color: _accentColor,
                                     ),
                                   ),
@@ -369,7 +369,7 @@ class _IntelligenceFilesPageState extends State<IntelligenceFilesPage> {
                             child: Text(
                               'No files uploaded yet',
                               textAlign: TextAlign.center,
-                              style: GoogleFonts.montserrat(
+                              style: GoogleFonts.poppins(
                                 color: const Color(0xFF64748B),
                                 fontSize: 14,
                               ),
@@ -426,9 +426,9 @@ class _MyFilesUploadButton extends StatelessWidget {
               SizedBox(width: 8 * scale),
               Text(
                 'Upload files',
-                style: GoogleFonts.montserrat(
+                style: GoogleFonts.poppins(
                   color: const Color(0xFFF8EEEE),
-                  fontSize: 14 * scale.clamp(0.9, 1.1),
+                  fontSize: 14,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -519,9 +519,9 @@ class _MyFilesGridCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.montserrat(
+                  style: GoogleFonts.poppins(
                     color: const Color(0xFF475569),
-                    fontSize: 11 * scale.clamp(0.85, 1.05),
+                    fontSize: 11,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -691,7 +691,7 @@ class _MyFilesRagProgressDialogState extends State<_MyFilesRagProgressDialog> {
             Text(
               widget.title,
               textAlign: TextAlign.center,
-              style: GoogleFonts.montserrat(
+              style: GoogleFonts.poppins(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
               ),
@@ -712,7 +712,7 @@ class _MyFilesRagProgressDialogState extends State<_MyFilesRagProgressDialog> {
             Text(
               '$_progress% · $_message',
               textAlign: TextAlign.center,
-              style: GoogleFonts.montserrat(
+              style: GoogleFonts.poppins(
                 color: const Color(0xFF64748B),
                 fontSize: 12,
                 height: 1.4,

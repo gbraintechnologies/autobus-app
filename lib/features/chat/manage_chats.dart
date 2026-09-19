@@ -138,7 +138,7 @@ class _ManageChatsState extends State<ManageChats> {
                 ),
                 child: Text(
                   'Could not load Chatwoot status. Check your connection and try again.\n${_shortError(_statusError!)}',
-                  style: LightScreenTheme.hubBody(scale).copyWith(fontSize: 12 * scale.clamp(0.9, 1.05)),
+                  style: LightScreenTheme.hubBody(scale).copyWith(fontSize: 12),
                 ),
               ),
               SizedBox(height: 16 * scale),
@@ -151,7 +151,7 @@ class _ManageChatsState extends State<ManageChats> {
                 iconColor: LightScreenTheme.warning,
                 child: Text(
                   'Chat linking is not enabled on this server (Chatwoot is not configured).',
-                  style: LightScreenTheme.hubBody(scale).copyWith(fontSize: 12 * scale.clamp(0.9, 1.05)),
+                  style: LightScreenTheme.hubBody(scale).copyWith(fontSize: 12),
                 ),
               ),
               SizedBox(height: 16 * scale),
@@ -164,7 +164,7 @@ class _ManageChatsState extends State<ManageChats> {
                 iconColor: LightScreenTheme.accent,
                 child: Text(
                   'No Chatwoot workspace is linked to your account yet. An active subscription provisions your workspace.',
-                  style: LightScreenTheme.hubBody(scale).copyWith(fontSize: 12 * scale.clamp(0.9, 1.05)),
+                  style: LightScreenTheme.hubBody(scale).copyWith(fontSize: 12),
                 ),
               ),
               SizedBox(height: 16 * scale),
@@ -177,7 +177,7 @@ class _ManageChatsState extends State<ManageChats> {
                 iconColor: LightScreenTheme.warning,
                 child: Text(
                   'An active subscription is required to link messaging channels in Chatwoot.',
-                  style: LightScreenTheme.hubBody(scale).copyWith(fontSize: 12 * scale.clamp(0.9, 1.05)),
+                  style: LightScreenTheme.hubBody(scale).copyWith(fontSize: 12),
                 ),
               ),
               SizedBox(height: 16 * scale),
@@ -203,7 +203,7 @@ class _ManageChatsState extends State<ManageChats> {
                 ),
                 child: Text(
                   'Could not load your Chatwoot inboxes. Pull to refresh after reconnecting.',
-                  style: LightScreenTheme.hubBody(scale).copyWith(fontSize: 12 * scale.clamp(0.9, 1.05)),
+                  style: LightScreenTheme.hubBody(scale).copyWith(fontSize: 12),
                 ),
               ),
               SizedBox(height: 16 * scale),
@@ -216,7 +216,7 @@ class _ManageChatsState extends State<ManageChats> {
                 iconColor: LightScreenTheme.accent,
                 child: Text(
                   'You have not linked any messaging channel in Chatwoot yet. Use Link Channel to add WhatsApp, Facebook, and other inboxes.',
-                  style: LightScreenTheme.hubBody(scale).copyWith(fontSize: 12 * scale.clamp(0.9, 1.05)),
+                  style: LightScreenTheme.hubBody(scale).copyWith(fontSize: 12),
                 ),
               ),
               SizedBox(height: 16 * scale),

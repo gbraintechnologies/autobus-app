@@ -26,7 +26,7 @@ class AutobusWordmark extends StatelessWidget {
         maxLines: 1,
         overflow: TextOverflow.visible,
         text: TextSpan(
-          style: GoogleFonts.montserrat(
+          style: GoogleFonts.poppins(
             fontSize: fontSize,
             fontWeight: fontWeight,
             color: baseColor,

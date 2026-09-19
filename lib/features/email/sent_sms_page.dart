@@ -69,7 +69,7 @@ class _SentSmsPageState extends State<SentSmsPage> {
           Text(
             phone.isEmpty ? '(No recipient)' : phone,
             style: LightScreenTheme.listTitle(scale).copyWith(
-              fontSize: 16 * scale.clamp(0.9, 1.05),
+              fontSize: 16,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -132,9 +132,9 @@ class _SentSmsPageState extends State<SentSmsPage> {
                           onPressed: _load,
                           child: Text(
                             'Retry',
-                            style: GoogleFonts.montserrat(
+                            style: GoogleFonts.poppins(
                               color: LightScreenTheme.accent,
-                              fontSize: 14 * scale.clamp(0.9, 1.05),
+                              fontSize: 14,
                               fontWeight: FontWeight.w600,
                             ),
                           ),

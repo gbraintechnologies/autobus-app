@@ -90,9 +90,9 @@ class _SentEmailsPageState extends State<SentEmailsPage> {
             subject.isEmpty ? '(No subject)' : subject,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.montserrat(
+            style: GoogleFonts.poppins(
               color: Colors.black,
-              fontSize: 14 * scale.clamp(0.9, 1.05),
+              fontSize: 14,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -105,9 +105,9 @@ class _SentEmailsPageState extends State<SentEmailsPage> {
                   to.startsWith('To: ') ? to : 'To: $to',
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.montserrat(
+                  style: GoogleFonts.poppins(
                     color: _mutedColor,
-                    fontSize: 12 * scale.clamp(0.9, 1.05),
+                    fontSize: 12,
                     fontWeight: FontWeight.w400,
                   ),
                 ),
@@ -115,9 +115,9 @@ class _SentEmailsPageState extends State<SentEmailsPage> {
               SizedBox(width: 12 * scale),
               Text(
                 date,
-                style: GoogleFonts.montserrat(
+                style: GoogleFonts.poppins(
                   color: _mutedColor,
-                  fontSize: 12 * scale.clamp(0.9, 1.05),
+                  fontSize: 12,
                   fontWeight: FontWeight.w400,
                 ),
               ),
@@ -161,9 +161,9 @@ class _SentEmailsPageState extends State<SentEmailsPage> {
                           Text(
                             _loadError!,
                             textAlign: TextAlign.center,
-                            style: GoogleFonts.montserrat(
+                            style: GoogleFonts.poppins(
                               color: _bodyColor,
-                              fontSize: 13 * scale.clamp(0.9, 1.05),
+                              fontSize: 13,
                             ),
                           ),
                           SizedBox(height: 16 * scale),
@@ -171,9 +171,9 @@ class _SentEmailsPageState extends State<SentEmailsPage> {
                             onPressed: _load,
                             child: Text(
                               'Retry',
-                              style: GoogleFonts.montserrat(
+                              style: GoogleFonts.poppins(
                                 color: _accentColor,
-                                fontSize: 14 * scale.clamp(0.9, 1.05),
+                                fontSize: 14,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -195,9 +195,9 @@ class _SentEmailsPageState extends State<SentEmailsPage> {
                               Center(
                                 child: Text(
                                   'No sent emails yet..',
-                                  style: GoogleFonts.montserrat(
+                                  style: GoogleFonts.poppins(
                                     color: _bodyColor,
-                                    fontSize: 14 * scale.clamp(0.9, 1.05),
+                                    fontSize: 14,
                                     fontWeight: FontWeight.w400,
                                   ),
                                 ),

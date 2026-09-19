@@ -167,11 +167,11 @@ class _IntelligenceWebsitesPageState extends State<IntelligenceWebsitesPage> {
           ),
           title: Text(
             'Delete website?',
-            style: GoogleFonts.montserrat(fontWeight: FontWeight.w600),
+            style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
           ),
           content: Text(
             'Remove "${_websiteTitle(doc)}" from your indexed websites?',
-            style: GoogleFonts.montserrat(
+            style: GoogleFonts.poppins(
               color: const Color(0xFF64748B),
               fontSize: 14,
             ),
@@ -181,14 +181,14 @@ class _IntelligenceWebsitesPageState extends State<IntelligenceWebsitesPage> {
               onPressed: () => Navigator.pop(context, false),
               child: Text(
                 'Cancel',
-                style: GoogleFonts.montserrat(color: const Color(0xFF64748B)),
+                style: GoogleFonts.poppins(color: const Color(0xFF64748B)),
               ),
             ),
             TextButton(
               onPressed: () => Navigator.pop(context, true),
               child: Text(
                 'Delete',
-                style: GoogleFonts.montserrat(color: const Color(0xFFE11D48)),
+                style: GoogleFonts.poppins(color: const Color(0xFFE11D48)),
               ),
             ),
           ],
@@ -215,7 +215,7 @@ class _IntelligenceWebsitesPageState extends State<IntelligenceWebsitesPage> {
   void _showSnack(String message) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message, style: GoogleFonts.montserrat())),
+      SnackBar(content: Text(message, style: GoogleFonts.poppins())),
     );
   }
 
@@ -260,9 +260,9 @@ class _IntelligenceWebsitesPageState extends State<IntelligenceWebsitesPage> {
                     SizedBox(height: 40 * scale),
                     Text(
                       'Indexed websites',
-                      style: GoogleFonts.montserrat(
+                      style: GoogleFonts.poppins(
                         color: Colors.black,
-                        fontSize: 16 * scale.clamp(0.9, 1.1),
+                        fontSize: 16,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -282,7 +282,7 @@ class _IntelligenceWebsitesPageState extends State<IntelligenceWebsitesPage> {
                             Text(
                               _loadError!,
                               textAlign: TextAlign.center,
-                              style: GoogleFonts.montserrat(
+                              style: GoogleFonts.poppins(
                                 color: const Color(0xFF64748B),
                                 fontSize: 14,
                               ),
@@ -291,7 +291,7 @@ class _IntelligenceWebsitesPageState extends State<IntelligenceWebsitesPage> {
                               onPressed: _loadWebsites,
                               child: Text(
                                 'Retry',
-                                style: GoogleFonts.montserrat(
+                                style: GoogleFonts.poppins(
                                   color: _accentColor,
                                 ),
                               ),
@@ -305,7 +305,7 @@ class _IntelligenceWebsitesPageState extends State<IntelligenceWebsitesPage> {
                         child: Text(
                           'No websites indexed yet',
                           textAlign: TextAlign.center,
-                          style: GoogleFonts.montserrat(
+                          style: GoogleFonts.poppins(
                             color: const Color(0xFF64748B),
                             fontSize: 14,
                           ),
@@ -363,9 +363,9 @@ class _IndexWebsiteButton extends StatelessWidget {
               SizedBox(width: 8 * scale),
               Text(
                 'Index website',
-                style: GoogleFonts.montserrat(
+                style: GoogleFonts.poppins(
                   color: const Color(0xFFF8EEEE),
-                  fontSize: 14 * scale.clamp(0.9, 1.1),
+                  fontSize: 14,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -445,9 +445,9 @@ class _WebsiteCard extends StatelessWidget {
                     title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.montserrat(
+                    style: GoogleFonts.poppins(
                       color: Colors.black,
-                      fontSize: 14 * scale.clamp(0.9, 1.05),
+                      fontSize: 14,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -457,9 +457,9 @@ class _WebsiteCard extends StatelessWidget {
                       url,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.montserrat(
+                      style: GoogleFonts.poppins(
                         color: const Color(0xFF64748B),
-                        fontSize: 13 * scale.clamp(0.85, 1.0),
+                        fontSize: 13,
                         fontWeight: FontWeight.w400,
                       ),
                     ),
@@ -568,7 +568,7 @@ class _WebsiteUrlDialogState extends State<_WebsiteUrlDialog> {
           children: [
             Text(
               'Index website',
-              style: GoogleFonts.montserrat(
+              style: GoogleFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
               ),
@@ -576,7 +576,7 @@ class _WebsiteUrlDialogState extends State<_WebsiteUrlDialog> {
             const SizedBox(height: 8),
             Text(
               'We will scrape the public page and add its text to your business knowledge base.',
-              style: GoogleFonts.montserrat(
+              style: GoogleFonts.poppins(
                 color: const Color(0xFF64748B),
                 fontSize: 12,
                 height: 1.45,
@@ -587,10 +587,10 @@ class _WebsiteUrlDialogState extends State<_WebsiteUrlDialog> {
               controller: _controller,
               autofocus: true,
               keyboardType: TextInputType.url,
-              style: GoogleFonts.montserrat(fontSize: 14),
+              style: GoogleFonts.poppins(fontSize: 14),
               decoration: InputDecoration(
                 hintText: 'https://example.com or www.example.com',
-                hintStyle: GoogleFonts.montserrat(
+                hintStyle: GoogleFonts.poppins(
                   color: const Color(0xFF94A3B8),
                   fontSize: 13,
                 ),
@@ -620,7 +620,7 @@ class _WebsiteUrlDialogState extends State<_WebsiteUrlDialog> {
                   onPressed: () => Navigator.of(context).pop(),
                   child: Text(
                     'Cancel',
-                    style: GoogleFonts.montserrat(
+                    style: GoogleFonts.poppins(
                       color: const Color(0xFF64748B),
                     ),
                   ),
@@ -636,7 +636,7 @@ class _WebsiteUrlDialogState extends State<_WebsiteUrlDialog> {
                   ),
                   child: Text(
                     'Index',
-                    style: GoogleFonts.montserrat(fontWeight: FontWeight.w500),
+                    style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
                   ),
                 ),
               ],
@@ -741,7 +741,7 @@ class _WebsitesRagProgressDialogState extends State<_WebsitesRagProgressDialog> 
             Text(
               widget.title,
               textAlign: TextAlign.center,
-              style: GoogleFonts.montserrat(
+              style: GoogleFonts.poppins(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
               ),
@@ -762,7 +762,7 @@ class _WebsitesRagProgressDialogState extends State<_WebsitesRagProgressDialog> 
             Text(
               '$_progress% · $_message',
               textAlign: TextAlign.center,
-              style: GoogleFonts.montserrat(
+              style: GoogleFonts.poppins(
                 color: const Color(0xFF64748B),
                 fontSize: 12,
                 height: 1.4,

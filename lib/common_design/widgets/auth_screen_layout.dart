@@ -78,7 +78,7 @@ class AuthScreenHeader extends StatelessWidget {
     return Column(
       children: [
         const AutobusBranding(
-          wordmarkFontSize: 22,
+          wordmarkFontSize: 20,
           markCircleSize: 30,
           spacing: 12,
         ),
@@ -86,10 +86,10 @@ class AuthScreenHeader extends StatelessWidget {
         Text(
           title,
           textAlign: TextAlign.center,
-          style: GoogleFonts.montserrat(
+          style: GoogleFonts.poppins(
             color: Colors.black,
-            fontSize: 24 * scale.clamp(0.9, 1.05),
-            fontWeight: FontWeight.w600,
+            fontSize: 22,
+            fontWeight: FontWeight.w500,
           ),
         ),
         if (subtitle != null) ...[
@@ -99,9 +99,9 @@ class AuthScreenHeader extends StatelessWidget {
             child: Text(
               subtitle!,
               textAlign: TextAlign.center,
-              style: GoogleFonts.montserrat(
+              style: GoogleFonts.poppins(
                 color: AuthScreenTokens.labelColor,
-                fontSize: 14 * scale.clamp(0.9, 1.05),
+                fontSize: 13,
                 fontWeight: FontWeight.w400,
                 height: 1.45,
               ),
@@ -125,9 +125,9 @@ class AuthFieldLabel extends StatelessWidget {
       alignment: Alignment.centerLeft,
       child: Text(
         label,
-        style: GoogleFonts.montserrat(
+        style: GoogleFonts.poppins(
           color: AuthScreenTokens.labelColor,
-          fontSize: 13 * scale.clamp(0.9, 1.05),
+          fontSize: 13,
           fontWeight: FontWeight.w500,
         ),
       ),
@@ -176,9 +176,9 @@ class AuthPrimaryButton extends StatelessWidget {
                     )
                   : Text(
                       label,
-                      style: GoogleFonts.montserrat(
+                      style: GoogleFonts.poppins(
                         color: Colors.white,
-                        fontSize: 16 * scale.clamp(0.9, 1.05),
+                        fontSize: 15,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -210,9 +210,9 @@ class AuthLinkText extends StatelessWidget {
       children: [
         Text(
           prompt,
-          style: GoogleFonts.montserrat(
+          style: GoogleFonts.poppins(
             color: AuthScreenTokens.labelColor,
-            fontSize: 13 * scale.clamp(0.9, 1.05),
+            fontSize: 13,
             fontWeight: FontWeight.w400,
           ),
         ),
@@ -221,9 +221,9 @@ class AuthLinkText extends StatelessWidget {
           onTap: onTap,
           child: Text(
             action,
-            style: GoogleFonts.montserrat(
+            style: GoogleFonts.poppins(
               color: AuthScreenTokens.accentColor,
-              fontSize: 16 * scale.clamp(0.9, 1.05),
+              fontSize: 15,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -315,8 +315,8 @@ class _AuthOtpInputState extends State<AuthOtpInput> {
               textAlign: TextAlign.center,
               keyboardType: TextInputType.number,
               maxLength: 1,
-              style: GoogleFonts.montserrat(
-                fontSize: 22 * widget.scale.clamp(0.9, 1.05),
+              style: GoogleFonts.poppins(
+                fontSize: 20,
                 fontWeight: FontWeight.w600,
                 color: Colors.black,
                 height: 1.0,

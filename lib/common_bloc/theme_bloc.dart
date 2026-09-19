@@ -5,15 +5,15 @@ class ThemeBloc extends Cubit<ThemeState> {
   ThemeBloc() : super(ThemeState(_defaultTheme()));
 
   static ThemeData _defaultTheme() {
-    final montserrat = GoogleFonts.montserrat();
+    final poppins = GoogleFonts.poppins();
     return ThemeData(
       brightness: Brightness.light,
       colorScheme: ColorScheme.fromSeed(
         seedColor: const Color(0xFF7F03B9),
         brightness: Brightness.light,
       ),
-      fontFamily: montserrat.fontFamily,
-      textTheme: GoogleFonts.montserratTextTheme(),
+      fontFamily: poppins.fontFamily,
+      textTheme: GoogleFonts.poppinsTextTheme(),
       scaffoldBackgroundColor: LightScreenTheme.background,
       snackBarTheme: const SnackBarThemeData(
         behavior: SnackBarBehavior.floating,

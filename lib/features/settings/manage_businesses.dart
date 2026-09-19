@@ -53,7 +53,7 @@ class _ManageBusinessesPageState extends State<ManageBusinessesPage> {
                 const SizedBox(height: 12),
                 Text(
                   'One login can manage several businesses. Detach a business by setting a password for its email — then it can be signed into on its own.',
-                  style: GoogleFonts.montserrat(
+                  style: GoogleFonts.poppins(
                     fontSize: 13,
                     height: 1.4,
                     color: Colors.black54,
@@ -70,7 +70,7 @@ class _ManageBusinessesPageState extends State<ManageBusinessesPage> {
                         return Center(
                           child: Text(
                             'No businesses loaded yet.',
-                            style: GoogleFonts.montserrat(color: Colors.black54),
+                            style: GoogleFonts.poppins(color: Colors.black54),
                           ),
                         );
                       }
@@ -86,7 +86,7 @@ class _ManageBusinessesPageState extends State<ManageBusinessesPage> {
                             contentPadding: EdgeInsets.zero,
                             title: Text(
                               businessDisplayName(item),
-                              style: GoogleFonts.montserrat(
+                              style: GoogleFonts.poppins(
                                 fontWeight: FontWeight.w600,
                                 fontSize: 14,
                               ),
@@ -97,7 +97,7 @@ class _ManageBusinessesPageState extends State<ManageBusinessesPage> {
                                 if (isManager) 'Primary login',
                                 if (isActive) 'Current',
                               ].where((s) => s.isNotEmpty).join(' · '),
-                              style: GoogleFonts.montserrat(fontSize: 12),
+                              style: GoogleFonts.poppins(fontSize: 12),
                             ),
                             trailing: isManager
                                 ? null

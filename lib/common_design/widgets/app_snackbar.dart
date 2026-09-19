@@ -27,7 +27,7 @@ void showAppSnackBar(
       SnackBar(
         content: Text(
           message,
-          style: GoogleFonts.montserrat(color: Colors.white),
+          style: GoogleFonts.poppins(color: Colors.white),
         ),
         backgroundColor: backgroundColor,
         behavior: SnackBarBehavior.floating,

@@ -269,7 +269,7 @@ class _Details2PageState extends State<Details2Page> {
           SnackBar(
             content: Text(
               'Please specify your industry',
-              style: GoogleFonts.montserrat(color: Colors.white),
+              style: GoogleFonts.poppins(color: Colors.white),
             ),
           ),
         );
@@ -285,7 +285,7 @@ class _Details2PageState extends State<Details2Page> {
         SnackBar(
           content: Text(
             _question.emptyMessage,
-            style: GoogleFonts.montserrat(color: Colors.white),
+            style: GoogleFonts.poppins(color: Colors.white),
           ),
         ),
       );
@@ -356,8 +356,8 @@ class _Details2PageState extends State<Details2Page> {
         ),
         child: Text(
           label,
-          style: GoogleFonts.montserrat(
-            fontSize: 14 * scale.clamp(0.9, 1.1),
+          style: GoogleFonts.poppins(
+            fontSize: 14,
             fontWeight: FontWeight.w400,
             color: textColor,
           ),
@@ -381,8 +381,8 @@ class _Details2PageState extends State<Details2Page> {
           SizedBox(height: 35 * scale),
           Text(
             'If Other, please specify',
-            style: GoogleFonts.montserrat(
-              fontSize: 14 * scale.clamp(0.9, 1.1),
+            style: GoogleFonts.poppins(
+              fontSize: 14,
               fontWeight: FontWeight.w400,
               color: _exampleColor,
             ),
@@ -393,8 +393,8 @@ class _Details2PageState extends State<Details2Page> {
             enabled: _selectedIndustry == 'Other' && !_isSaving,
             textInputAction: TextInputAction.done,
             onSubmitted: (_) => _onNext(),
-            style: GoogleFonts.montserrat(
-              fontSize: 16 * scale.clamp(0.9, 1.1),
+            style: GoogleFonts.poppins(
+              fontSize: 16,
               fontWeight: FontWeight.w500,
               color: Colors.black,
             ),
@@ -426,16 +426,16 @@ class _Details2PageState extends State<Details2Page> {
       inputFormatters: _inputFormatters,
       textInputAction: TextInputAction.done,
       onSubmitted: (_) => _onNext(),
-      style: GoogleFonts.montserrat(
-        fontSize: 16 * scale.clamp(0.9, 1.1),
+      style: GoogleFonts.poppins(
+        fontSize: 16,
         fontWeight: FontWeight.w500,
         color: Colors.black,
       ),
       decoration: InputDecoration(
         isDense: true,
         hintText: _question.inputHint,
-        hintStyle: GoogleFonts.montserrat(
-          fontSize: 14 * scale.clamp(0.9, 1.1),
+        hintStyle: GoogleFonts.poppins(
+              fontSize: 14,
           fontWeight: FontWeight.w400,
           height: 1.4,
           color: _exampleColor,
@@ -502,8 +502,8 @@ class _Details2PageState extends State<Details2Page> {
                         Text(
                           'Your Business',
                           textAlign: TextAlign.center,
-                          style: GoogleFonts.montserrat(
-                            fontSize: 20 * scale.clamp(0.9, 1.1),
+                          style: GoogleFonts.poppins(
+                            fontSize: 20,
                             fontWeight: FontWeight.w600,
                             color: Colors.black,
                           ),
@@ -536,8 +536,8 @@ class _Details2PageState extends State<Details2Page> {
                   padding: EdgeInsets.symmetric(horizontal: 24 * scale),
                   child: Text(
                     'Question $currentQuestion of $_totalQuestions',
-                    style: GoogleFonts.montserrat(
-                      fontSize: 14 * scale.clamp(0.9, 1.1),
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
                       fontWeight: FontWeight.w400,
                       color: _mutedColor,
                     ),
@@ -562,8 +562,8 @@ class _Details2PageState extends State<Details2Page> {
                         SizedBox(height: 10 * scale),
                         Text(
                           _question.question,
-                          style: GoogleFonts.montserrat(
-                            fontSize: 18 * scale.clamp(0.9, 1.1),
+                          style: GoogleFonts.poppins(
+                            fontSize: 18,
                             fontWeight: FontWeight.w600,
                             height: 1.35,
                             color: Colors.black,
@@ -574,8 +574,8 @@ class _Details2PageState extends State<Details2Page> {
                           _question.optional
                               ? '${_question.hint} (Optional)'
                               : _question.hint,
-                          style: GoogleFonts.montserrat(
-                            fontSize: 14 * scale.clamp(0.9, 1.1),
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
                             fontWeight: FontWeight.w400,
                             height: 1.4,
                             color: _mutedColor,
@@ -613,8 +613,8 @@ class _Details2PageState extends State<Details2Page> {
                                 children: [
                                   Text(
                                     _isLastStep ? 'Finish' : 'Next',
-                                    style: GoogleFonts.montserrat(
-                                      fontSize: 16 * scale.clamp(0.9, 1.1),
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 16,
                                       fontWeight: FontWeight.w600,
                                       color: Colors.white,
                                     ),
@@ -643,8 +643,8 @@ class _Details2PageState extends State<Details2Page> {
                       onPressed: _isSaving ? null : _finishSetup,
                       child: Text(
                         'Save and Finish',
-                        style: GoogleFonts.montserrat(
-                          fontSize: 14 * scale.clamp(0.9, 1.1),
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
                           fontWeight: FontWeight.w600,
                           color: _buttonColor,
                         ),

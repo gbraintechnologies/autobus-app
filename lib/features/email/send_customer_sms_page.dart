@@ -66,7 +66,7 @@ class _SendCustomerSmsPageState extends State<SendCustomerSmsPage> {
         SnackBar(
           content: Text(
             'Select at least one customer',
-            style: GoogleFonts.montserrat(),
+            style: GoogleFonts.poppins(),
           ),
         ),
       );
@@ -78,7 +78,7 @@ class _SendCustomerSmsPageState extends State<SendCustomerSmsPage> {
         SnackBar(
           content: Text(
             'Message is required',
-            style: GoogleFonts.montserrat(),
+            style: GoogleFonts.poppins(),
           ),
         ),
       );
@@ -89,7 +89,7 @@ class _SendCustomerSmsPageState extends State<SendCustomerSmsPage> {
         SnackBar(
           content: Text(
             'SMS must be 160 characters or fewer',
-            style: GoogleFonts.montserrat(),
+            style: GoogleFonts.poppins(),
           ),
         ),
       );
@@ -115,7 +115,7 @@ class _SendCustomerSmsPageState extends State<SendCustomerSmsPage> {
         SnackBar(
           content: Text(
             userFacingError(e),
-            style: GoogleFonts.montserrat(),
+            style: GoogleFonts.poppins(),
           ),
           backgroundColor: Colors.red.shade700,
         ),
@@ -128,7 +128,7 @@ class _SendCustomerSmsPageState extends State<SendCustomerSmsPage> {
   InputDecoration _fieldDecoration(String hint) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: GoogleFonts.montserrat(
+      hintStyle: GoogleFonts.poppins(
         color: LightScreenTheme.hint,
         fontSize: 14,
         fontWeight: FontWeight.w400,
@@ -148,7 +148,7 @@ class _SendCustomerSmsPageState extends State<SendCustomerSmsPage> {
         borderSide: BorderSide.none,
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-      counterStyle: GoogleFonts.montserrat(
+      counterStyle: GoogleFonts.poppins(
         fontSize: 11,
         color: LightScreenTheme.hint,
       ),
@@ -190,9 +190,9 @@ class _SendCustomerSmsPageState extends State<SendCustomerSmsPage> {
                   Text(
                     'Tap the icon on your upper right to choose recipient',
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.montserrat(
+                    style: GoogleFonts.poppins(
                       color: LightScreenTheme.hint,
-                      fontSize: 13 * scale.clamp(0.9, 1.05),
+                      fontSize: 13,
                       fontWeight: FontWeight.w400,
                       height: 1.4,
                     ),
@@ -206,7 +206,7 @@ class _SendCustomerSmsPageState extends State<SendCustomerSmsPage> {
                         return Chip(
                           label: Text(
                             _nameForId(id),
-                            style: GoogleFonts.montserrat(
+                            style: GoogleFonts.poppins(
                               fontSize: 12,
                               color: Colors.black87,
                             ),
@@ -236,9 +236,9 @@ class _SendCustomerSmsPageState extends State<SendCustomerSmsPage> {
                       maxLength: 160,
                       textAlignVertical: TextAlignVertical.top,
                       keyboardType: TextInputType.multiline,
-                      style: GoogleFonts.montserrat(
+                      style: GoogleFonts.poppins(
                         color: Colors.black,
-                        fontSize: 14 * scale.clamp(0.9, 1.05),
+                        fontSize: 14,
                       ),
                       decoration: _fieldDecoration('Type your SMS…'),
                     ),
@@ -250,8 +250,8 @@ class _SendCustomerSmsPageState extends State<SendCustomerSmsPage> {
                         alignment: Alignment.centerRight,
                         child: Text(
                           '$_charCount / 160',
-                          style: GoogleFonts.montserrat(
-                            fontSize: 11 * scale.clamp(0.9, 1.05),
+                          style: GoogleFonts.poppins(
+                            fontSize: 11,
                             color: _charCount > 160
                                 ? Colors.red
                                 : LightScreenTheme.hint,
@@ -290,9 +290,9 @@ class _SendCustomerSmsPageState extends State<SendCustomerSmsPage> {
                       )
                     : Text(
                         'Send SMS',
-                        style: GoogleFonts.montserrat(
+                        style: GoogleFonts.poppins(
                           color: Colors.white,
-                          fontSize: 16 * scale.clamp(0.9, 1.05),
+                          fontSize: 16,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -356,9 +356,9 @@ class _RecipientPickerButton extends StatelessWidget {
                     child: Text(
                       '$count',
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.montserrat(
+                      style: GoogleFonts.poppins(
                         color: Colors.white,
-                        fontSize: 10 * headerScale,
+                        fontSize: 10,
                         fontWeight: FontWeight.w600,
                         height: 1,
                       ),

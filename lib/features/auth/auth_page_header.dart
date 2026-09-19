@@ -42,7 +42,7 @@ class AuthPageHeader extends StatelessWidget {
             child: AppFitText(
               title,
               textAlign: TextAlign.center,
-              style: GoogleFonts.montserrat(
+              style: GoogleFonts.poppins(
                 color: Colors.black,
                 fontSize: 26,
                 fontWeight: fontWeight,

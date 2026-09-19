@@ -44,7 +44,7 @@ class AuthField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fontSize = 14 * scale.clamp(0.9, 1.1);
+    const fontSize = 13.0;
 
     return Center(
       child: Container(
@@ -72,7 +72,7 @@ class AuthField extends StatelessWidget {
                     inputFormatters: inputFormatters,
                     onSubmitted: onSubmitted,
                     onChanged: onChanged,
-                    style: GoogleFonts.montserrat(
+                    style: GoogleFonts.poppins(
                       fontSize: fontSize,
                       color: Colors.black87,
                     ),
@@ -81,7 +81,7 @@ class AuthField extends StatelessWidget {
                       border: InputBorder.none,
                       counterText: '',
                       hintText: hintText,
-                      hintStyle: GoogleFonts.montserrat(
+                      hintStyle: GoogleFonts.poppins(
                         fontSize: fontSize,
                         color: _hintColor,
                       ),

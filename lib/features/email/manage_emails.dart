@@ -141,8 +141,8 @@ class _ManageEmailsState extends State<ManageEmails> {
                           ),
                           child: Text(
                             'Add',
-                            style: GoogleFonts.montserrat(
-                              fontSize: 13 * scale.clamp(0.9, 1.05),
+                            style: GoogleFonts.poppins(
+                              fontSize: 13,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -244,9 +244,9 @@ class _MessagingNoticeCard extends StatelessWidget {
               SizedBox(height: 12 * scale),
               Text(
                 message,
-                style: GoogleFonts.montserrat(
+                style: GoogleFonts.poppins(
                   color: _ManageEmailsState._bodyColor,
-                  fontSize: 12 * scale.clamp(0.9, 1.05),
+                  fontSize: 12,
                   fontWeight: FontWeight.w400,
                   height: 1.5,
                 ),
@@ -321,9 +321,9 @@ class _MessagingHubCard extends StatelessWidget {
                         title,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.montserrat(
+                        style: GoogleFonts.poppins(
                           color: Colors.black,
-                          fontSize: 14 * scale.clamp(0.9, 1.05),
+                          fontSize: 14,
                           fontWeight: FontWeight.w600,
                           height: 1.25,
                         ),
@@ -333,9 +333,9 @@ class _MessagingHubCard extends StatelessWidget {
                         subtitle,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.montserrat(
+                        style: GoogleFonts.poppins(
                           color: _ManageEmailsState._mutedColor,
-                          fontSize: 12 * scale.clamp(0.85, 1.05),
+                          fontSize: 12,
                           fontWeight: FontWeight.w400,
                           height: 1.3,
                         ),

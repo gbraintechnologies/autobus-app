@@ -61,18 +61,18 @@ class _ReportMetricRow extends StatelessWidget {
               Expanded(
                 child: Text(
                   label,
-                  style: GoogleFonts.montserrat(
+                  style: GoogleFonts.poppins(
                     color: Colors.black,
-                    fontSize: 14 * scale.clamp(0.9, 1.05),
+                    fontSize: 14,
                     fontWeight: FontWeight.w400,
                   ),
                 ),
               ),
               Text(
                 value,
-                style: GoogleFonts.montserrat(
+                style: GoogleFonts.poppins(
                   color: Colors.black,
-                  fontSize: 15 * scale.clamp(0.9, 1.05),
+                  fontSize: 15,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -346,7 +346,7 @@ class _LightReportDetailScreenState extends State<_LightReportDetailScreen> {
               children: [
                 Text(
                   'Filter by period',
-                  style: GoogleFonts.montserrat(
+                  style: GoogleFonts.poppins(
                     color: Colors.black,
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -359,7 +359,7 @@ class _LightReportDetailScreenState extends State<_LightReportDetailScreen> {
                     contentPadding: EdgeInsets.zero,
                     title: Text(
                       period.label,
-                      style: GoogleFonts.montserrat(
+                      style: GoogleFonts.poppins(
                         color: isSelected ? _reportAccentColor : Colors.black87,
                         fontWeight:
                             isSelected ? FontWeight.w600 : FontWeight.w400,
@@ -444,9 +444,9 @@ class _LightReportDetailScreenState extends State<_LightReportDetailScreen> {
                       children: [
                         Text(
                           reportPeriodHeading(_period),
-                          style: GoogleFonts.montserrat(
+                          style: GoogleFonts.poppins(
                             color: Colors.black,
-                            fontSize: 16 * scale.clamp(0.9, 1.05),
+                            fontSize: 16,
                             fontWeight: FontWeight.w600,
                           ),
                         ),

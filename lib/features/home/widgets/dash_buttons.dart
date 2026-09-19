@@ -30,7 +30,7 @@ class DashboardButtons extends StatelessWidget {
             const SizedBox(width: 34),
             Text(
               label,
-              style: GoogleFonts.montserrat(
+              style: GoogleFonts.poppins(
                 color: Colors.white,
                 fontSize: 15,
                 fontWeight: FontWeight.w600,

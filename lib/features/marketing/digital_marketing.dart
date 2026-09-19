@@ -607,7 +607,7 @@ class _MarketingScaffold extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           textAlign: TextAlign.center,
-                          style: GoogleFonts.montserrat(
+                          style: GoogleFonts.poppins(
                             fontSize: 18,
                             fontWeight: FontWeight.w400,
                             color: _kHeaderPurple,
@@ -676,7 +676,7 @@ class _DarkButton extends StatelessWidget {
           children: [
             Text(
               label,
-              style: GoogleFonts.montserrat(
+              style: GoogleFonts.poppins(
                 fontSize: fontSize,
                 fontWeight: FontWeight.w500,
                 color: enabled ? Colors.white : Colors.white70,
@@ -891,7 +891,7 @@ class _MarketingInlineVideoPlayerState
           child: Text(
             'Could not load video.\n$_errorDetail',
             textAlign: TextAlign.center,
-            style: GoogleFonts.montserrat(color: Colors.white70, fontSize: 13),
+            style: GoogleFonts.poppins(color: Colors.white70, fontSize: 13),
           ),
         ),
       );
@@ -1125,7 +1125,7 @@ class _MediaSlotPreviewDialogState extends State<_MediaSlotPreviewDialog> {
                     : const Icon(Icons.download_rounded),
                 label: Text(
                   downloadLabel,
-                  style: GoogleFonts.montserrat(fontWeight: FontWeight.w600),
+                  style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
                 ),
                 style: FilledButton.styleFrom(
                   backgroundColor: _kHeaderPurple,
@@ -1150,7 +1150,7 @@ class _MediaSlotPreviewDialogState extends State<_MediaSlotPreviewDialog> {
                 ),
                 label: Text(
                   deleteLabel,
-                  style: GoogleFonts.montserrat(
+                  style: GoogleFonts.poppins(
                     fontWeight: FontWeight.w600,
                     color: CustColors.accentRed,
                   ),
@@ -1267,7 +1267,7 @@ class _CompactCalendar extends StatelessWidget {
             children: [
               Text(
                 '${_months[m]} $y',
-                style: GoogleFonts.montserrat(
+                style: GoogleFonts.poppins(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
                   color: Colors.black87,
@@ -1293,7 +1293,7 @@ class _CompactCalendar extends StatelessWidget {
                   child: Text(
                     d,
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.montserrat(
+                    style: GoogleFonts.poppins(
                       fontSize: 10,
                       fontWeight: FontWeight.w600,
                       color: Colors.black38,
@@ -1337,7 +1337,7 @@ class _CompactCalendar extends StatelessWidget {
                   alignment: Alignment.center,
                   child: Text(
                     '$day',
-                    style: GoogleFonts.montserrat(
+                    style: GoogleFonts.poppins(
                       fontSize: 12,
                       fontWeight:
                           isToday || isSel ? FontWeight.w700 : FontWeight.w500,

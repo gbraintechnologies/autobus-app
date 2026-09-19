@@ -1,0 +1,30 @@
+{
+  "fileKey": "vDEDLxCPolEKtncF1Brucp",
+  "fileName": "Auto-Bus",
+  "url": "https://www.figma.com/design/vDEDLxCPolEKtncF1Brucp/Auto-Bus",
+  "pages": {
+    "newDesigns": {
+      "name": "NEW DESIGNS",
+      "nodeId": "3229:10",
+      "url": "https://www.figma.com/design/vDEDLxCPolEKtncF1Brucp/Auto-Bus?node-id=3229-10"
+    }
+  },
+  "assets": {
+    "icons": "assets/icons/figma",
+    "images": "assets/img/figma"
+  },
+  "typography": {
+    "fontFamily": "Poppins",
+    "designWidth": 402,
+    "note": "Figma px maps 1:1 to Flutter logical pixels. Do not scale type with screen width.",
+    "sizes": {
+      "display": 22,
+      "headline": 18,
+      "title": 15,
+      "body": 13,
+      "label": 12,
+      "caption": 11,
+      "micro": 10
+    }
+  }
+}

@@ -66,7 +66,7 @@ class _ManageSmsSenderIdsState extends State<ManageSmsSenderIds> {
         SnackBar(
           content: Text(
             'Sender ID submitted for approval.',
-            style: GoogleFonts.montserrat(),
+            style: GoogleFonts.poppins(),
           ),
         ),
       );
@@ -77,7 +77,7 @@ class _ManageSmsSenderIdsState extends State<ManageSmsSenderIds> {
         SnackBar(
           content: Text(
             userFacingError(e),
-            style: GoogleFonts.montserrat(),
+            style: GoogleFonts.poppins(),
           ),
         ),
       );
@@ -127,7 +127,7 @@ class _ManageSmsSenderIdsState extends State<ManageSmsSenderIds> {
                   const SizedBox(height: 12),
                   Text(
                     'Register a Sender ID for SMS. Approved IDs can be used after the Autobus team verifies them.',
-                    style: GoogleFonts.montserrat(
+                    style: GoogleFonts.poppins(
                       color: Colors.white.withValues(alpha: 0.65),
                       fontSize: 12,
                       fontWeight: FontWeight.w300,
@@ -150,7 +150,7 @@ class _ManageSmsSenderIdsState extends State<ManageSmsSenderIds> {
                                     Text(
                                       _loadError!,
                                       textAlign: TextAlign.center,
-                                      style: GoogleFonts.montserrat(
+                                      style: GoogleFonts.poppins(
                                         color: Colors.amber.shade200,
                                         fontSize: 12,
                                       ),
@@ -202,7 +202,7 @@ class _ManageSmsSenderIdsState extends State<ManageSmsSenderIds> {
         icon: const Icon(Icons.add),
         label: Text(
           'Register Sender ID',
-          style: GoogleFonts.montserrat(fontWeight: FontWeight.w600),
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
         ),
       ),
     );
@@ -221,7 +221,7 @@ class _SectionHeader extends StatelessWidget {
       children: [
         Text(
           title,
-          style: GoogleFonts.montserrat(
+          style: GoogleFonts.poppins(
             color: Colors.white,
             fontSize: 16,
             fontWeight: FontWeight.w600,
@@ -236,7 +236,7 @@ class _SectionHeader extends StatelessWidget {
           ),
           child: Text(
             '$count',
-            style: GoogleFonts.montserrat(
+            style: GoogleFonts.poppins(
               color: Colors.white.withValues(alpha: 0.7),
               fontSize: 11,
               fontWeight: FontWeight.w500,
@@ -259,7 +259,7 @@ class _EmptyHint extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Text(
         text,
-        style: GoogleFonts.montserrat(
+        style: GoogleFonts.poppins(
           color: Colors.white.withValues(alpha: 0.5),
           fontSize: 13,
           height: 1.4,
@@ -321,7 +321,7 @@ class _SenderIdCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   senderId,
-                  style: GoogleFonts.montserrat(
+                  style: GoogleFonts.poppins(
                     color: Colors.white,
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
@@ -338,7 +338,7 @@ class _SenderIdCard extends StatelessWidget {
                 ),
                 child: Text(
                   _statusLabel(status),
-                  style: GoogleFonts.montserrat(
+                  style: GoogleFonts.poppins(
                     color: statusColor,
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
@@ -351,7 +351,7 @@ class _SenderIdCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               company,
-              style: GoogleFonts.montserrat(
+              style: GoogleFonts.poppins(
                 color: Colors.white.withValues(alpha: 0.7),
                 fontSize: 12,
               ),
@@ -361,7 +361,7 @@ class _SenderIdCard extends StatelessWidget {
             const SizedBox(height: 6),
             Text(
               notes,
-              style: GoogleFonts.montserrat(
+              style: GoogleFonts.poppins(
                 color: Colors.white.withValues(alpha: 0.55),
                 fontSize: 12,
                 height: 1.4,
@@ -372,7 +372,7 @@ class _SenderIdCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               'Reason: $rejection',
-              style: GoogleFonts.montserrat(
+              style: GoogleFonts.poppins(
                 color: const Color(0xFFEF4444).withValues(alpha: 0.9),
                 fontSize: 12,
                 height: 1.4,
@@ -410,7 +410,7 @@ class _SmsSenderIdDialogState extends State<_SmsSenderIdDialog> {
   }) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: GoogleFonts.montserrat(
+      hintStyle: GoogleFonts.poppins(
         color: Colors.white.withValues(alpha: 0.4),
         fontSize: 13,
       ),
@@ -477,7 +477,7 @@ class _SmsSenderIdDialogState extends State<_SmsSenderIdDialog> {
             children: [
               Text(
                 'Register SMS Sender ID',
-                style: GoogleFonts.montserrat(
+                style: GoogleFonts.poppins(
                   color: Colors.white,
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
@@ -486,7 +486,7 @@ class _SmsSenderIdDialogState extends State<_SmsSenderIdDialog> {
               const SizedBox(height: 8),
               Text(
                 'Submit the name that appears as the SMS sender. It is registered under your business name from signup so SMS cannot be sent under a different company. The Autobus team will verify and approve it before it can be used.',
-                style: GoogleFonts.montserrat(
+                style: GoogleFonts.poppins(
                   color: Colors.white.withValues(alpha: 0.75),
                   fontSize: 12,
                   height: 1.45,
@@ -497,7 +497,7 @@ class _SmsSenderIdDialogState extends State<_SmsSenderIdDialog> {
                 controller: _senderIdController,
                 autofocus: true,
                 onTapOutside: dismissAppKeyboard,
-                style: GoogleFonts.montserrat(color: Colors.white, fontSize: 14),
+                style: GoogleFonts.poppins(color: Colors.white, fontSize: 14),
                 textCapitalization: TextCapitalization.characters,
                 decoration: _fieldDecoration(
                   hint: 'Sender ID (e.g. AutoBus)',
@@ -512,7 +512,7 @@ class _SmsSenderIdDialogState extends State<_SmsSenderIdDialog> {
               TextField(
                 controller: _notesController,
                 onTapOutside: dismissAppKeyboard,
-                style: GoogleFonts.montserrat(color: Colors.white, fontSize: 14),
+                style: GoogleFonts.poppins(color: Colors.white, fontSize: 14),
                 maxLines: 2,
                 decoration: _fieldDecoration(hint: 'Notes (optional)'),
               ),
@@ -524,7 +524,7 @@ class _SmsSenderIdDialogState extends State<_SmsSenderIdDialog> {
                     onPressed: () => Navigator.of(context).pop(),
                     child: Text(
                       'Cancel',
-                      style: GoogleFonts.montserrat(
+                      style: GoogleFonts.poppins(
                         color: Colors.white.withValues(alpha: 0.7),
                       ),
                     ),
@@ -537,7 +537,7 @@ class _SmsSenderIdDialogState extends State<_SmsSenderIdDialog> {
                     ),
                     child: Text(
                       'Submit',
-                      style: GoogleFonts.montserrat(fontWeight: FontWeight.w600),
+                      style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
                     ),
                   ),
                 ],

@@ -137,7 +137,7 @@ class _ManageOutletsState extends State<ManageOutlets>
           ),
           title: Text(
             'Unlink ${item.outlet.label}?',
-            style: GoogleFonts.montserrat(
+            style: GoogleFonts.poppins(
               color: Colors.white,
               fontWeight: FontWeight.w600,
               fontSize: 18,
@@ -147,7 +147,7 @@ class _ManageOutletsState extends State<ManageOutlets>
             item.integrations.length == 1
                 ? 'This removes ${item.subtitle} from Autobus. You can link it again later.'
                 : 'This removes all ${item.integrations.length} linked ${item.outlet.label} accounts. You can link again later.',
-            style: GoogleFonts.montserrat(
+            style: GoogleFonts.poppins(
               color: Colors.white.withValues(alpha: 0.75),
               fontSize: 14,
               height: 1.45,
@@ -158,7 +158,7 @@ class _ManageOutletsState extends State<ManageOutlets>
               onPressed: () => Navigator.of(ctx).pop(false),
               child: Text(
                 'Cancel',
-                style: GoogleFonts.montserrat(
+                style: GoogleFonts.poppins(
                   color: Colors.white70,
                   fontWeight: FontWeight.w500,
                 ),
@@ -168,7 +168,7 @@ class _ManageOutletsState extends State<ManageOutlets>
               onPressed: () => Navigator.of(ctx).pop(true),
               child: Text(
                 'Unlink',
-                style: GoogleFonts.montserrat(
+                style: GoogleFonts.poppins(
                   color: const Color(0xFFEF4444),
                   fontWeight: FontWeight.w600,
                 ),
@@ -233,7 +233,7 @@ class _ManageOutletsState extends State<ManageOutlets>
                 Text(
                   item.outlet.label,
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.montserrat(
+                  style: GoogleFonts.poppins(
                     color: Colors.white,
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -244,7 +244,7 @@ class _ManageOutletsState extends State<ManageOutlets>
                   Text(
                     item.subtitle,
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.montserrat(
+                    style: GoogleFonts.poppins(
                       color: Colors.white54,
                       fontSize: 12,
                     ),
@@ -255,7 +255,7 @@ class _ManageOutletsState extends State<ManageOutlets>
                   leading: const Icon(Icons.link, color: Colors.white70),
                   title: Text(
                     'Link another account',
-                    style: GoogleFonts.montserrat(color: Colors.white),
+                    style: GoogleFonts.poppins(color: Colors.white),
                   ),
                   onTap: () => Navigator.of(ctx).pop('link'),
                 ),
@@ -263,7 +263,7 @@ class _ManageOutletsState extends State<ManageOutlets>
                   leading: const Icon(Icons.link_off, color: Color(0xFFEF4444)),
                   title: Text(
                     'Unlink',
-                    style: GoogleFonts.montserrat(
+                    style: GoogleFonts.poppins(
                       color: const Color(0xFFEF4444),
                       fontWeight: FontWeight.w600,
                     ),
@@ -334,7 +334,7 @@ class _ManageOutletsState extends State<ManageOutlets>
                                     Text(
                                       _loadError!,
                                       textAlign: TextAlign.center,
-                                      style: GoogleFonts.montserrat(
+                                      style: GoogleFonts.poppins(
                                         color: Colors.amber.shade200,
                                         fontSize: 12,
                                       ),
@@ -344,7 +344,7 @@ class _ManageOutletsState extends State<ManageOutlets>
                                   Text(
                                     'Linked Outlets',
                                     textAlign: TextAlign.center,
-                                    style: GoogleFonts.montserrat(
+                                    style: GoogleFonts.poppins(
                                       color: Colors.white,
                                       fontSize: 19,
                                        fontWeight: FontWeight.w500,
@@ -355,7 +355,7 @@ class _ManageOutletsState extends State<ManageOutlets>
                                   Text(
                                     'Tap a linked outlet to unlink or add another account.',
                                     textAlign: TextAlign.center,
-                                    style: GoogleFonts.montserrat(
+                                    style: GoogleFonts.poppins(
                                       color: Colors.white.withValues(alpha: 0.55),
                                       fontSize: 12,
                                       fontWeight: FontWeight.w300,
@@ -370,7 +370,7 @@ class _ManageOutletsState extends State<ManageOutlets>
                                       child: Text(
                                         'No outlets linked yet. Connect a channel below.',
                                         textAlign: TextAlign.center,
-                                        style: GoogleFonts.montserrat(
+                                        style: GoogleFonts.poppins(
                                           color: Colors.white.withValues(
                                             alpha: 0.55,
                                           ),
@@ -398,7 +398,7 @@ class _ManageOutletsState extends State<ManageOutlets>
                                   Text(
                                     'Select to Link Social Media',
                                     textAlign: TextAlign.center,
-                                    style: GoogleFonts.montserrat(
+                                    style: GoogleFonts.poppins(
                                       color: Colors.white.withValues(alpha: 0.9),
                                       fontSize: 14,
                                       fontWeight: FontWeight.w400,
@@ -409,7 +409,7 @@ class _ManageOutletsState extends State<ManageOutlets>
                                   Text(
                                     'Instagram uses Business Login for inbox and posting. TikTok and YouTube open in a lightweight in-app browser — tap X when you are done.',
                                     textAlign: TextAlign.center,
-                                    style: GoogleFonts.montserrat(
+                                    style: GoogleFonts.poppins(
                                       color: Colors.white.withValues(alpha: 0.65),
                                       fontSize: 12,
                                       fontWeight: FontWeight.w300,
@@ -525,7 +525,7 @@ class _OutletCard extends StatelessWidget {
                   textAlign: TextAlign.center,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.montserrat(
+                  style: GoogleFonts.poppins(
                     color: Colors.white.withValues(alpha: 0.88),
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
@@ -538,7 +538,7 @@ class _OutletCard extends StatelessWidget {
                     textAlign: TextAlign.center,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.montserrat(
+                    style: GoogleFonts.poppins(
                       color: Colors.white.withValues(alpha: 0.55),
                       fontSize: 10,
                       fontWeight: FontWeight.w400,

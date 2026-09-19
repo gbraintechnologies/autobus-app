@@ -73,8 +73,8 @@ class DetailsPage extends StatelessWidget {
                     'Answer a few questions so your chatbot can talk about '
                     'your business- even before you upload documents or a '
                     'website..',
-                    style: GoogleFonts.montserrat(
-                      fontSize: 16 * scale.clamp(0.9, 1.1),
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
                       fontWeight: FontWeight.w400,
                       height: 1.5,
                       color: Colors.black,
@@ -95,8 +95,8 @@ class DetailsPage extends StatelessWidget {
                         child: Center(
                           child: Text(
                             'Let\u2019s go!',
-                            style: GoogleFonts.montserrat(
-                              fontSize: 16 * scale.clamp(0.9, 1.1),
+                            style: GoogleFonts.poppins(
+                              fontSize: 16,
                               fontWeight: FontWeight.w600,
                               color: Colors.white,
                             ),

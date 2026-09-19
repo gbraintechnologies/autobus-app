@@ -94,7 +94,7 @@ class _CreateBusinessPageState extends State<CreateBusinessPage> {
                   const SizedBox(height: 24),
                   Text(
                     'This business gets its own email. You can switch to it from this login until you detach it with a password reset.',
-                    style: GoogleFonts.montserrat(
+                    style: GoogleFonts.poppins(
                       fontSize: 13,
                       height: 1.4,
                       color: Colors.black54,
@@ -109,7 +109,7 @@ class _CreateBusinessPageState extends State<CreateBusinessPage> {
                     textInputAction: TextInputAction.next,
                     decoration: InputDecoration(
                       hintText: 'business@example.com',
-                      hintStyle: GoogleFonts.montserrat(color: Colors.black38, fontSize: 14),
+                      hintStyle: GoogleFonts.poppins(color: Colors.black38, fontSize: 14),
                       border: const UnderlineInputBorder(),
                     ),
                   ),
@@ -121,7 +121,7 @@ class _CreateBusinessPageState extends State<CreateBusinessPage> {
                     textInputAction: TextInputAction.next,
                     decoration: InputDecoration(
                       hintText: 'Unique username',
-                      hintStyle: GoogleFonts.montserrat(color: Colors.black38, fontSize: 14),
+                      hintStyle: GoogleFonts.poppins(color: Colors.black38, fontSize: 14),
                       border: const UnderlineInputBorder(),
                     ),
                   ),
@@ -134,7 +134,7 @@ class _CreateBusinessPageState extends State<CreateBusinessPage> {
                     onSubmitted: (_) => dismissAppKeyboard(),
                     decoration: InputDecoration(
                       hintText: 'Optional display name',
-                      hintStyle: GoogleFonts.montserrat(color: Colors.black38, fontSize: 14),
+                      hintStyle: GoogleFonts.poppins(color: Colors.black38, fontSize: 14),
                       border: const UnderlineInputBorder(),
                     ),
                   ),
@@ -159,7 +159,7 @@ class _CreateBusinessPageState extends State<CreateBusinessPage> {
   Widget _label(String text) {
     return Text(
       text,
-      style: GoogleFonts.montserrat(
+      style: GoogleFonts.poppins(
         fontSize: 13,
         fontWeight: FontWeight.w500,
       ),

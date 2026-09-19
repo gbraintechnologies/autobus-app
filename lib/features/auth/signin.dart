@@ -137,9 +137,9 @@ class _SigninState extends State<Signin> {
                     },
                     child: Text(
                       'Forgot password?',
-                      style: GoogleFonts.montserrat(
+                      style: GoogleFonts.poppins(
                         color: AuthScreenTokens.labelColor,
-                        fontSize: 13 * scale.clamp(0.9, 1.05),
+                            fontSize: 13,
                         fontWeight: FontWeight.w500,
                       ),
                     ),

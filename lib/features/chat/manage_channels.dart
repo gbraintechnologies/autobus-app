@@ -131,7 +131,7 @@ class _ManageChannelsState extends State<ManageChannels> {
           ),
           title: Text(
             'Coming Soon',
-            style: GoogleFonts.montserrat(
+            style: GoogleFonts.poppins(
               color: Colors.black,
               fontWeight: FontWeight.w600,
               fontSize: 18,
@@ -139,7 +139,7 @@ class _ManageChannelsState extends State<ManageChannels> {
           ),
           content: Text(
             '${channel.label} messaging will be available soon.',
-            style: GoogleFonts.montserrat(
+            style: GoogleFonts.poppins(
               color: LightScreenTheme.body,
               fontSize: 14,
               height: 1.45,
@@ -150,7 +150,7 @@ class _ManageChannelsState extends State<ManageChannels> {
               onPressed: () => Navigator.of(ctx).pop(),
               child: Text(
                 'OK',
-                style: GoogleFonts.montserrat(
+                style: GoogleFonts.poppins(
                   color: LightScreenTheme.accent,
                   fontWeight: FontWeight.w600,
                 ),

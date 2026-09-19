@@ -52,7 +52,7 @@ class _SuccessState extends State<Success> {
                   Text(
                     displayMessage,
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.montserrat(
+                    style: GoogleFonts.poppins(
                       color: Colors.black,
                       fontSize: 16,
                       fontWeight: FontWeight.w500,

@@ -70,7 +70,7 @@ class _SendCustomerEmailPageState extends State<SendCustomerEmailPage> {
         SnackBar(
           content: Text(
             'Select at least one recipient',
-            style: GoogleFonts.montserrat(),
+            style: GoogleFonts.poppins(),
           ),
         ),
       );
@@ -83,7 +83,7 @@ class _SendCustomerEmailPageState extends State<SendCustomerEmailPage> {
         SnackBar(
           content: Text(
             'Subject and message are required',
-            style: GoogleFonts.montserrat(),
+            style: GoogleFonts.poppins(),
           ),
         ),
       );
@@ -111,7 +111,7 @@ class _SendCustomerEmailPageState extends State<SendCustomerEmailPage> {
         SnackBar(
           content: Text(
             userFacingError(e),
-            style: GoogleFonts.montserrat(),
+            style: GoogleFonts.poppins(),
           ),
           backgroundColor: Colors.red.shade700,
         ),
@@ -124,7 +124,7 @@ class _SendCustomerEmailPageState extends State<SendCustomerEmailPage> {
   InputDecoration _fieldDecoration(String hint) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: GoogleFonts.montserrat(
+      hintStyle: GoogleFonts.poppins(
         color: _hintColor,
         fontSize: 14,
         fontWeight: FontWeight.w400,
@@ -182,9 +182,9 @@ class _SendCustomerEmailPageState extends State<SendCustomerEmailPage> {
                   Text(
                     'Tap the icon on your upper right to choose recipient',
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.montserrat(
+                    style: GoogleFonts.poppins(
                       color: _hintColor,
-                      fontSize: 13 * scale.clamp(0.9, 1.05),
+                      fontSize: 13,
                       fontWeight: FontWeight.w400,
                       height: 1.4,
                     ),
@@ -198,7 +198,7 @@ class _SendCustomerEmailPageState extends State<SendCustomerEmailPage> {
                         return Chip(
                           label: Text(
                             _nameForId(id),
-                            style: GoogleFonts.montserrat(
+                            style: GoogleFonts.poppins(
                               fontSize: 12,
                               color: Colors.black87,
                             ),
@@ -222,9 +222,9 @@ class _SendCustomerEmailPageState extends State<SendCustomerEmailPage> {
                     child: TextField(
                       controller: _subjectController,
                       cursorColor: _buttonColor,
-                      style: GoogleFonts.montserrat(
+                      style: GoogleFonts.poppins(
                         color: Colors.black,
-                        fontSize: 14 * scale.clamp(0.9, 1.05),
+                        fontSize: 14,
                       ),
                       decoration: _fieldDecoration('Subject'),
                     ),
@@ -240,9 +240,9 @@ class _SendCustomerEmailPageState extends State<SendCustomerEmailPage> {
                       minLines: null,
                       textAlignVertical: TextAlignVertical.top,
                       keyboardType: TextInputType.multiline,
-                      style: GoogleFonts.montserrat(
+                      style: GoogleFonts.poppins(
                         color: Colors.black,
-                        fontSize: 14 * scale.clamp(0.9, 1.05),
+                        fontSize: 14,
                       ),
                       decoration: _fieldDecoration('Write your message here...'),
                     ),
@@ -277,9 +277,9 @@ class _SendCustomerEmailPageState extends State<SendCustomerEmailPage> {
                       )
                     : Text(
                         'Send email',
-                        style: GoogleFonts.montserrat(
+                        style: GoogleFonts.poppins(
                           color: Colors.white,
-                          fontSize: 16 * scale.clamp(0.9, 1.05),
+                          fontSize: 16,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -343,9 +343,9 @@ class _RecipientPickerButton extends StatelessWidget {
                     child: Text(
                       '$count',
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.montserrat(
+                      style: GoogleFonts.poppins(
                         color: Colors.white,
-                        fontSize: 10 * headerScale,
+                        fontSize: 10,
                         fontWeight: FontWeight.w600,
                         height: 1,
                       ),

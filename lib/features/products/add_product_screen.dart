@@ -91,11 +91,11 @@ class _AddProductScreenState extends State<AddProductScreen> {
     return InputDecoration(
       labelText: label,
       hintText: hint,
-      labelStyle: GoogleFonts.montserrat(
+      labelStyle: GoogleFonts.poppins(
         color: Colors.black54,
         fontSize: 13,
       ),
-      hintStyle: GoogleFonts.montserrat(
+      hintStyle: GoogleFonts.poppins(
         color: Colors.black38,
         fontSize: 13,
       ),
@@ -396,7 +396,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
       keyboardType: keyboardType,
       maxLines: maxLines,
       onTapOutside: dismissAppKeyboard,
-      style: GoogleFonts.montserrat(color: Colors.black87, fontSize: 14),
+      style: GoogleFonts.poppins(color: Colors.black87, fontSize: 14),
       cursorColor: LightScreenTheme.accent,
       decoration: _fieldDecoration(label),
     );

@@ -105,7 +105,7 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
         SnackBar(
           content: Text(
             widget.isEditing ? 'Customer updated' : 'Customer added',
-            style: GoogleFonts.montserrat(),
+            style: GoogleFonts.poppins(),
           ),
         ),
       );
@@ -116,7 +116,7 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
         SnackBar(
           content: Text(
             userFacingError(e),
-            style: GoogleFonts.montserrat(),
+            style: GoogleFonts.poppins(),
           ),
           backgroundColor: Colors.red.shade700,
         ),
@@ -198,8 +198,8 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
                   child: Center(
                     child: Text(
                       buttonLabel,
-                      style: GoogleFonts.montserrat(
-                        fontSize: 16 * scale.clamp(0.9, 1.05),
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
                         fontWeight: FontWeight.w600,
                         color: Colors.white,
                       ),
@@ -247,9 +247,9 @@ class _LabeledPillField extends StatelessWidget {
       children: [
         Text(
           label,
-          style: GoogleFonts.montserrat(
+          style: GoogleFonts.poppins(
             color: _AddCustomerPageState._labelColor,
-            fontSize: 14 * scale.clamp(0.9, 1.05),
+            fontSize: 14,
             fontWeight: FontWeight.w400,
           ),
         ),
@@ -260,7 +260,7 @@ class _LabeledPillField extends StatelessWidget {
           textInputAction: textInputAction,
           onFieldSubmitted: onSubmitted,
           validator: validator,
-          style: GoogleFonts.montserrat(
+          style: GoogleFonts.poppins(
             color: Colors.black87,
             fontSize: fontSize,
           ),
@@ -268,7 +268,7 @@ class _LabeledPillField extends StatelessWidget {
           decoration: InputDecoration(
             isDense: true,
             hintText: hintText,
-            hintStyle: GoogleFonts.montserrat(
+            hintStyle: GoogleFonts.poppins(
               color: _AddCustomerPageState._hintColor,
               fontSize: fontSize,
             ),

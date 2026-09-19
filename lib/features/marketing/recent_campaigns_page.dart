@@ -107,7 +107,7 @@ class _RecentCampaignsPageState extends State<RecentCampaignsPage> {
               children: [
                 Text(
                   'Sort campaigns',
-                  style: GoogleFonts.montserrat(
+                  style: GoogleFonts.poppins(
                     color: Colors.black,
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -117,7 +117,7 @@ class _RecentCampaignsPageState extends State<RecentCampaignsPage> {
                 ListTile(
                   title: Text(
                     'Newest first',
-                    style: GoogleFonts.montserrat(color: Colors.black87),
+                    style: GoogleFonts.poppins(color: Colors.black87),
                   ),
                   trailing: _newestFirst
                       ? HomeSfIcon(
@@ -131,7 +131,7 @@ class _RecentCampaignsPageState extends State<RecentCampaignsPage> {
                 ListTile(
                   title: Text(
                     'Oldest first',
-                    style: GoogleFonts.montserrat(color: Colors.black87),
+                    style: GoogleFonts.poppins(color: Colors.black87),
                   ),
                   trailing: !_newestFirst
                       ? HomeSfIcon(
@@ -267,7 +267,7 @@ class _RecentCampaignsPageState extends State<RecentCampaignsPage> {
                   overflow: TextOverflow.ellipsis,
                   style: LightScreenTheme.listSubtitle(scale).copyWith(
                     color: _metaGray,
-                    fontSize: 11 * scale.clamp(0.9, 1.05),
+                    fontSize: 11,
                   ),
                 ),
               ),
@@ -275,7 +275,7 @@ class _RecentCampaignsPageState extends State<RecentCampaignsPage> {
                 _createdLabel(m),
                 style: LightScreenTheme.listSubtitle(scale).copyWith(
                   color: _metaGray,
-                  fontSize: 11 * scale.clamp(0.9, 1.05),
+                  fontSize: 11,
                 ),
               ),
             ],
@@ -285,9 +285,9 @@ class _RecentCampaignsPageState extends State<RecentCampaignsPage> {
             children: [
               Text(
                 'View conversation',
-                style: GoogleFonts.montserrat(
+                style: GoogleFonts.poppins(
                   color: LightScreenTheme.accent,
-                  fontSize: 12 * scale.clamp(0.9, 1.05),
+                  fontSize: 12,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -351,9 +351,9 @@ class _RecentCampaignsPageState extends State<RecentCampaignsPage> {
                           ),
                           label: Text(
                             'Retry',
-                            style: GoogleFonts.montserrat(
+                            style: GoogleFonts.poppins(
                               color: LightScreenTheme.accent,
-                              fontSize: 14 * scale.clamp(0.9, 1.05),
+                              fontSize: 14,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -479,7 +479,7 @@ class _CampaignConversationPageState extends State<CampaignConversationPage> {
                       onPressed: _load,
                       child: Text(
                         'Retry',
-                        style: GoogleFonts.montserrat(
+                        style: GoogleFonts.poppins(
                           color: LightScreenTheme.accent,
                           fontWeight: FontWeight.w600,
                         ),
