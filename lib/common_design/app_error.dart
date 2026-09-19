@@ -214,11 +214,6 @@ class AppException implements Exception {
   String toString() => userMessage;
 }
 
-/// Maps any thrown object to a short message that is safe to show in the UI.
-String userFacingError(Object error, {String? action}) {
-  return AppException.fromCause(error, action: action ?? '').userMessage;
-}
-
 class AppErrorMapper {
   AppErrorMapper._();
 

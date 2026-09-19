@@ -7,8 +7,15 @@ import 'package:flutter_sficon/flutter_sficon.dart';
 
 class AddCustomerPage extends StatefulWidget {
   final Map<String, dynamic>? existing;
+  final Map<String, dynamic>? prefill;
+  final String? linkOrderId;
 
-  const AddCustomerPage({super.key, this.existing});
+  const AddCustomerPage({
+    super.key,
+    this.existing,
+    this.prefill,
+    this.linkOrderId,
+  });
 
   bool get isEditing => existing != null;
 
@@ -33,7 +40,7 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
   @override
   void initState() {
     super.initState();
-    final c = widget.existing;
+    final c = widget.existing ?? widget.prefill;
     _nameController = TextEditingController(text: (c?['name'] ?? '').toString());
     _phoneController = TextEditingController(
       text: (c?['customer_number'] ?? '').toString(),
@@ -84,6 +91,14 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
           email: email.isEmpty ? null : email,
           network: network.isEmpty ? null : network,
         );
+        final orderId = widget.linkOrderId?.trim();
+        if (orderId != null && orderId.isNotEmpty) {
+          try {
+            await api.saveCustomerFromOrder(orderId);
+          } catch (_) {
+            // Customer was saved; linking the order is best-effort.
+          }
+        }
       }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

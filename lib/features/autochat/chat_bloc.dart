@@ -1,4 +1,3 @@
-import 'package:autobus/common_design/app_error.dart';
 import 'package:bloc/bloc.dart';
 import 'package:autobus/common_design/user_facing_error.dart';
 import 'chat_event.dart';
