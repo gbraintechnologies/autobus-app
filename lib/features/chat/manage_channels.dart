@@ -14,6 +14,12 @@ class _ManageChannelsState extends State<ManageChannels>
   var _loading = true;
   var _busy = false;
   var _awaitingBrowserConnect = false;
+  var _finalizingConnect = false;
+  var _sawBrowserBackground = false;
+  DateTime? _browserOpenedAt;
+  String? _pendingConnectSlug;
+  String? _linkingStatus;
+  Set<String> _idsBeforeConnect = {};
   String? _loadError;
   List<LinkedChannel> _linked = [];
   List<ChannelOption> _unlinked = ChannelCatalog.all;
@@ -33,17 +39,107 @@ class _ManageChannelsState extends State<ManageChannels>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed && _awaitingBrowserConnect) {
-      _awaitingBrowserConnect = false;
-      _refreshInboxes();
+    if (!_awaitingBrowserConnect) return;
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.hidden ||
+        state == AppLifecycleState.inactive) {
+      _sawBrowserBackground = true;
+      return;
+    }
+    if (state != AppLifecycleState.resumed) return;
+    final opened = _browserOpenedAt;
+    // Custom Tabs often bounce resumed as soon as they open.
+    if (opened != null &&
+        DateTime.now().difference(opened) < const Duration(seconds: 2)) {
+      return;
+    }
+    if (!_sawBrowserBackground) return;
+    _finalizeBrowserConnect();
+  }
+
+  Set<String> _accountKeysFor(String apiSlug) {
+    final keys = <String>{};
+    for (final item in _linked) {
+      if (item.channel.apiSlug != apiSlug) continue;
+      for (final inbox in item.inboxes) {
+        final id = (inbox.accountId ?? '').trim();
+        final name = inbox.name.trim();
+        if (id.isNotEmpty) keys.add(id);
+        if (name.isNotEmpty) keys.add(name);
+      }
+    }
+    return keys;
+  }
+
+  bool _hasNewAccount(String apiSlug) {
+    final now = _accountKeysFor(apiSlug);
+    if (now.isEmpty) return false;
+    if (_idsBeforeConnect.isEmpty) return now.isNotEmpty;
+    return now.difference(_idsBeforeConnect).isNotEmpty;
+  }
+
+  Future<void> _finalizeBrowserConnect() async {
+    if (_finalizingConnect) return;
+    final slug = _pendingConnectSlug;
+    final label = slug == 'instagram' ? 'Instagram' : 'WhatsApp';
+    _finalizingConnect = true;
+    _awaitingBrowserConnect = false;
+    if (!mounted) return;
+    setState(() {
+      _busy = true;
+      _linkingStatus = 'Linking channel…';
+    });
+
+    var linked = false;
+    try {
+      for (var i = 0; i < 12; i++) {
+        await _refreshInboxes(showLoader: false);
+        if (!mounted) return;
+        if (slug != null && _hasNewAccount(slug)) {
+          linked = true;
+          break;
+        }
+        if (i < 11) {
+          await Future<void>.delayed(const Duration(seconds: 2));
+        }
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _linkingStatus = null;
+          _pendingConnectSlug = null;
+          _finalizingConnect = false;
+        });
+      } else {
+        _finalizingConnect = false;
+      }
+    }
+
+    if (!mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    if (linked) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('$label connected')),
+      );
+    } else {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            '$label is not linked yet. Wait until the page says connected, then tap X.',
+          ),
+        ),
+      );
     }
   }
 
-  Future<void> _refreshInboxes() async {
-    setState(() {
-      _loading = true;
-      _loadError = null;
-    });
+  Future<void> _refreshInboxes({bool showLoader = true}) async {
+    if (showLoader) {
+      setState(() {
+        _loading = true;
+        _loadError = null;
+      });
+    }
 
     try {
       final api = context.read<ApiService>();
@@ -166,6 +262,10 @@ class _ManageChannelsState extends State<ManageChannels>
 
     if (channel.apiSlug == 'whatsapp' || channel.apiSlug == 'instagram') {
       final api = context.read<ApiService>();
+      _pendingConnectSlug = channel.apiSlug;
+      _idsBeforeConnect = _accountKeysFor(channel.apiSlug);
+      _browserOpenedAt = DateTime.now();
+      _sawBrowserBackground = false;
       _awaitingBrowserConnect = true;
       final closed = await openPlatformConnectInBrowser(
         context,
@@ -175,8 +275,7 @@ class _ManageChannelsState extends State<ManageChannels>
             : api.getInstagramConnectSession,
       );
       if (closed && mounted) {
-        _awaitingBrowserConnect = false;
-        await _refreshInboxes();
+        await _finalizeBrowserConnect();
       }
       return;
     }
@@ -393,7 +492,7 @@ class _ManageChannelsState extends State<ManageChannels>
                       children: [
                         if (!_loading)
                           IconButton(
-                            onPressed: _busy ? null : _refreshInboxes,
+                            onPressed: _busy ? null : () => _refreshInboxes(),
                             icon: const Icon(
                               Icons.refresh,
                               color: Colors.white70,
@@ -409,7 +508,7 @@ class _ManageChannelsState extends State<ManageChannels>
                     child: _loading
                         ? const Center(child: AutobusLoadingIndicator(size: 32))
                         : RefreshIndicator(
-                            onRefresh: _refreshInboxes,
+                            onRefresh: () => _refreshInboxes(),
                             color: Colors.white,
                             child: SingleChildScrollView(
                               physics: const AlwaysScrollableScrollPhysics(),
@@ -493,7 +592,7 @@ class _ManageChannelsState extends State<ManageChannels>
                                   ),
                                   const SizedBox(height: 12),
                   Text(
-                    'Instagram uses Meta Business Login. WhatsApp uses Meta signup. Both open in a lightweight in-app browser — tap X when you are done.',
+                    'Instagram uses Meta Business Login. WhatsApp uses Meta signup. Both open in a lightweight in-app browser — wait until Autobus says connected, then tap X.',
                     textAlign: TextAlign.center,
                     style: GoogleFonts.montserrat(
                       color: Colors.white.withValues(alpha: 0.65),
@@ -542,6 +641,27 @@ class _ManageChannelsState extends State<ManageChannels>
               ),
             ),
           ),
+          if (_busy)
+            ColoredBox(
+              color: const Color(0x66000000),
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const AutobusLoadingIndicator(size: 32),
+                    const SizedBox(height: 16),
+                    Text(
+                      _linkingStatus ?? 'Please wait…',
+                      style: GoogleFonts.montserrat(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
         ],
       ),
     );
