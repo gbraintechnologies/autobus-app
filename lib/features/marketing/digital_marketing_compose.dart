@@ -68,9 +68,7 @@ class _ComposePostPageState extends State<_ComposePostPage> {
       _postizIntegrations = postiz
           .where(
             (p) =>
-                p.isActive &&
-                p.identifier.toLowerCase() != 'whatsapp' &&
-                p.identifier.toLowerCase() != 'facebook',
+                p.isActive && p.identifier.toLowerCase() != 'whatsapp',
           )
           .toList();
       _blotatoAccounts = blotato;
