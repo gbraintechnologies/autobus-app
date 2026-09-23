@@ -82,6 +82,14 @@ class OutletCatalog {
       postizIdentifiers: {'tiktok'},
       connectSlug: 'tiktok',
     ),
+    OutletOption(
+      label: 'Facebook Page',
+      icon: FontAwesomeIcons.facebook,
+      iconColor: Color(0xFF1877F2),
+      postizIdentifiers: {'facebook'},
+      connectSlug: 'facebook',
+      helperText: 'Connect a Facebook Page for Digital Marketing posts.',
+    ),
   ];
 
   static ({List<LinkedOutlet> linked, List<OutletOption> unlinked}) partition(

@@ -43,9 +43,7 @@ Future<List<PostizIntegration>> loadLinkedMarketingIntegrations(
   return integrations
       .where(
         (p) =>
-            p.isActive &&
-            p.identifier.toLowerCase() != 'whatsapp' &&
-            p.identifier.toLowerCase() != 'facebook',
+            p.isActive && p.identifier.toLowerCase() != 'whatsapp',
       )
       .toList();
 }

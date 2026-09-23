@@ -407,7 +407,7 @@ class _ManageOutletsState extends State<ManageOutlets>
                                   ),
                                   const SizedBox(height: 12),
                                   Text(
-                                    'Instagram uses Business Login for inbox and posting. TikTok and YouTube open in a lightweight in-app browser — tap X when you are done.',
+                                    'Instagram uses Business Login for inbox and posting. TikTok, YouTube, and Facebook Page open in a lightweight in-app browser — tap X when you are done.',
                                     textAlign: TextAlign.center,
                                     style: GoogleFonts.montserrat(
                                       color: Colors.white.withValues(alpha: 0.65),
