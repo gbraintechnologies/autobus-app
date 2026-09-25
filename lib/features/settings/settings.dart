@@ -377,6 +377,12 @@ class _SettingsPageState extends State<SettingsPage> {
           MaterialPageRoute(builder: (_) => const Security()),
         );
       }),
+      SettingsMenuItem("Embedded chat", Icons.forum_outlined, () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const EmbedIntegrationPage()),
+        );
+      }),
       SettingsMenuItem("Help & Support", Icons.help_outline, () {
         Navigator.push(
           context,

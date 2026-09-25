@@ -3150,6 +3150,39 @@ class ApiService {
     if (response.statusCode == 401) throw Exception('Session expired');
     _fail(response, 'sending email');
   }
+
+  Future<Map<String, dynamic>> getEmbedSettings() async {
+    final response = await httpClient.get(Uri.parse('$baseUrl/embed/portal/settings'));
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      final data = jsonDecode(response.body);
+      return data is Map<String, dynamic> ? data : <String, dynamic>{};
+    }
+    _fail(response, 'loading embedded chat settings');
+  }
+
+  Future<Map<String, dynamic>> saveEmbedSettings(Map<String, dynamic> body) async {
+    final response = await httpClient.put(
+      Uri.parse('$baseUrl/embed/portal/settings'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(body),
+    );
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      final data = jsonDecode(response.body);
+      return data is Map<String, dynamic> ? data : <String, dynamic>{};
+    }
+    _fail(response, 'saving embedded chat settings');
+  }
+
+  Future<Map<String, dynamic>> rotateEmbedKey() async {
+    final response = await httpClient.post(
+      Uri.parse('$baseUrl/embed/portal/settings/keys'),
+    );
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      final data = jsonDecode(response.body);
+      return data is Map<String, dynamic> ? data : <String, dynamic>{};
+    }
+    _fail(response, 'issuing an embedded chat key');
+  }
 }
 
 class PaystackInitResult {
