@@ -110,6 +110,9 @@ export 'package:autobus/features/notifications/notifications_inbox.dart';
 // Subscription
 export 'package:autobus/features/subscription/userplan.dart';
 export 'package:autobus/features/subscription/buy_credits.dart';
+export 'package:autobus/features/subscription/payment_method_page.dart';
+export 'package:autobus/features/subscription/add_payment_method_page.dart';
+export 'package:autobus/features/subscription/add_mobile_money_page.dart';
 export 'package:autobus/features/subscription/subscription_bill.dart';
 // barrel.dart
 export 'package:autobus/features/subscription/models/subscription_plan.dart';

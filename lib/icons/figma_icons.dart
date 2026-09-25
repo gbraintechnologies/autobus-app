@@ -75,6 +75,8 @@ class FigmaImages {
   static const onboardingHero = 'assets/img/figma/onboarding_hero.png';
   static const splashLogo = 'assets/img/figma/splash_logo.png';
   static const homeBanner = 'assets/img/figma/home_banner.png';
+  static const mtnLogo = 'assets/img/figma/mtn_logo.png';
+  static const visaLogo = 'assets/img/figma/visa_logo.png';
 }
 
 class FigmaSvgIcon extends StatelessWidget {

@@ -312,6 +312,12 @@ class _SettingsPageState extends State<SettingsPage> {
         );
       }),
       SettingsMenuItem('Credits', FigmaIcons.tokenOutline, _openSubscription),
+      SettingsMenuItem('Payment method', FigmaIcons.invoice, () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const PaymentMethodPage()),
+        );
+      }),
       SettingsMenuItem('Notifications', FigmaIcons.notification, () {
         Navigator.push(
           context,

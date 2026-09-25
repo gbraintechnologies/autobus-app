@@ -10,6 +10,7 @@ import 'package:autobus/common_design/widgets/autobus_loading_indicator.dart';
 import 'package:autobus/common_design/widgets/light_screen_scaffold.dart';
 import 'package:autobus/features/home/services/api_service.dart';
 import 'package:autobus/features/subscription/userplan.dart';
+import 'package:autobus/features/subscription/payment_method_page.dart';
 import 'package:autobus/icons/figma_icons.dart';
 
 /// [RouteSettings.name] for [Navigator.popUntil] after plan purchase from this flow.
@@ -432,7 +433,28 @@ class _ManageSubscriptionPageState extends State<ManageSubscriptionPage> {
               _heroCard(scale),
               SizedBox(height: 12 * scale),
               _actionsCard(scale),
-              SizedBox(height: 20 * scale),
+              SizedBox(height: 12 * scale),
+              Center(
+                child: TextButton(
+                  onPressed: () {
+                    Navigator.push<void>(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const PaymentMethodPage(),
+                      ),
+                    );
+                  },
+                  child: Text(
+                    'Payment method',
+                    style: GoogleFonts.poppins(
+                      fontSize: LightScreenTheme.typeBody,
+                      fontWeight: FontWeight.w500,
+                      color: _heroPurple,
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(height: 8 * scale),
               _historyHeader(scale),
               SizedBox(height: 10 * scale),
               if (_visibleHistory.isEmpty)

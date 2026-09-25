@@ -7,6 +7,21 @@
       "name": "NEW DESIGNS",
       "nodeId": "3229:10",
       "url": "https://www.figma.com/design/vDEDLxCPolEKtncF1Brucp/Auto-Bus?node-id=3229-10"
+    },
+    "paymentMethod": {
+      "name": "Payment method",
+      "nodeId": "3548:94",
+      "url": "https://www.figma.com/design/vDEDLxCPolEKtncF1Brucp/Auto-Bus?node-id=3548-94"
+    },
+    "addPaymentMethod": {
+      "name": "Add payment method",
+      "nodeId": "3548:1400",
+      "url": "https://www.figma.com/design/vDEDLxCPolEKtncF1Brucp/Auto-Bus?node-id=3548-1400"
+    },
+    "addMobileMoney": {
+      "name": "Add mobile money",
+      "nodeId": "3548:1543",
+      "url": "https://www.figma.com/design/vDEDLxCPolEKtncF1Brucp/Auto-Bus?node-id=3548-1543"
     }
   },
   "assets": {
