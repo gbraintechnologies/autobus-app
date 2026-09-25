@@ -94,7 +94,6 @@ export 'package:autobus/features/settings/help.dart';
 export 'package:autobus/features/settings/manage_subscription.dart';
 export 'package:autobus/features/settings/business_switcher.dart';
 export 'package:autobus/features/settings/manage_businesses.dart';
-export 'package:autobus/features/settings/embed_integration.dart';
 export 'package:autobus/features/settings/create_business.dart';
 export 'package:autobus/features/settings/detach_business.dart';
 export 'package:autobus/features/analytics/analytics.dart';
