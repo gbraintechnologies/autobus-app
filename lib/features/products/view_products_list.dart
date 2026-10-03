@@ -3,6 +3,10 @@ import 'package:autobus/common_design/light_screen_theme.dart';
 import 'package:autobus/common_design/widgets/app_bottom_nav.dart';
 import 'package:autobus/common_design/widgets/light_list_card.dart';
 import 'package:autobus/common_design/widgets/light_screen_scaffold.dart';
+import 'package:autobus/features/products/product_existing_gallery.dart';
+import 'package:autobus/features/products/product_media.dart';
+import 'package:autobus/icons/figma_icons.dart';
+
 class ViewProductsPage extends StatefulWidget {
   const ViewProductsPage({super.key});
 
@@ -129,10 +133,7 @@ class _ViewProductsPageState extends State<ViewProductsPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            userFacingError(e),
-            style: GoogleFonts.poppins(),
-          ),
+          content: Text(userFacingError(e), style: GoogleFonts.poppins()),
         ),
       );
     }
@@ -141,10 +142,7 @@ class _ViewProductsPageState extends State<ViewProductsPage> {
   Widget _sectionTitle(double scale, String text) {
     return Padding(
       padding: EdgeInsets.only(bottom: 12 * scale),
-      child: Text(
-        text,
-        style: LightScreenTheme.hubTitle(scale),
-      ),
+      child: Text(text, style: LightScreenTheme.hubTitle(scale)),
     );
   }
 
@@ -154,14 +152,53 @@ class _ViewProductsPageState extends State<ViewProductsPage> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => ProductDetailScreen(
-          productId: id,
-          initialName: _productName(p),
-        ),
+        builder: (_) =>
+            ProductDetailScreen(productId: id, initialName: _productName(p)),
       ),
     ).then((refreshed) {
       if (refreshed == true && mounted) _loadAll();
     });
+  }
+
+  String? _productImageUrl(Map<String, dynamic> p) {
+    final candidates = <Object?>[
+      p['primary_photo'],
+      p['cover_url'],
+      p['photo'],
+      if (p['photos'] is List) ...(p['photos'] as List),
+    ];
+    for (final c in candidates) {
+      final url =
+          (c is Map ? (c['url'] ?? c['image_url']) : c)?.toString().trim() ??
+          '';
+      if (url.startsWith('http') && !productMediaLooksLikeVideo(url)) {
+        return url;
+      }
+    }
+    return null;
+  }
+
+  Widget _productThumb(double scale, String? url) {
+    final size = 64 * scale;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12 * scale),
+      child: SizedBox(
+        width: size,
+        height: size,
+        child: url == null
+            ? ColoredBox(
+                color: LightScreenTheme.border,
+                child: Center(
+                  child: FigmaSvgIcon(
+                    FigmaIcons.bag,
+                    size: 24 * scale.clamp(0.9, 1.05),
+                    color: LightScreenTheme.muted,
+                  ),
+                ),
+              )
+            : productRemoteImage(url, fit: BoxFit.cover),
+      ),
+    );
   }
 
   Widget _productCard(double scale, Map<String, dynamic> p) {
@@ -172,46 +209,60 @@ class _ViewProductsPageState extends State<ViewProductsPage> {
       child: LightListCard(
         scale: scale,
         onTap: () => _openProduct(context, p),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
+          children: [
+            _productThumb(scale, _productImageUrl(p)),
+            SizedBox(width: 14 * scale),
+            Expanded(child: _productCardDetails(scale, p, category, stock)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _productCardDetails(
+    double scale,
+    Map<String, dynamic> p,
+    String? category,
+    String? stock,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          _productName(p),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: LightScreenTheme.listTitle(scale),
+        ),
+        SizedBox(height: 8 * scale),
+        Row(
           children: [
             Text(
-              _productName(p),
-              style: LightScreenTheme.listTitle(scale),
+              _productPriceLabel(p),
+              style: GoogleFonts.poppins(
+                color: LightScreenTheme.accent,
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+              ),
             ),
-            SizedBox(height: 10 * scale),
-            Row(
-              children: [
-                Text(
-                  _productPriceLabel(p),
-                  style: GoogleFonts.poppins(
-                    color: LightScreenTheme.accent,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                  ),
+            if (stock != null) ...[
+              SizedBox(width: 14 * scale),
+              Expanded(
+                child: Text(
+                  stock,
+                  textAlign: TextAlign.end,
+                  style: LightScreenTheme.listSubtitle(scale),
                 ),
-                if (stock != null) ...[
-                  SizedBox(width: 14 * scale),
-                  Expanded(
-                    child: Text(
-                      stock,
-                      textAlign: TextAlign.end,
-                      style: LightScreenTheme.listSubtitle(scale),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-            if (category != null) ...[
-              SizedBox(height: 8 * scale),
-              Text(
-                category,
-                style: LightScreenTheme.listSubtitle(scale),
               ),
             ],
           ],
         ),
-      ),
+        if (category != null) ...[
+          SizedBox(height: 8 * scale),
+          Text(category, style: LightScreenTheme.listSubtitle(scale)),
+        ],
+      ],
     );
   }
 
@@ -297,10 +348,7 @@ class _ViewProductsPageState extends State<ViewProductsPage> {
                   ? Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          name,
-                          style: LightScreenTheme.listTitle(scale),
-                        ),
+                        Text(name, style: LightScreenTheme.listTitle(scale)),
                         if (key != null) ...[
                           SizedBox(height: 12 * scale),
                           Text(
@@ -327,10 +375,7 @@ class _ViewProductsPageState extends State<ViewProductsPage> {
                   : Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          name,
-                          style: LightScreenTheme.listTitle(scale),
-                        ),
+                        Text(name, style: LightScreenTheme.listTitle(scale)),
                         if (key != null) ...[
                           SizedBox(height: 6 * scale),
                           Text(
@@ -356,7 +401,12 @@ class _ViewProductsPageState extends State<ViewProductsPage> {
       title: 'Product catalogue',
       creditCategory: CreditCategory.storageMb,
       body: Padding(
-        padding: EdgeInsets.fromLTRB(20 * scale, 20 * scale, 20 * scale, 24 * scale),
+        padding: EdgeInsets.fromLTRB(
+          20 * scale,
+          20 * scale,
+          20 * scale,
+          24 * scale,
+        ),
         child: _loading
             ? const Center(child: AutobusLoadingIndicator(size: 32))
             : _blockingError != null && _hasNothingToShow

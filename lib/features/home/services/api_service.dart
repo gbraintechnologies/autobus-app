@@ -1,4 +1,5 @@
 import 'package:autobus/barrel.dart';
+import 'package:autobus/common_design/credits_store.dart';
 import 'package:autobus/common_design/plain_ai_text.dart';
 import 'dart:developer';
 import 'package:autobus/features/chat/models/chatwoot_inbox.dart';
@@ -161,8 +162,11 @@ class ApiService {
       final response = await httpClient.get(Uri.parse('$baseUrl/credits/me'));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        if (data is Map<String, dynamic>) return data;
-        if (data is Map) return Map<String, dynamic>.from(data);
+        if (data is Map) {
+          final map = Map<String, dynamic>.from(data);
+          CreditsStore.instance.ingest(map);
+          return map;
+        }
       }
       return null;
     } catch (e) {
@@ -1449,6 +1453,54 @@ class ApiService {
       throw Exception('Session expired');
     }
     return [];
+  }
+
+  /// GET /api/v1/billing/payment-methods — saved mobile money / card methods.
+  Future<List<Map<String, dynamic>>> listPaymentMethods() async {
+    final response = await httpClient.get(
+      Uri.parse('$baseUrl/billing/payment-methods'),
+    );
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data is Map && data['payment_methods'] is List) {
+        return _decodeMapList(data['payment_methods']);
+      }
+      return _decodeListPayload(data);
+    }
+    _fail(response, 'loading payment methods');
+  }
+
+  /// POST /api/v1/billing/payment-methods — save a mobile money wallet.
+  Future<Map<String, dynamic>> addMobileMoneyPaymentMethod({
+    required String accountName,
+    required String phoneNumber,
+    String provider = 'mtn',
+  }) async {
+    final response = await httpClient.post(
+      Uri.parse('$baseUrl/billing/payment-methods'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'type': 'mobile_money',
+        'provider': provider,
+        'account_name': accountName,
+        'phone_number': phoneNumber,
+      }),
+    );
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final data = jsonDecode(response.body);
+      if (data is Map) return Map<String, dynamic>.from(data);
+      return const {};
+    }
+    _fail(response, 'adding payment method');
+  }
+
+  /// DELETE /api/v1/billing/payment-methods/{id}
+  Future<void> deletePaymentMethod(String id) async {
+    final response = await httpClient.delete(
+      Uri.parse('$baseUrl/billing/payment-methods/${Uri.encodeComponent(id)}'),
+    );
+    if (response.statusCode == 200 || response.statusCode == 204) return;
+    _fail(response, 'removing payment method');
   }
 
   /// Get financial transaction history

@@ -197,7 +197,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        childAspectRatio: 1.4,
+        mainAxisExtent: 112,
         crossAxisSpacing: 12 * scale,
         mainAxisSpacing: 12 * scale,
       ),
@@ -244,14 +244,14 @@ class _GrowthWidget extends StatelessWidget {
           Row(
             children: [
               SizedBox(
-                width: 56,
-                height: 56,
+                width: 48,
+                height: 48,
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
                     SizedBox(
-                      width: 56,
-                      height: 56,
+                      width: 48,
+                      height: 48,
                       child: CircularProgressIndicator(
                         value: percentage / 100,
                         strokeWidth: 5,
@@ -265,7 +265,7 @@ class _GrowthWidget extends StatelessWidget {
                     Text(
                       '${percentage.toInt()}%',
                       style: GoogleFonts.poppins(
-                        fontSize: 13,
+                        fontSize: 12,
                         fontWeight: FontWeight.w600,
                         color: Colors.black87,
                       ),
@@ -273,29 +273,35 @@ class _GrowthWidget extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
 
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Progress',
-                    style: GoogleFonts.poppins(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.black87,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Progress',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black87,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    month,
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w400,
-                      color: Colors.black54,
+                    const SizedBox(height: 2),
+                    Text(
+                      month,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.poppins(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w400,
+                        color: Colors.black54,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ],
           ),
@@ -348,58 +354,16 @@ class _AverageWidget extends StatelessWidget {
                   borderRadius: BorderRadius.circular(3),
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 12),
 
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        'RMA',
-                        style: GoogleFonts.poppins(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w400,
-                          color: Colors.black54,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Text(
-                        'VAL',
-                        style: GoogleFonts.poppins(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w400,
-                          color: Colors.black54,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                    textBaseline: TextBaseline.alphabetic,
-                    children: [
-                      Text(
-                        rmaValue.toString(),
-                        style: GoogleFonts.poppins(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black87,
-                        ),
-                      ),
-                      const SizedBox(width: 24),
-                      Text(
-                        valValue.toString(),
-                        style: GoogleFonts.poppins(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black87,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+              Expanded(
+                child: Row(
+                  children: [
+                    Expanded(child: _averageValue('RMA', rmaValue)),
+                    const SizedBox(width: 8),
+                    Expanded(child: _averageValue('VAL', valValue)),
+                  ],
+                ),
               ),
             ],
           ),
@@ -407,6 +371,36 @@ class _AverageWidget extends StatelessWidget {
       ),
     );
   }
+}
+
+Widget _averageValue(String label, int value) {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        label,
+        maxLines: 1,
+        style: GoogleFonts.poppins(
+          fontSize: 11,
+          fontWeight: FontWeight.w400,
+          color: Colors.black54,
+        ),
+      ),
+      const SizedBox(height: 4),
+      FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.centerLeft,
+        child: Text(
+          value.toString(),
+          style: GoogleFonts.poppins(
+            fontSize: 22,
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
+          ),
+        ),
+      ),
+    ],
+  );
 }
 
 class _MetricCard extends StatelessWidget {
@@ -454,17 +448,21 @@ class _MetricCard extends StatelessWidget {
             // number and the badge pill sit on the same vertical midpoint.
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Main Value
-              Text(
-                metric.value.toString(),
-                style: GoogleFonts.poppins(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black87,
+              Expanded(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    metric.value.toString(),
+                    style: GoogleFonts.poppins(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                    ),
+                  ),
                 ),
               ),
-
-              // Percentage Change Badge
+              const SizedBox(width: 6),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                 decoration: BoxDecoration(

@@ -1,4 +1,5 @@
 import 'package:autobus/barrel.dart';
+import 'package:autobus/common_design/credits_store.dart';
 import 'package:autobus/common_design/widgets/app_screen_header.dart';
 import 'package:autobus/icons/figma_icons.dart';
 
@@ -21,52 +22,39 @@ class CreditsPill extends StatefulWidget {
 }
 
 class _CreditsPillState extends State<CreditsPill> {
-  double? _remaining;
-  bool _loading = true;
+  final _store = CreditsStore.instance;
+  late bool _loading = !_store.hasLoaded;
 
   @override
   void initState() {
     super.initState();
-    _load();
+    _refresh();
   }
 
-  Future<void> _load() async {
-    try {
-      final data = await context.read<ApiService>().getMyCredits();
-      if (!mounted) return;
-      final credits = data?['credits'];
-      if (credits is Map) {
-        final item = credits[widget.creditCategory];
-        if (item is Map) {
-          final rem = item['remaining'];
-          setState(() {
-            _remaining = rem is num
-                ? rem.toDouble()
-                : double.tryParse(rem?.toString() ?? '');
-            _loading = false;
-          });
-          return;
-        }
-      }
-      if (mounted) setState(() => _loading = false);
-    } catch (_) {
-      if (mounted) setState(() => _loading = false);
-    }
+  Future<void> _refresh({bool force = false}) async {
+    await _store.refresh(context.read<ApiService>(), force: force);
+    if (mounted && _loading) setState(() => _loading = false);
   }
 
-  String _displayValue() {
-    if (_loading) return '…';
-    if (_remaining == null) return '—';
-    return '${_remaining!.round()} credits';
+  String _displayValue(double? remaining) {
+    if (remaining == null) return _loading ? '…' : '—';
+    final text = remaining == remaining.roundToDouble()
+        ? remaining.toStringAsFixed(0)
+        : remaining.toStringAsFixed(1);
+    return '$text credits';
   }
 
   void _openSubscription() {
-    Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(
-        settings: const RouteSettings(name: kManageSubscriptionRouteName),
-        builder: (_) => const ManageSubscriptionPage(),
-      ),
-    );
+    Navigator.of(context)
+        .push<void>(
+          MaterialPageRoute<void>(
+            settings: const RouteSettings(name: kManageSubscriptionRouteName),
+            builder: (_) => const ManageSubscriptionPage(),
+          ),
+        )
+        .then((_) {
+          if (mounted) _refresh(force: true);
+        });
   }
 
   @override
@@ -104,16 +92,19 @@ class _CreditsPillState extends State<CreditsPill> {
               ),
                 SizedBox(width: 3 * headerScale),
                 Flexible(
-                  child: Text(
-                    _displayValue(),
-                    maxLines: 1,
-                    softWrap: false,
-                    overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.poppins(
-                      color: CreditsPill.textColor,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500,
-                      height: 1,
+                  child: ValueListenableBuilder<double?>(
+                    valueListenable: _store.walletRemaining,
+                    builder: (context, remaining, _) => Text(
+                      _displayValue(remaining),
+                      maxLines: 1,
+                      softWrap: false,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.poppins(
+                        color: CreditsPill.textColor,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        height: 1,
+                      ),
                     ),
                   ),
                 ),

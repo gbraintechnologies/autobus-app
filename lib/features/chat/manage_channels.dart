@@ -352,7 +352,6 @@ class _ManageChannelsState extends State<ManageChannels> {
     );
   }
 }
-
 class _ChannelGrid extends StatelessWidget {
   final double scale;
   final List<Widget> children;
@@ -364,3 +363,4 @@ class _ChannelGrid extends StatelessWidget {
     return LightHubGrid(scale: scale, children: children);
   }
 }
+

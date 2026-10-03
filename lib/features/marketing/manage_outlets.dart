@@ -130,17 +130,17 @@ class _ManageOutletsState extends State<ManageOutlets>
       context: context,
       builder: (ctx) {
         return AlertDialog(
-          backgroundColor: const Color(0xFF1A1333),
+          backgroundColor: Colors.white,
+          surfaceTintColor: Colors.transparent,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
-            side: const BorderSide(color: Color(0xFF3F1163)),
           ),
           title: Text(
             'Unlink ${item.outlet.label}?',
             style: GoogleFonts.poppins(
-              color: Colors.white,
-              fontWeight: FontWeight.w600,
-              fontSize: 18,
+              color: Colors.black,
+              fontWeight: FontWeight.w500,
+              fontSize: LightScreenTheme.typeTitle,
             ),
           ),
           content: Text(
@@ -148,8 +148,8 @@ class _ManageOutletsState extends State<ManageOutlets>
                 ? 'This removes ${item.subtitle} from Autobus. You can link it again later.'
                 : 'This removes all ${item.integrations.length} linked ${item.outlet.label} accounts. You can link again later.',
             style: GoogleFonts.poppins(
-              color: Colors.white.withValues(alpha: 0.75),
-              fontSize: 14,
+              color: LightScreenTheme.body,
+              fontSize: LightScreenTheme.typeBody,
               height: 1.45,
             ),
           ),
@@ -159,7 +159,7 @@ class _ManageOutletsState extends State<ManageOutlets>
               child: Text(
                 'Cancel',
                 style: GoogleFonts.poppins(
-                  color: Colors.white70,
+                  color: LightScreenTheme.muted,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -203,11 +203,7 @@ class _ManageOutletsState extends State<ManageOutlets>
       await _refreshIntegrations();
     } catch (e) {
       if (!mounted) return;
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(userFacingError(e)),
-        ),
-      );
+      messenger.showSnackBar(SnackBar(content: Text(userFacingError(e))));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -217,10 +213,9 @@ class _ManageOutletsState extends State<ManageOutlets>
     if (_busy) return;
     final action = await showModalBottomSheet<String>(
       context: context,
-      backgroundColor: const Color(0xFF1A1333),
+      backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        side: BorderSide(color: Color(0xFF3F1163)),
       ),
       builder: (ctx) {
         return SafeArea(
@@ -234,9 +229,9 @@ class _ManageOutletsState extends State<ManageOutlets>
                   item.outlet.label,
                   textAlign: TextAlign.center,
                   style: GoogleFonts.poppins(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+                    color: Colors.black,
+                    fontSize: LightScreenTheme.typeTitle,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
                 if (item.subtitle.isNotEmpty) ...[
@@ -245,17 +240,24 @@ class _ManageOutletsState extends State<ManageOutlets>
                     item.subtitle,
                     textAlign: TextAlign.center,
                     style: GoogleFonts.poppins(
-                      color: Colors.white54,
-                      fontSize: 12,
+                      color: LightScreenTheme.muted,
+                      fontSize: LightScreenTheme.typeLabel,
                     ),
                   ),
                 ],
                 const SizedBox(height: 16),
                 ListTile(
-                  leading: const Icon(Icons.link, color: Colors.white70),
+                  leading: FigmaSvgIcon(
+                    FigmaIcons.link,
+                    size: 22,
+                    color: LightScreenTheme.accent,
+                  ),
                   title: Text(
                     'Link another account',
-                    style: GoogleFonts.poppins(color: Colors.white),
+                    style: GoogleFonts.poppins(
+                      color: Colors.black,
+                      fontSize: LightScreenTheme.typeBody,
+                    ),
                   ),
                   onTap: () => Navigator.of(ctx).pop('link'),
                 ),
@@ -286,163 +288,136 @@ class _ManageOutletsState extends State<ManageOutlets>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
+    final scale = MediaQuery.sizeOf(context).width / appShellDesignWidth;
+
+    return LightScreenScaffold(
+      title: 'Link Channel',
+      trailing: IconButton(
+        onPressed: _loading || _busy ? null : _refreshIntegrations,
+        tooltip: 'Refresh',
+        padding: EdgeInsets.zero,
+        constraints: BoxConstraints(
+          minWidth: 32 * scale,
+          minHeight: 32 * scale,
+        ),
+        icon: FigmaSvgIcon(
+          FigmaIcons.refresh,
+          size: 24 * scale.clamp(0.9, 1.0),
+          color: Colors.black,
+        ),
+      ),
       body: Stack(
         fit: StackFit.expand,
         children: [
-          const DecoratedBox(
-            decoration: ManageScreenStyle.homeDashboardBodyDecoration,
-          ),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+          if (_loading)
+            const Center(child: AutobusLoadingIndicator(size: 32))
+          else
+            RefreshIndicator(
+              onRefresh: _refreshIntegrations,
+              color: LightScreenTheme.accent,
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: EdgeInsets.fromLTRB(
+                  20 * scale,
+                  30 * scale,
+                  20 * scale,
+                  32 * scale,
+                ),
                 children: [
-                  Row(
-                    children: [
-                      const ManageScreenBackButton(),
-                      const SizedBox(width: 18),
-                      Expanded(
-                        child: Text(
-                          'Link Social Media',
-                          style: ManageScreenStyle.headerTitleStyle(),
-                        ),
+                  if (_loadError != null) ...[
+                    Text(
+                      _loadError!,
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.poppins(
+                        color: const Color(0xFFDC2626),
+                        fontSize: LightScreenTheme.typeLabel,
                       ),
-                      if (!_loading)
-                        IconButton(
-                          onPressed: _busy ? null : _refreshIntegrations,
-                          icon: const Icon(Icons.refresh, color: Colors.white70),
-                          tooltip: 'Refresh',
-                        ),
-                    ],
+                    ),
+                    SizedBox(height: 16 * scale),
+                  ],
+                  Text(
+                    'Select to Link a Channel',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.poppins(
+                      color: Colors.black,
+                      fontSize: LightScreenTheme.typeTitle,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
-                  const SizedBox(height: 24),
-                  Expanded(
-                    child: _loading
-                        ? const Center(child: AutobusLoadingIndicator(size: 32))
-                        : RefreshIndicator(
-                            onRefresh: _refreshIntegrations,
-                            color: Colors.white,
-                            child: SingleChildScrollView(
-                              physics: const AlwaysScrollableScrollPhysics(),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  if (_loadError != null) ...[
-                                    Text(
-                                      _loadError!,
-                                      textAlign: TextAlign.center,
-                                      style: GoogleFonts.poppins(
-                                        color: Colors.amber.shade200,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 16),
-                                  ],
-                                  Text(
-                                    'Linked Outlets',
-                                    textAlign: TextAlign.center,
-                                    style: GoogleFonts.poppins(
-                                      color: Colors.white,
-                                      fontSize: 19,
-                                       fontWeight: FontWeight.w500,
-                                      letterSpacing: -0.3,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    'Tap a linked outlet to unlink or add another account.',
-                                    textAlign: TextAlign.center,
-                                    style: GoogleFonts.poppins(
-                                      color: Colors.white.withValues(alpha: 0.55),
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w300,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 20),
-                                  if (_linked.isEmpty)
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                      ),
-                                      child: Text(
-                                        'No outlets linked yet. Connect a channel below.',
-                                        textAlign: TextAlign.center,
-                                        style: GoogleFonts.poppins(
-                                          color: Colors.white.withValues(
-                                            alpha: 0.55,
-                                          ),
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w300,
-                                          height: 1.45,
-                                        ),
-                                      ),
-                                    )
-                                  else
-                                    _OutletGrid(
-                                      children: [
-                                        for (final item in _linked)
-                                          _OutletCard(
-                                            label: item.outlet.label,
-                                            subtitle: item.subtitle,
-                                            icon: FaIcon(item.outlet.icon),
-                                            iconColor: item.outlet.iconColor,
-                                            isLinked: true,
-                                            onTap: () => _onLinkedTap(item),
-                                          ),
-                                      ],
-                                    ),
-                                  const SizedBox(height: 28),
-                                  Text(
-                                    'Select to Link Social Media',
-                                    textAlign: TextAlign.center,
-                                    style: GoogleFonts.poppins(
-                                      color: Colors.white.withValues(alpha: 0.9),
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w400,
-                                      height: 1.5,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  Text(
-                                    'Instagram uses Business Login for inbox and posting. TikTok and YouTube open in a lightweight in-app browser — tap X when you are done.',
-                                    textAlign: TextAlign.center,
-                                    style: GoogleFonts.poppins(
-                                      color: Colors.white.withValues(alpha: 0.65),
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w300,
-                                      height: 1.45,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 20),
-                                  _OutletGrid(
-                                    children: [
-                                      for (final outlet in _unlinked)
-                                        _OutletCard(
-                                          label: outlet.label,
-                                          icon: FaIcon(outlet.icon),
-                                          iconColor: outlet.iconColor,
-                                          onTap: _busy
-                                              ? () {}
-                                              : () => _linkOutlet(outlet),
-                                        ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 24),
-                                ],
-                              ),
-                            ),
+                  SizedBox(height: 16 * scale),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 9 * scale),
+                    child: Text(
+                      'Instagram uses Business Login for inbox and posting. TikTok and YouTube open in an in-app browser — tap X when you are done.',
+                      textAlign: TextAlign.center,
+                      style: LightScreenTheme.hubBody(
+                        scale,
+                      ).copyWith(fontSize: LightScreenTheme.typeBody),
+                    ),
+                  ),
+                  SizedBox(height: 30 * scale),
+                  if (_unlinked.isEmpty)
+                    Text(
+                      'All available channels are linked.',
+                      textAlign: TextAlign.center,
+                      style: LightScreenTheme.emptyState(scale),
+                    )
+                  else
+                    _OutletGrid(
+                      scale: scale,
+                      children: [
+                        for (final outlet in _unlinked)
+                          _OutletCard(
+                            scale: scale,
+                            outlet: outlet,
+                            subtitle: outlet.linkSubtitle,
+                            onTap: _busy ? null : () => _linkOutlet(outlet),
                           ),
+                      ],
+                    ),
+                  SizedBox(height: 30 * scale),
+                  Padding(
+                    padding: EdgeInsets.only(left: 10 * scale),
+                    child: Text(
+                      'Linked Outlets',
+                      style: GoogleFonts.poppins(
+                        color: Colors.black,
+                        fontSize: LightScreenTheme.typeTitle,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ),
+                  SizedBox(height: 16 * scale),
+                  if (_linked.isEmpty)
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 10 * scale),
+                      child: Text(
+                        'No channels linked yet. Tap a channel above to connect it.',
+                        style: LightScreenTheme.emptyState(scale),
+                      ),
+                    )
+                  else
+                    _OutletGrid(
+                      scale: scale,
+                      children: [
+                        for (final item in _linked)
+                          _OutletCard(
+                            scale: scale,
+                            outlet: item.outlet,
+                            subtitle: item.integrations.length > 1
+                                ? '${item.integrations.length} accounts linked'
+                                : 'Linked successfully',
+                            linked: true,
+                            onTap: () => _onLinkedTap(item),
+                          ),
+                      ],
+                    ),
                 ],
               ),
             ),
-          ),
           if (_busy)
             const ColoredBox(
-              color: Color(0x66000000),
+              color: Color(0x33000000),
               child: Center(child: AutobusLoadingIndicator(size: 32)),
             ),
         ],
@@ -452,9 +427,10 @@ class _ManageOutletsState extends State<ManageOutlets>
 }
 
 class _OutletGrid extends StatelessWidget {
+  final double scale;
   final List<Widget> children;
 
-  const _OutletGrid({required this.children});
+  const _OutletGrid({required this.scale, required this.children});
 
   @override
   Widget build(BuildContext context) {
@@ -462,112 +438,89 @@ class _OutletGrid extends StatelessWidget {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       crossAxisCount: 2,
-      crossAxisSpacing: 16,
-      mainAxisSpacing: 16,
-      childAspectRatio: 1.12,
+      crossAxisSpacing: 12 * scale,
+      mainAxisSpacing: 8 * scale,
+      childAspectRatio: 175 / 146,
       children: children,
     );
   }
 }
 
+/// Figma `3399:3342` — channel tile on Link Channel.
 class _OutletCard extends StatelessWidget {
-  final String label;
-  final String? subtitle;
-  final Widget icon;
-  final Color iconColor;
-  final bool isLinked;
-  final bool isDeviceShare;
-  final VoidCallback onTap;
+  final double scale;
+  final OutletOption outlet;
+  final String subtitle;
+  final bool linked;
+  final VoidCallback? onTap;
 
   const _OutletCard({
-    required this.label,
-    required this.icon,
-    required this.iconColor,
+    required this.scale,
+    required this.outlet,
+    required this.subtitle,
     required this.onTap,
-    this.subtitle,
-    this.isLinked = false,
-    this.isDeviceShare = false,
+    this.linked = false,
   });
+
+  static const _linkedGreen = Color(0xFF65A30D);
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(12, 14, 12, 10),
-        decoration: BoxDecoration(
-          color: const Color(0xFF1A1333).withValues(alpha: 0.35),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isLinked
-                ? const Color(0xFF22C55E)
-                : isDeviceShare
-                ? const Color(0xFF25D366)
-                : const Color(0xFF3F1163),
-            width: isLinked || isDeviceShare ? 1.5 : 1,
-          ),
-        ),
-        child: Stack(
-          children: [
-            Column(
-              children: [
-                Expanded(
-                  child: Center(
-                    child: IconTheme(
-                      data: IconThemeData(color: iconColor, size: 28),
-                      child: icon,
-                    ),
-                  ),
+    final iconSize = 22 * scale.clamp(0.9, 1.05);
+    final label = outlet.label
+        .replaceAll(' Page', '')
+        .replaceAll(' Status', '');
+    return Material(
+      color: LightScreenTheme.surface,
+      borderRadius: BorderRadius.circular(20 * scale),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: EdgeInsets.all(20 * scale),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 44 * scale,
+                height: 44 * scale,
+                decoration: BoxDecoration(
+                  color: outlet.tileColor,
+                  borderRadius: BorderRadius.circular(12 * scale),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  label,
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.poppins(
-                    color: Colors.white.withValues(alpha: 0.88),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                if (subtitle != null && subtitle!.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    subtitle!,
-                    textAlign: TextAlign.center,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.poppins(
-                      color: Colors.white.withValues(alpha: 0.55),
-                      fontSize: 10,
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-            if (isLinked)
-              const Positioned(
-                top: 0,
-                right: 0,
-                child: Icon(
-                  Icons.check_circle,
-                  color: Color(0xFF22C55E),
-                  size: 18,
-                ),
-              )
-            else if (isDeviceShare)
-              const Positioned(
-                top: 0,
-                right: 0,
-                child: Icon(
-                  Icons.smartphone,
-                  color: Color(0xFF25D366),
-                  size: 18,
+                alignment: Alignment.center,
+                child: outlet.iconAsset != null
+                    ? FigmaSvgIcon(
+                        outlet.iconAsset!,
+                        size: iconSize,
+                        color: Colors.white,
+                      )
+                    : FaIcon(outlet.icon, size: iconSize, color: Colors.white),
+              ),
+              const Spacer(),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.poppins(
+                  color: Colors.black,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
-          ],
+              SizedBox(height: 4 * scale),
+              Text(
+                subtitle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.poppins(
+                  color: linked ? _linkedGreen : LightScreenTheme.muted,
+                  fontSize: LightScreenTheme.typeLabel,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

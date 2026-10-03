@@ -326,12 +326,17 @@ class _RevenueHeroCard extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: 4 * scale),
-                Text(
-                  revenue,
-                  style: GoogleFonts.poppins(
-                    color: Colors.black,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    revenue,
+                    maxLines: 1,
+                    style: GoogleFonts.poppins(
+                      color: Colors.black,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ],
@@ -443,13 +448,16 @@ class _MetricRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        for (var i = 0; i < tiles.length; i++) ...[
-          if (i > 0) SizedBox(width: 7 * scale),
-          Expanded(child: _MetricTile(scale: scale, data: tiles[i])),
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (var i = 0; i < tiles.length; i++) ...[
+            if (i > 0) SizedBox(width: 7 * scale),
+            Expanded(child: _MetricTile(scale: scale, data: tiles[i])),
+          ],
         ],
-      ],
+      ),
     );
   }
 }
@@ -463,7 +471,7 @@ class _MetricTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 95 * scale,
+      constraints: BoxConstraints(minHeight: 95 * scale),
       padding: EdgeInsets.fromLTRB(14 * scale, 12 * scale, 8 * scale, 12 * scale),
       decoration: BoxDecoration(
         color: _ManageReportsState._surfaceColor,
@@ -483,15 +491,19 @@ class _MetricTile extends StatelessWidget {
               height: 1.2,
             ),
           ),
+          SizedBox(height: 8 * scale),
           const Spacer(),
-          Text(
-            data.value,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.poppins(
-              color: Colors.black,
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              data.value,
+              maxLines: 1,
+              style: GoogleFonts.poppins(
+                color: Colors.black,
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
           if (data.subtitle != null) ...[
@@ -671,7 +683,6 @@ class _ReportGradientCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(12 * scale),
         child: Ink(
-          height: 68 * scale,
           padding: EdgeInsets.fromLTRB(14 * scale, 7 * scale, 8 * scale, 8 * scale),
           decoration: BoxDecoration(
             gradient: gradient,
@@ -685,9 +696,11 @@ class _ReportGradientCard extends StatelessWidget {
                 size: 16 * scale.clamp(0.9, 1.05),
                 color: const Color(0xFFFCD34D),
               ),
-              const Spacer(),
+              SizedBox(height: 6 * scale),
               Text(
                 title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: GoogleFonts.poppins(
                   color: Colors.white,
                   fontSize: 12,

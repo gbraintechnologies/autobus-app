@@ -106,10 +106,9 @@ class _HomeState extends State<Home> {
       destination: AppShellDestination.home,
       onTabSelected: (tab) => AppShellNavigation.onTabSelected(context, tab),
       onCenterNavTap: () => AppShellNavigation.openIntelligence(context),
-      onAiTap: () => AppShellNavigation.openChatbot(context),
-      body: Stack(
-        children: [
-          SafeArea(
+      showAiFab: true,
+      onAiTap: () => _setAgentMode(true),
+      body: SafeArea(
             bottom: false,
             child: SingleChildScrollView(
               padding: EdgeInsets.fromLTRB(
@@ -187,9 +186,6 @@ class _HomeState extends State<Home> {
                               fontSize: 18,
                               fontWeight: FontWeight.w500,
                               height: 1.4,
-                              decoration: TextDecoration.underline,
-                              decorationColor: Colors.black,
-                              decorationThickness: 1,
                             ),
                           ),
                         ],
@@ -282,13 +278,6 @@ class _HomeState extends State<Home> {
               ),
             ),
           ),
-          Positioned(
-            right: 16,
-            bottom: 16 + bottomInset,
-            child: _AgentEntryButton(onTap: () => _setAgentMode(true)),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -385,44 +374,6 @@ class _HomeToolCard extends StatelessWidget {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _AgentEntryButton extends StatelessWidget {
-  final VoidCallback onTap;
-
-  const _AgentEntryButton({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: 'Agent mode',
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          width: 58,
-          height: 58,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0xFF7C3AED), Color(0xFFA855F7)],
-            ),
-            border: Border.all(color: Colors.white24, width: 1),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFFA855F7).withValues(alpha: 0.35),
-                blurRadius: 18,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
-          child: const Icon(Icons.auto_awesome, color: Colors.white, size: 24),
         ),
       ),
     );

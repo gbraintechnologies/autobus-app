@@ -1,11 +1,8 @@
+import 'package:autobus/barrel.dart';
 import 'package:autobus/common_design/light_screen_theme.dart';
 import 'package:autobus/common_design/widgets/app_bottom_nav.dart';
-import 'package:autobus/common_design/widgets/app_snackbar.dart';
-import 'package:autobus/common_design/widgets/auth_screen_layout.dart';
 import 'package:autobus/common_design/widgets/light_screen_scaffold.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 /// Mobile money details — Figma [Add payment method](`3548:1543`).
 class AddMobileMoneyPage extends StatefulWidget {
@@ -22,6 +19,7 @@ class _AddMobileMoneyPageState extends State<AddMobileMoneyPage> {
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _phoneFocus = FocusNode();
+  bool _saving = false;
 
   @override
   void dispose() {
@@ -31,23 +29,37 @@ class _AddMobileMoneyPageState extends State<AddMobileMoneyPage> {
     super.dispose();
   }
 
-  void _onAdd() {
+  Future<void> _onAdd() async {
+    if (_saving) return;
     final name = _nameController.text.trim();
     final phone = _phoneController.text.trim();
     if (name.isEmpty) {
       showAppSnackBar(context, 'Please enter the account name.');
       return;
     }
-    if (phone.isEmpty) {
-      showAppSnackBar(context, 'Please enter the phone number.');
+    if (phone.length < 9) {
+      showAppSnackBar(context, 'Please enter a valid phone number.');
       return;
     }
+    setState(() => _saving = true);
+    try {
+      await context.read<ApiService>().addMobileMoneyPaymentMethod(
+        accountName: name,
+        phoneNumber: phone,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _saving = false);
+      showAppSnackBar(context, userFacingError(e));
+      return;
+    }
+    if (!mounted) return;
     showAppSnackBar(
       context,
       'Mobile money method added.',
       backgroundColor: LightScreenTheme.button,
     );
-    // Leave form + type picker; list has no persistence API yet.
+    // Back past the type picker to the saved-methods list, which reloads.
     final nav = Navigator.of(context);
     nav.pop();
     if (nav.canPop()) nav.pop();
@@ -106,6 +118,7 @@ class _AddMobileMoneyPageState extends State<AddMobileMoneyPage> {
           AuthPrimaryButton(
             scale: scale,
             label: 'Add',
+            loading: _saving,
             onPressed: _onAdd,
           ),
         ],

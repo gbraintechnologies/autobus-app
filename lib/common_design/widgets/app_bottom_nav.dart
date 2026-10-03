@@ -343,12 +343,6 @@ class AppShellScaffold extends StatelessWidget {
       body: Stack(
         children: [
           body,
-          if (showAiFab)
-            Positioned(
-              right: 12 * scale,
-              bottom: 96 * scale + bottomInset,
-              child: AppAiAssistantFab(onTap: onAiTap),
-            ),
           Positioned(
             left: 0,
             right: 0,
@@ -359,6 +353,14 @@ class AppShellScaffold extends StatelessWidget {
               onCenterTap: onCenterNavTap,
             ),
           ),
+          // Painted after the nav so the dock never covers it; sits 16px
+          // above the dock's top edge (8 bottom padding + 80 bar height).
+          if (showAiFab)
+            Positioned(
+              right: 21 * scale,
+              bottom: (8 + 80 + 16) * scale + bottomInset,
+              child: AppAiAssistantFab(onTap: onAiTap),
+            ),
         ],
       ),
     );

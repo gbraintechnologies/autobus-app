@@ -1,4 +1,5 @@
 import 'package:autobus/barrel.dart';
+import 'package:autobus/common_design/light_screen_theme.dart';
 import 'package:autobus/common_design/widgets/light_screen_scaffold.dart';
 import 'package:autobus/features/products/pricing_currency.dart';
 import 'package:autobus/features/products/product_existing_gallery.dart';
@@ -78,6 +79,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     final stock = p['number_in_stock'];
     _stockCtrl.text = stock == null ? '' : stock.toString();
     _linkCtrl.text = (p['link'] ?? '').toString();
+  }
+
+  ProductGalleryPhoto? get _coverPhoto {
+    final images = _photos.where((p) => !p.isVideo).toList();
+    if (images.isEmpty) return null;
+    return images.firstWhere((p) => p.isPrimary, orElse: () => images.first);
   }
 
   List<ProductGalleryPhoto> _photosFromProduct(Map<String, dynamic> p) {
@@ -168,16 +175,16 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     return InputDecoration(
       labelText: label,
       hintText: hint,
-      labelStyle: GoogleFonts.outfit(
-        color: Colors.white.withValues(alpha: 0.7),
+      labelStyle: GoogleFonts.poppins(
+        color: Colors.black54,
         fontSize: 13,
       ),
-      hintStyle: GoogleFonts.outfit(
-        color: Colors.white.withValues(alpha: 0.35),
+      hintStyle: GoogleFonts.poppins(
+        color: Colors.black38,
         fontSize: 13,
       ),
       filled: true,
-      fillColor: Colors.white.withValues(alpha: 0.06),
+      fillColor: LightScreenTheme.surface,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
         borderSide: BorderSide.none,
@@ -185,12 +192,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
         borderSide: BorderSide(
-          color: const Color(0xFF3F1163).withValues(alpha: 0.8),
+          color: LightScreenTheme.hint.withValues(alpha: 0.5),
         ),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: Color(0xFFA855F7)),
+        borderSide: const BorderSide(color: LightScreenTheme.accent),
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
     );
@@ -336,22 +343,28 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1E0A32),
+        backgroundColor: Colors.white,
         title: Text(
           'Delete product?',
-          style: GoogleFonts.outfit(color: Colors.white),
+          style: GoogleFonts.poppins(
+            color: Colors.black,
+            fontWeight: FontWeight.w500,
+          ),
         ),
         content: Text(
           'Remove "$name" permanently? This cannot be undone.',
-          style: GoogleFonts.outfit(
-            color: Colors.white.withValues(alpha: 0.8),
+          style: GoogleFonts.poppins(
+            color: LightScreenTheme.body,
             fontSize: 14,
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text('Cancel', style: GoogleFonts.outfit(color: Colors.white70)),
+            child: Text(
+              'Cancel',
+              style: GoogleFonts.poppins(color: LightScreenTheme.muted),
+            ),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
@@ -420,8 +433,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               Text(
                 _loadError!,
                 textAlign: TextAlign.center,
-                style: GoogleFonts.outfit(
-                  color: Colors.white.withValues(alpha: 0.75),
+                style: GoogleFonts.poppins(
+                  color: LightScreenTheme.body,
                   fontSize: 14,
                 ),
               ),
@@ -430,7 +443,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 onPressed: _load,
                 child: Text(
                   'Retry',
-                  style: GoogleFonts.outfit(color: const Color(0xFFA855F7)),
+                  style: GoogleFonts.poppins(color: LightScreenTheme.accent),
                 ),
               ),
             ],
@@ -445,13 +458,20 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
         children: [
+          if (_coverPhoto != null) ...[
+            _ProductCoverImage(
+              photo: _coverPhoto!,
+              onTap: () => _onPhotoTap(_coverPhoto!),
+            ),
+            const SizedBox(height: 16),
+          ],
           if (_inventoryId != null && _inventoryId!.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(bottom: 16),
               child: Text(
                 'SKU: $_inventoryId',
-                style: GoogleFonts.outfit(
-                  color: Colors.white.withValues(alpha: 0.45),
+                style: GoogleFonts.poppins(
+                  color: LightScreenTheme.muted,
                   fontSize: 12,
                 ),
               ),
@@ -555,8 +575,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       maxLines: maxLines,
       onChanged: onChanged,
       onTapOutside: dismissAppKeyboard,
-      style: GoogleFonts.outfit(color: Colors.white, fontSize: 14),
-      cursorColor: const Color(0xFFA855F7),
+      style: GoogleFonts.poppins(color: Colors.black87, fontSize: 14),
+      cursorColor: LightScreenTheme.accent,
       decoration: _fieldDecoration(label),
     );
   }
@@ -607,6 +627,30 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ProductCoverImage extends StatelessWidget {
+  final ProductGalleryPhoto photo;
+  final VoidCallback onTap;
+
+  const _ProductCoverImage({required this.photo, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: AspectRatio(
+          aspectRatio: 4 / 3,
+          child: ColoredBox(
+            color: LightScreenTheme.surface,
+            child: productRemoteImage(photo.url, fit: BoxFit.cover),
+          ),
+        ),
       ),
     );
   }
