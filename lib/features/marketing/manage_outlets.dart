@@ -1,5 +1,8 @@
 import 'package:autobus/barrel.dart';
-import 'package:autobus/features/marketing/outlet_catalog.dart';
+import 'package:autobus/common_design/light_screen_theme.dart';
+import 'package:autobus/common_design/widgets/app_bottom_nav.dart';
+import 'package:autobus/common_design/widgets/light_screen_scaffold.dart';
+import 'package:autobus/icons/figma_icons.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class ManageOutlets extends StatefulWidget {
