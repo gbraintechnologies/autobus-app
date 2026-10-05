@@ -1,142 +1,72 @@
 import 'package:autobus/barrel.dart';
+import 'package:autobus/common_design/light_screen_theme.dart';
+import 'package:autobus/common_design/widgets/app_bottom_nav.dart';
+import 'package:autobus/common_design/widgets/light_hub_card.dart';
+import 'package:autobus/common_design/widgets/light_list_card.dart';
+import 'package:autobus/common_design/widgets/light_screen_scaffold.dart';
+import 'package:autobus/icons/home_figma_icons.dart';
 
 class ManageInteractions extends StatelessWidget {
   const ManageInteractions({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          const DecoratedBox(
-            decoration: ManageScreenStyle.homeDashboardBodyDecoration,
-          ),
-          SafeArea(
-            child: Column(
+    final scale = MediaQuery.sizeOf(context).width / appShellDesignWidth;
+
+    return LightScreenScaffold(
+      title: 'Manage Interactions',
+      creditCategory: CreditCategory.llm,
+      body: SingleChildScrollView(
+        padding: LightScreenTheme.hubPagePadding(scale),
+        child: Column(
+          children: [
+            Text(
+              'Welcome to Interactions',
+              textAlign: TextAlign.center,
+              style: LightScreenTheme.hubTitle(scale),
+            ),
+            SizedBox(height: LightScreenTheme.hubTitleGap * scale),
+            Text(
+              'Interact with AI-driven analytics to gain insights, monitor performance, and support decision-making.',
+              textAlign: TextAlign.center,
+              style: LightScreenTheme.hubBody(scale),
+            ),
+            SizedBox(height: LightScreenTheme.hubToCards * scale),
+            LightHubGrid(
+              scale: scale,
               children: [
-                const ManageScreenHeader(
-                  title: 'Manage Interactions',
-                  creditCategory: CreditCategory.llm,
-                ),
-                Expanded(
-                  child: SingleChildScrollView(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const SizedBox(height: 60),
-                          Text(
-                            'Welcome to Inbox',
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.montserrat(
-                              color: Colors.white,
-                              fontSize: 19,
-                              fontWeight: FontWeight.w500,
-                              letterSpacing: -0.3,
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          Text(
-                            'Interact with AI-driven analytics to gain insights, monitor performance, and support decision-making.',
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.montserrat(
-                              color: Colors.white.withValues(alpha: 0.9),
-                              fontSize: 14,
-                              fontWeight: FontWeight.w300,
-                              height: 1.6,
-                            ),
-                          ),
-                          const SizedBox(height: 32),
-                          const SizedBox(height: 8),
-                          const SizedBox(height: 40),
-                          GridView.count(
-                            crossAxisCount: 2,
-                            mainAxisSpacing: 16,
-                            crossAxisSpacing: 16,
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            childAspectRatio: 1.0,
-                            children: [
-                              _InteractionCard(
-                                icon: Icons.forum_outlined,
-                                title: 'Start Interaction',
-                                onTap: () {
-                                  Navigator.push<void>(
-                                    context,
-                                    MaterialPageRoute<void>(
-                                      builder: (_) => const AutoBus(
-                                        title: 'My Ai',
-                                        webhookContext: 'my_ai_agent',
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                              _InteractionCard(
-                                icon: Icons.history_outlined,
-                                title: 'View Interactions',
-                                onTap: () {
-                                  Navigator.push<void>(
-                                    context,
-                                    MaterialPageRoute<void>(
-                                      builder: (_) =>
-                                          const InteractionHistoryPage(),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 40),
-                        ],
+                LightHubCard(
+                  scale: scale,
+                  title: 'Start Interaction',
+                  icon: HomeFigmaIcons.startInteraction,
+                  iconGradient: HomeFigmaIcons.interactionsGradient,
+                  onTap: () {
+                    Navigator.push<void>(
+                      context,
+                      MaterialPageRoute<void>(
+                        builder: (_) => const AutoBus(
+                          title: 'My Ai',
+                          webhookContext: 'interactions_agent',
+                        ),
                       ),
-                    ),
-                  ),
+                    );
+                  },
+                ),
+                LightHubCard(
+                  scale: scale,
+                  title: 'View Interactions',
+                  icon: HomeFigmaIcons.viewInteractions,
+                  iconGradient: HomeFigmaIcons.interactionsGradient,
+                  onTap: () {
+                    Navigator.push<void>(
+                      context,
+                      MaterialPageRoute<void>(
+                        builder: (_) => const InteractionHistoryPage(),
+                      ),
+                    );
+                  },
                 ),
               ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _InteractionCard extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final VoidCallback onTap;
-
-  const _InteractionCard({
-    required this.icon,
-    required this.title,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          border: Border.all(color: const Color(0xFF3F1163), width: 1),
-          borderRadius: BorderRadius.circular(32),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: Colors.white, size: 28),
-            const SizedBox(height: 14),
-            Text(
-              title,
-              style: GoogleFonts.montserrat(
-                color: Colors.white.withValues(alpha: 0.9),
-                fontSize: 13,
-                fontWeight: FontWeight.w400,
-              ),
             ),
           ],
         ),
@@ -145,56 +75,144 @@ class _InteractionCard extends StatelessWidget {
   }
 }
 
-class InteractionHistoryPage extends StatelessWidget {
+class InteractionHistoryPage extends StatefulWidget {
   const InteractionHistoryPage({super.key});
 
-  Widget _historyListTile({
-    required String title,
-    required String id,
-    required String date,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        border: Border.all(color: const Color(0xFF3F1163), width: 1),
-        borderRadius: BorderRadius.circular(30),
+  @override
+  State<InteractionHistoryPage> createState() => _InteractionHistoryPageState();
+}
+
+class _InteractionHistoryPageState extends State<InteractionHistoryPage> {
+  List<Map<String, dynamic>> _rows = const [];
+  bool _loading = true;
+  String? _loadError;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _load());
+  }
+
+  String _title(Map<String, dynamic> row) {
+    for (final key in [
+      'title',
+      'last_message',
+      'current_intent',
+      'summary',
+      'product_name',
+      'item_name',
+    ]) {
+      final value = (row[key] ?? '').toString().trim();
+      if (value.isNotEmpty) {
+        return value.length > 48 ? '${value.substring(0, 48)}..' : value;
+      }
+    }
+    return 'Interaction';
+  }
+
+  String _idLabel(Map<String, dynamic> row) {
+    for (final key in [
+      'conversation_id',
+      'session_id',
+      'id',
+      'reference',
+    ]) {
+      final value = (row[key] ?? '').toString().trim();
+      if (value.isNotEmpty) return value;
+    }
+    return '';
+  }
+
+  String _dateLabel(Map<String, dynamic> row) {
+    final raw =
+        row['updated_at']?.toString() ??
+        row['created_at']?.toString() ??
+        row['conversation_date']?.toString();
+    final dt = DateTime.tryParse(raw ?? '');
+    if (dt == null) return '—';
+    final d = dt.toLocal();
+    final mm = d.month.toString().padLeft(2, '0');
+    final dd = d.day.toString().padLeft(2, '0');
+    return '$dd / $mm / ${d.year}';
+  }
+
+  int? _sessionId(Map<String, dynamic> row) {
+    for (final key in ['session_id', 'daily_conversation_id', 'id']) {
+      final raw = row[key];
+      if (raw is int) return raw;
+      if (raw is num) return raw.toInt();
+      final parsed = int.tryParse(raw?.toString() ?? '');
+      if (parsed != null) return parsed;
+    }
+    return null;
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _loadError = null;
+    });
+    try {
+      final api = context.read<ApiService>();
+      var list = await api.listInterventions(limit: 100);
+      if (list.isEmpty) {
+        final grouped = await api.listMyConversations(skip: 0, limit: 100);
+        list = [
+          ...?grouped['intervention_active'],
+          ...?grouped['completed'],
+        ];
+      }
+      if (!mounted) return;
+      setState(() {
+        _rows = list;
+        _loading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loadError = userFacingError(e);
+        _loading = false;
+        _rows = const [];
+      });
+    }
+  }
+
+  void _open(Map<String, dynamic> row) {
+    final sid = _sessionId(row);
+    if (sid == null) return;
+    Navigator.push<void>(
+      context,
+      MaterialPageRoute<void>(
+        builder: (_) => ConversationDetailScreen(
+          title: _title(row),
+          mode: ConversationScreenMode.historyOnly,
+          sessionId: sid,
+        ),
       ),
+    );
+  }
+
+  Widget _tile(double scale, Map<String, dynamic> row) {
+    return LightListCard(
+      scale: scale,
+      onTap: () => _open(row),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: GoogleFonts.outfit(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.w400,
-            ),
-          ),
-          const SizedBox(height: 12),
+          Text(_title(row), style: LightScreenTheme.listTitle(scale)),
+          SizedBox(height: 12 * scale),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(
                 child: Text(
-                  id,
+                  _idLabel(row),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.outfit(
-                    color: Colors.white.withValues(alpha: 0.45),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w300,
-                  ),
+                  style: LightScreenTheme.listSubtitle(scale),
                 ),
               ),
-              const SizedBox(width: 12),
-              Text(
-                date,
-                style: GoogleFonts.outfit(
-                  color: Colors.white.withValues(alpha: 0.45),
-                  fontSize: 11,
-                  fontWeight: FontWeight.w300,
-                ),
-              ),
+              SizedBox(width: 12 * scale),
+              Text(_dateLabel(row), style: LightScreenTheme.listSubtitle(scale)),
             ],
           ),
         ],
@@ -204,57 +222,69 @@ class InteractionHistoryPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          const DecoratedBox(
-            decoration: ManageScreenStyle.homeDashboardBodyDecoration,
-          ),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const ManageScreenBackButton(),
-                      const SizedBox(width: 18),
-                      Expanded(
-                        child: Text(
-                          'Manage Interactions',
-                          style: ManageScreenStyle.headerTitleStyle(),
+    final scale = MediaQuery.sizeOf(context).width / appShellDesignWidth;
+
+    return LightScreenScaffold(
+      title: 'Interaction History',
+      creditCategory: CreditCategory.llm,
+      body: _loading
+          ? Center(
+              child: CircularProgressIndicator(color: LightScreenTheme.accent),
+            )
+          : _loadError != null
+          ? Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 28 * scale),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      _loadError!,
+                      textAlign: TextAlign.center,
+                      style: LightScreenTheme.emptyState(scale),
+                    ),
+                    SizedBox(height: 16 * scale),
+                    TextButton(
+                      onPressed: _load,
+                      child: Text(
+                        'Retry',
+                        style: LightScreenTheme.listTitle(scale).copyWith(
+                          color: LightScreenTheme.accent,
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 32),
-                  Expanded(
-                    child: ListView(
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : RefreshIndicator(
+              color: LightScreenTheme.accent,
+              onRefresh: _load,
+              child: _rows.isEmpty
+                  ? ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
                       children: [
-                        _historyListTile(
-                          title: 'Bag of rice ..',
-                          id: 'ID TRF 26342348264',
-                          date: '08 / 01 /2026',
+                        SizedBox(
+                          height: MediaQuery.sizeOf(context).height * 0.32,
                         ),
-                        const SizedBox(height: 16),
-                        _historyListTile(
-                          title: 'Fruit Jar',
-                          id: 'ID TRF 26342348264',
-                          date: '08 / 01 /2026',
+                        Center(
+                          child: Text(
+                            'No interactions yet',
+                            style: LightScreenTheme.emptyState(scale),
+                          ),
                         ),
                       ],
+                    )
+                  : ListView.separated(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: LightScreenTheme.listPagePadding(scale),
+                      itemCount: _rows.length,
+                      separatorBuilder: (_, _) =>
+                          SizedBox(height: LightScreenTheme.gridGap * scale),
+                      itemBuilder: (context, index) =>
+                          _tile(scale, _rows[index]),
                     ),
-                  ),
-                ],
-              ),
             ),
-          ),
-        ],
-      ),
     );
   }
 }

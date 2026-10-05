@@ -1,4 +1,9 @@
 import 'package:autobus/barrel.dart';
+import 'package:autobus/common_design/light_screen_theme.dart';
+import 'package:autobus/common_design/widgets/app_bottom_nav.dart';
+import 'package:autobus/common_design/widgets/light_list_card.dart';
+import 'package:autobus/common_design/widgets/light_screen_scaffold.dart';
+import 'package:autobus/icons/home_figma_icons.dart';
 
 /// Lists archived digital marketing payloads from
 /// `GET /api/v1/social/digital-marketing/assets`.
@@ -10,16 +15,16 @@ class RecentCampaignsPage extends StatefulWidget {
 }
 
 class _RecentCampaignsPageState extends State<RecentCampaignsPage> {
+  static const _metaGray = Color(0xFF938F8F);
+
   List<Map<String, dynamic>> _items = const [];
-  int _total = 0;
   bool _loading = true;
   String? _loadError;
+  var _newestFirst = true;
 
-  String _previewText(Map<String, dynamic> m) {
+  String _bodyText(Map<String, dynamic> m) {
     final t = (m['marketing_text'] ?? '').toString().trim();
-    if (t.isEmpty) return 'Campaign';
-    if (t.length <= 120) return t;
-    return '${t.substring(0, 117)}…';
+    return t.isEmpty ? 'Campaign' : t;
   }
 
   String _createdLabel(Map<String, dynamic> m) {
@@ -29,13 +34,21 @@ class _RecentCampaignsPageState extends State<RecentCampaignsPage> {
     final d = dt.toLocal();
     final mm = d.month.toString().padLeft(2, '0');
     final dd = d.day.toString().padLeft(2, '0');
-    return '$dd / $mm / ${d.year}';
+    return '$mm/$dd/${d.year}';
   }
 
-  int _linkCount(Map<String, dynamic> m) {
-    final links = m['content_links'];
-    if (links is List) return links.length;
-    return 0;
+  DateTime? _createdAt(Map<String, dynamic> m) {
+    return DateTime.tryParse((m['created_at'] ?? '').toString());
+  }
+
+  List<Map<String, dynamic>> get _visibleItems {
+    final list = List<Map<String, dynamic>>.from(_items);
+    list.sort((a, b) {
+      final da = _createdAt(a) ?? DateTime.fromMillisecondsSinceEpoch(0);
+      final db = _createdAt(b) ?? DateTime.fromMillisecondsSinceEpoch(0);
+      return _newestFirst ? db.compareTo(da) : da.compareTo(db);
+    });
+    return list;
   }
 
   @override
@@ -64,10 +77,8 @@ class _RecentCampaignsPageState extends State<RecentCampaignsPage> {
           }
         }
       }
-      final tot = body['total'];
       setState(() {
         _items = list;
-        _total = tot is int ? tot : (tot is num ? tot.toInt() : list.length);
         _loading = false;
       });
     } catch (e) {
@@ -76,253 +87,321 @@ class _RecentCampaignsPageState extends State<RecentCampaignsPage> {
         _loadError = userFacingError(e);
         _loading = false;
         _items = const [];
-        _total = 0;
       });
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          const DecoratedBox(
-            decoration: ManageScreenStyle.homeDashboardBodyDecoration,
+  Future<void> _showFilter() async {
+    final choice = await showModalBottomSheet<bool>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Sort campaigns',
+                  style: GoogleFonts.poppins(
+                    color: Colors.black,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                ListTile(
+                  title: Text(
+                    'Newest first',
+                    style: GoogleFonts.poppins(color: Colors.black87),
+                  ),
+                  trailing: _newestFirst
+                      ? HomeSfIcon(
+                          icon: HomeFigmaIcons.check,
+                          color: LightScreenTheme.accent,
+                          size: 18,
+                        )
+                      : null,
+                  onTap: () => Navigator.of(ctx).pop(true),
+                ),
+                ListTile(
+                  title: Text(
+                    'Oldest first',
+                    style: GoogleFonts.poppins(color: Colors.black87),
+                  ),
+                  trailing: !_newestFirst
+                      ? HomeSfIcon(
+                          icon: HomeFigmaIcons.check,
+                          color: LightScreenTheme.accent,
+                          size: 18,
+                        )
+                      : null,
+                  onTap: () => Navigator.of(ctx).pop(false),
+                ),
+              ],
+            ),
           ),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
+        );
+      },
+    );
+    if (choice != null && mounted) {
+      setState(() => _newestFirst = choice);
+    }
+  }
+
+  void _openCampaign(Map<String, dynamic> m) {
+    final id = (m['id'] ?? '').toString();
+    if (id.isNotEmpty) {
+      Navigator.push<void>(
+        context,
+        MaterialPageRoute<void>(
+          builder: (_) => CampaignConversationPage(assetId: id),
+        ),
+      );
+      return;
+    }
+    final scale = MediaQuery.sizeOf(context).width / appShellDesignWidth;
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.white,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              20 * scale,
+              20 * scale,
+              20 * scale,
+              24 * scale,
+            ),
+            child: SingleChildScrollView(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  Text.rich(
+                    TextSpan(
+                      children: [
+                        TextSpan(
+                          text: 'User: ',
+                          style: LightScreenTheme.listTitle(scale),
+                        ),
+                        TextSpan(
+                          text: _bodyText(m),
+                          style: LightScreenTheme.listTitle(scale).copyWith(
+                            fontWeight: FontWeight.w400,
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 16 * scale),
                   Row(
                     children: [
-                      const ManageScreenBackButton(),
-                      const SizedBox(width: 18),
                       Expanded(
                         child: Text(
-                          'Recent campaigns',
-                          style: ManageScreenStyle.headerTitleStyle(),
+                          'Digital marketing',
+                          style: LightScreenTheme.listSubtitle(scale).copyWith(
+                            color: _metaGray,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        _createdLabel(m),
+                        style: LightScreenTheme.listSubtitle(scale).copyWith(
+                          color: _metaGray,
                         ),
                       ),
                     ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    _loading ? ' ' : '$_total saved',
-                    style: GoogleFonts.outfit(
-                      color: Colors.white.withValues(alpha: 0.5),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w300,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  Expanded(
-                    child: _loading
-                        ? const Center(
-                            child: const AutobusLoadingIndicator(size: 32),
-                          )
-                        : _loadError != null
-                        ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                  ),
-                                  child: Text(
-                                    _loadError!,
-                                    textAlign: TextAlign.center,
-                                    style: GoogleFonts.outfit(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.75,
-                                      ),
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 16),
-                                TextButton(
-                                  onPressed: _load,
-                                  child: Text(
-                                    'Retry',
-                                    style: GoogleFonts.outfit(
-                                      color: const Color(0xFFA855F7),
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )
-                        : RefreshIndicator(
-                            color: const Color(0xFFA855F7),
-                            onRefresh: _load,
-                            child: _items.isEmpty
-                                ? ListView(
-                                    physics:
-                                        const AlwaysScrollableScrollPhysics(),
-                                    children: [
-                                      SizedBox(
-                                        height:
-                                            MediaQuery.sizeOf(context).height *
-                                            0.22,
-                                      ),
-                                      Center(
-                                        child: Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 20,
-                                          ),
-                                          child: Text(
-                                            'No campaigns yet. Create one in Digital Marketing — chats and generated media are saved here.',
-                                            textAlign: TextAlign.center,
-                                            style: GoogleFonts.outfit(
-                                              color: Colors.white.withValues(
-                                                alpha: 0.6,
-                                              ),
-                                              fontSize: 15,
-                                              height: 1.45,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  )
-                                : ListView.separated(
-                                    physics:
-                                        const AlwaysScrollableScrollPhysics(),
-                                    itemCount: _items.length,
-                                    separatorBuilder: (_, __) =>
-                                        const SizedBox(height: 16),
-                                    itemBuilder: (context, index) {
-                                      final m = _items[index];
-                                      final links = _linkCount(m);
-                                      final id = (m['id'] ?? '').toString();
-                                      return Material(
-                                        color: Colors.transparent,
-                                        child: InkWell(
-                                          onTap: id.isEmpty
-                                              ? null
-                                              : () {
-                                                  Navigator.push<void>(
-                                                    context,
-                                                    MaterialPageRoute<void>(
-                                                      builder: (_) =>
-                                                          CampaignConversationPage(
-                                                        assetId: id,
-                                                      ),
-                                                    ),
-                                                  );
-                                                },
-                                          borderRadius:
-                                              BorderRadius.circular(28),
-                                          child: Ink(
-                                            padding: const EdgeInsets.all(22),
-                                            decoration: BoxDecoration(
-                                              border: Border.all(
-                                                color: const Color(0xFF3F1163),
-                                                width: 1,
-                                              ),
-                                              borderRadius:
-                                                  BorderRadius.circular(28),
-                                            ),
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  _previewText(m),
-                                                  style: GoogleFonts.outfit(
-                                                    color: Colors.white,
-                                                    fontSize: 16,
-                                                    fontWeight: FontWeight.w400,
-                                                    height: 1.35,
-                                                  ),
-                                                ),
-                                                const SizedBox(height: 12),
-                                                Row(
-                                                  children: [
-                                                    Expanded(
-                                                      child: Text(
-                                                        (m['agent_name'] ?? '')
-                                                            .toString(),
-                                                        maxLines: 1,
-                                                        overflow: TextOverflow
-                                                            .ellipsis,
-                                                        style:
-                                                            GoogleFonts.outfit(
-                                                          color: Colors.white
-                                                              .withValues(
-                                                                alpha: 0.45,
-                                                              ),
-                                                          fontSize: 11,
-                                                          fontWeight:
-                                                              FontWeight.w300,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                    Text(
-                                                      _createdLabel(m),
-                                                      style:
-                                                          GoogleFonts.outfit(
-                                                        color: Colors.white
-                                                            .withValues(
-                                                              alpha: 0.45,
-                                                            ),
-                                                        fontSize: 11,
-                                                        fontWeight:
-                                                            FontWeight.w300,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                                const SizedBox(height: 8),
-                                                Row(
-                                                  children: [
-                                                    Text(
-                                                      links > 0
-                                                          ? '$links attachment${links == 1 ? '' : 's'} · View conversation'
-                                                          : 'View conversation',
-                                                      style:
-                                                          GoogleFonts.outfit(
-                                                        color: const Color(
-                                                          0xFFA855F7,
-                                                        ),
-                                                        fontSize: 11,
-                                                        fontWeight:
-                                                            FontWeight.w400,
-                                                      ),
-                                                    ),
-                                                    const Spacer(),
-                                                    Icon(
-                                                      Icons
-                                                          .chevron_right_rounded,
-                                                      color: Colors.white
-                                                          .withValues(
-                                                            alpha: 0.45,
-                                                          ),
-                                                      size: 20,
-                                                    ),
-                                                  ],
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                          ),
                   ),
                 ],
               ),
             ),
           ),
+        );
+      },
+    );
+  }
+
+  Widget _campaignCard(double scale, Map<String, dynamic> m) {
+    return LightListCard(
+      scale: scale,
+      borderColor: Colors.black,
+      onTap: () => _openCampaign(m),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(
+                  text: 'User: ',
+                  style: LightScreenTheme.listTitle(scale),
+                ),
+                TextSpan(
+                  text: _bodyText(m),
+                  style: LightScreenTheme.listTitle(scale).copyWith(
+                    fontWeight: FontWeight.w400,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+          ),
+          SizedBox(height: 12 * scale),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Digital marketing',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: LightScreenTheme.listSubtitle(scale).copyWith(
+                    color: _metaGray,
+                    fontSize: 11,
+                  ),
+                ),
+              ),
+              Text(
+                _createdLabel(m),
+                style: LightScreenTheme.listSubtitle(scale).copyWith(
+                  color: _metaGray,
+                  fontSize: 11,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 12 * scale),
+          Row(
+            children: [
+              Text(
+                'View conversation',
+                style: GoogleFonts.poppins(
+                  color: LightScreenTheme.accent,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const Spacer(),
+              HomeSfIcon(
+                icon: HomeFigmaIcons.chevronRight,
+                color: LightScreenTheme.accent,
+                size: 16 * scale.clamp(0.9, 1.05),
+              ),
+            ],
+          ),
         ],
       ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scale = MediaQuery.sizeOf(context).width / appShellDesignWidth;
+    final items = _visibleItems;
+
+    return LightScreenScaffold(
+      title: 'Recent Campaigns',
+      titleFontSize: 16,
+      trailing: IconButton(
+        onPressed: _showFilter,
+        padding: EdgeInsets.zero,
+        constraints: BoxConstraints(
+          minWidth: 32 * scale,
+          minHeight: 32 * scale,
+        ),
+        icon: HomeSfIcon(
+          icon: HomeFigmaIcons.analyticsFilter,
+          color: Colors.black,
+          size: 22 * scale.clamp(0.9, 1.0),
+        ),
+      ),
+      body: _loading
+          ? Center(
+              child: CircularProgressIndicator(color: LightScreenTheme.accent),
+            )
+          : _loadError != null
+              ? Center(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 28 * scale),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          _loadError!,
+                          textAlign: TextAlign.center,
+                          style: LightScreenTheme.emptyState(scale),
+                        ),
+                        SizedBox(height: 16 * scale),
+                        TextButton.icon(
+                          onPressed: _load,
+                          icon: HomeSfIcon(
+                            icon: HomeFigmaIcons.refresh,
+                            size: 18 * scale.clamp(0.9, 1.05),
+                            color: LightScreenTheme.accent,
+                          ),
+                          label: Text(
+                            'Retry',
+                            style: GoogleFonts.poppins(
+                              color: LightScreenTheme.accent,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : RefreshIndicator(
+                  color: LightScreenTheme.accent,
+                  onRefresh: _load,
+                  child: items.isEmpty
+                      ? ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          children: [
+                            SizedBox(
+                              height: MediaQuery.sizeOf(context).height * 0.22,
+                            ),
+                            Center(
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 28 * scale,
+                                ),
+                                child: Text(
+                                  'No campaigns yet. Publish from Digital Marketing with Postiz to see them here.',
+                                  textAlign: TextAlign.center,
+                                  style: LightScreenTheme.emptyState(scale),
+                                ),
+                              ),
+                            ),
+                          ],
+                        )
+                      : ListView.separated(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: EdgeInsets.fromLTRB(
+                            20 * scale,
+                            20 * scale,
+                            20 * scale,
+                            32 * scale,
+                          ),
+                          itemCount: items.length,
+                          separatorBuilder: (_, __) =>
+                              SizedBox(height: 8 * scale),
+                          itemBuilder: (context, index) {
+                            return _campaignCard(scale, items[index]);
+                          },
+                        ),
+                ),
     );
   }
 }
@@ -379,78 +458,37 @@ class _CampaignConversationPageState extends State<CampaignConversationPage> {
       return DigitalMarketingPage(campaign: campaign, readOnly: true);
     }
 
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          const DecoratedBox(
-            decoration: ManageScreenStyle.homeDashboardBodyDecoration,
-          ),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const ManageScreenBackButton(),
-                      const SizedBox(width: 18),
-                      Expanded(
-                        child: Text(
-                          'Campaign conversation',
-                          style: ManageScreenStyle.headerTitleStyle(),
+    return LightScreenScaffold(
+      title: 'Campaign conversation',
+      creditCategory: CreditCategory.imageGen,
+      body: _loading
+          ? Center(child: CircularProgressIndicator(color: LightScreenTheme.accent))
+          : Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 28),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      _loadError ?? 'Could not open this campaign',
+                      textAlign: TextAlign.center,
+                      style: LightScreenTheme.emptyState(1),
+                    ),
+                    const SizedBox(height: 16),
+                    TextButton(
+                      onPressed: _load,
+                      child: Text(
+                        'Retry',
+                        style: GoogleFonts.poppins(
+                          color: LightScreenTheme.accent,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  Expanded(
-                    child: _loading
-                        ? const Center(
-                            child: AutobusLoadingIndicator(size: 32),
-                          )
-                        : Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                  ),
-                                  child: Text(
-                                    _loadError ?? 'Unable to load conversation',
-                                    textAlign: TextAlign.center,
-                                    style: GoogleFonts.outfit(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.75,
-                                      ),
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 16),
-                                TextButton(
-                                  onPressed: _load,
-                                  child: Text(
-                                    'Retry',
-                                    style: GoogleFonts.outfit(
-                                      color: const Color(0xFFA855F7),
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                  ),
-                ],
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
-      ),
     );
   }
 }

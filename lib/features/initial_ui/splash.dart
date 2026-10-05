@@ -1,5 +1,6 @@
 import 'package:autobus/barrel.dart';
 import 'package:autobus/features/onboarding/onboarding_storage.dart';
+import 'package:autobus/icons/figma_icons.dart';
 
 class SplashPge extends StatefulWidget {
   final VoidCallback? onFinished;
@@ -28,6 +29,7 @@ class _SplashPgeState extends State<SplashPge> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       body: BlocBuilder<ThemeBloc, ThemeState>(
         builder: (context, state) {
           return LayoutBuilder(
@@ -35,8 +37,6 @@ class _SplashPgeState extends State<SplashPge> {
               final h = constraints.maxHeight;
               final w = constraints.maxWidth;
 
-              final titleTop = h * (101 / 926);
-              final markTop = h * (154 / 926);
               final yourTop = h * (465 / 926);
               final autonomousTop = h * (515 / 926);
               final subtitleTop = h * (585 / 926);
@@ -50,27 +50,12 @@ class _SplashPgeState extends State<SplashPge> {
                   SafeArea(
                     child: Stack(
                       children: [
-                        Positioned(
-                          top: titleTop,
-                          left: 0,
-                          right: 0,
-                          child: Center(child: const AutobusWordmark()),
-                        ),
-                        Positioned(
-                          top: markTop,
-                          left: (w - 240) / 2,
-                          child: SizedBox(
-                            width: 240,
-                            height: 240,
-                            child: Stack(
-                              children: const [
-                                Positioned(
-                                  left: 90,
-                                  top: 100,
-                                  child: AutobusMark(),
-                                ),
-                              ],
-                            ),
+                        Center(
+                          child: Image.asset(
+                            FigmaImages.splashLogo,
+                            width: 125,
+                            height: 108,
+                            fit: BoxFit.contain,
                           ),
                         ),
                         Positioned(
@@ -80,8 +65,8 @@ class _SplashPgeState extends State<SplashPge> {
                           child: Center(
                             child: Text(
                               "Your",
-                              style: GoogleFonts.montserrat(
-                                fontSize: 16,
+                              style: GoogleFonts.poppins(
+                                fontSize: 15,
                                 fontWeight: FontWeight.w400,
                                 color: textCol,
                               ),
@@ -95,9 +80,9 @@ class _SplashPgeState extends State<SplashPge> {
                           child: Center(
                             child: Text(
                               "Autonomous",
-                              style: GoogleFonts.montserrat(
-                                fontSize: 28,
-                                fontWeight: FontWeight.w600,
+                              style: GoogleFonts.poppins(
+                                fontSize: 24,
+                                fontWeight: FontWeight.w500,
                                 color: textCol,
                               ),
                             ),
@@ -110,8 +95,8 @@ class _SplashPgeState extends State<SplashPge> {
                           child: Center(
                             child: Text(
                               "Business operations assistant!",
-                              style: GoogleFonts.montserrat(
-                                fontSize: 14,
+                              style: GoogleFonts.poppins(
+                                fontSize: 13,
                                 fontWeight: FontWeight.w400,
                                 color: textCol,
                               ),
@@ -136,8 +121,8 @@ class _SplashPgeState extends State<SplashPge> {
                               ),
                               child: Text(
                                 "Get Started",
-                                style: GoogleFonts.montserrat(
-                                  fontSize: 16,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 15,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),

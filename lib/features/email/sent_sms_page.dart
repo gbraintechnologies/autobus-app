@@ -1,4 +1,8 @@
 import 'package:autobus/barrel.dart';
+import 'package:autobus/common_design/light_screen_theme.dart';
+import 'package:autobus/common_design/widgets/app_bottom_nav.dart';
+import 'package:autobus/common_design/widgets/light_list_card.dart';
+import 'package:autobus/common_design/widgets/light_screen_scaffold.dart';
 
 class SentSmsPage extends StatefulWidget {
   const SentSmsPage({super.key});
@@ -51,61 +55,47 @@ class _SentSmsPageState extends State<SentSmsPage> {
   }
 
   Widget _sentTile({
+    required double scale,
     required String phone,
     required String message,
     required String date,
     required String status,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        border: Border.all(color: const Color(0xFF3F1163), width: 1),
-        borderRadius: BorderRadius.circular(30),
-      ),
+    return LightListCard(
+      scale: scale,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             phone.isEmpty ? '(No recipient)' : phone,
-            style: GoogleFonts.outfit(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.w400,
+            style: LightScreenTheme.listTitle(scale).copyWith(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
             ),
           ),
           if (message.isNotEmpty) ...[
-            const SizedBox(height: 8),
+            SizedBox(height: 8 * scale),
             Text(
               message,
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.outfit(
-                color: Colors.white.withValues(alpha: 0.75),
-                fontSize: 13,
-                fontWeight: FontWeight.w300,
+              style: LightScreenTheme.listSubtitle(scale).copyWith(
+                color: LightScreenTheme.body,
               ),
             ),
           ],
-          const SizedBox(height: 12),
+          SizedBox(height: 12 * scale),
           Row(
             children: [
               Expanded(
                 child: Text(
                   status.isEmpty ? 'Sent' : status,
-                  style: GoogleFonts.outfit(
-                    color: Colors.white.withValues(alpha: 0.45),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w300,
-                  ),
+                  style: LightScreenTheme.listSubtitle(scale),
                 ),
               ),
               Text(
                 date,
-                style: GoogleFonts.outfit(
-                  color: Colors.white.withValues(alpha: 0.45),
-                  fontSize: 11,
-                  fontWeight: FontWeight.w300,
-                ),
+                style: LightScreenTheme.listSubtitle(scale),
               ),
             ],
           ),
@@ -116,117 +106,86 @@ class _SentSmsPageState extends State<SentSmsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          const DecoratedBox(
-            decoration: ManageScreenStyle.homeDashboardBodyDecoration,
-          ),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const ManageScreenHeader(
-                    title: 'Sent SMS',
-                    creditCategory: CreditCategory.sms,
-                    padding: EdgeInsets.zero,
-                  ),
-                  const SizedBox(height: 32),
-                  Expanded(
-                    child: _loading
-                        ? const Center(
-                            child: AutobusLoadingIndicator(size: 32),
-                          )
-                        : _loadError != null
-                        ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                  ),
-                                  child: Text(
-                                    _loadError!,
-                                    textAlign: TextAlign.center,
-                                    style: GoogleFonts.outfit(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.75,
-                                      ),
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 16),
-                                TextButton(
-                                  onPressed: _load,
-                                  child: Text(
-                                    'Retry',
-                                    style: GoogleFonts.outfit(
-                                      color: const Color(0xFFA855F7),
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                ),
-                              ],
+    final scale = MediaQuery.sizeOf(context).width / appShellDesignWidth;
+
+    return LightScreenScaffold(
+      title: 'Sent SMS',
+      creditCategory: CreditCategory.sms,
+      body: _loading
+          ? Center(
+              child: CircularProgressIndicator(color: LightScreenTheme.accent),
+            )
+          : _loadError != null
+              ? Center(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 28 * scale),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          _loadError!,
+                          textAlign: TextAlign.center,
+                          style: LightScreenTheme.emptyState(scale),
+                        ),
+                        SizedBox(height: 16 * scale),
+                        TextButton(
+                          onPressed: _load,
+                          child: Text(
+                            'Retry',
+                            style: GoogleFonts.poppins(
+                              color: LightScreenTheme.accent,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
                             ),
-                          )
-                        : RefreshIndicator(
-                            color: const Color(0xFFA855F7),
-                            onRefresh: _load,
-                            child: _messages.isEmpty
-                                ? ListView(
-                                    physics:
-                                        const AlwaysScrollableScrollPhysics(),
-                                    children: [
-                                      SizedBox(
-                                        height:
-                                            MediaQuery.sizeOf(context).height *
-                                            0.25,
-                                      ),
-                                      Center(
-                                        child: Text(
-                                          'No sent SMS yet',
-                                          style: GoogleFonts.outfit(
-                                            color: Colors.white.withValues(
-                                              alpha: 0.6,
-                                            ),
-                                            fontSize: 16,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  )
-                                : ListView.separated(
-                                    physics:
-                                        const AlwaysScrollableScrollPhysics(),
-                                    itemCount: _messages.length,
-                                    separatorBuilder: (_, __) =>
-                                        const SizedBox(height: 16),
-                                    itemBuilder: (context, index) {
-                                      final m = _messages[index];
-                                      return _sentTile(
-                                        phone: (m['phone'] ?? '').toString(),
-                                        message: (m['message'] ?? '').toString(),
-                                        date: _formatSentAt(
-                                          (m['sent_at'] ?? '').toString(),
-                                        ),
-                                        status: (m['status'] ?? '').toString(),
-                                      );
-                                    },
-                                  ),
                           ),
+                        ),
+                      ],
+                    ),
                   ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
+                )
+              : RefreshIndicator(
+                  color: LightScreenTheme.accent,
+                  onRefresh: _load,
+                  child: _messages.isEmpty
+                      ? ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          children: [
+                            SizedBox(
+                              height: MediaQuery.sizeOf(context).height * 0.32,
+                            ),
+                            Center(
+                              child: Text(
+                                'No sent SMS yet',
+                                style: LightScreenTheme.emptyState(scale),
+                              ),
+                            ),
+                          ],
+                        )
+                      : ListView.separated(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: EdgeInsets.fromLTRB(
+                            20 * scale,
+                            8 * scale,
+                            20 * scale,
+                            24 * scale,
+                          ),
+                          itemCount: _messages.length,
+                          separatorBuilder: (_, __) =>
+                              SizedBox(height: 12 * scale),
+                          itemBuilder: (context, index) {
+                            final m = _messages[index];
+                            return _sentTile(
+                              scale: scale,
+                              phone: (m['phone'] ?? '').toString(),
+                              message: (m['message'] ?? '').toString(),
+                              date: _formatSentAt(
+                                (m['sent_at'] ?? '').toString(),
+                              ),
+                              status: (m['status'] ?? '').toString(),
+                            );
+                          },
+                        ),
+                ),
     );
   }
 }

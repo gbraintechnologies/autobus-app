@@ -1,4 +1,5 @@
 import 'package:autobus/barrel.dart';
+import 'package:autobus/icons/figma_icons.dart';
 
 class CtaButton extends StatelessWidget {
   final VoidCallback? onPressed;
@@ -31,13 +32,7 @@ class CtaButton extends StatelessWidget {
           Text('Continue', style: TextStyle(color: Colors.white, fontSize: 16)),
           Padding(
             padding: const EdgeInsets.all(8.0),
-            child: Row(
-              children: [
-                Icon(Icons.arrow_forward_ios, color: Colors.white, size: 12),
-                Icon(Icons.arrow_forward_ios, color: Colors.white54, size: 12),
-                Icon(Icons.arrow_forward_ios, color: Colors.white30, size: 12),
-              ],
-            ),
+            child: FigmaChevronTrail(size: 12),
           ),
         ],
       ),

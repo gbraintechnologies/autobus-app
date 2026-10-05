@@ -1,5 +1,8 @@
 import 'package:autobus/barrel.dart';
-import 'models/app_notification.dart';
+import 'package:autobus/common_design/light_screen_theme.dart';
+import 'package:autobus/common_design/widgets/app_bottom_nav.dart';
+import 'package:autobus/common_design/widgets/light_list_card.dart';
+import 'package:autobus/common_design/widgets/light_screen_scaffold.dart';
 
 class NotificationsInboxPage extends StatefulWidget {
   const NotificationsInboxPage({super.key});
@@ -42,7 +45,7 @@ class _NotificationsInboxPageState extends State<NotificationsInboxPage> {
         SnackBar(
           content: Text(
             'Could not mark notification as read',
-            style: GoogleFonts.montserrat(fontWeight: FontWeight.w300),
+            style: GoogleFonts.poppins(fontWeight: FontWeight.w400),
           ),
         ),
       );
@@ -55,170 +58,132 @@ class _NotificationsInboxPageState extends State<NotificationsInboxPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: DecoratedBox(
-        decoration: ManageScreenStyle.homeDashboardBodyDecoration,
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 18),
-            child: Column(
-              children: [
-                const SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const ManageScreenBackButton(),
-                    Text(
-                      'Notifications',
-                      style: ManageScreenStyle.headerTitleStyle(),
-                    ),
-                    const SizedBox(width: 48, height: 48),
-                  ],
-                ),
-                const SizedBox(height: 18),
-                Expanded(
-                  child: FutureBuilder<List<AppNotification>>(
-                    future: _future,
-                    builder: (context, snap) {
-                      if (snap.connectionState != ConnectionState.done) {
-                        return const Center(child: AutobusLoadingIndicator());
-                      }
-                      if (snap.hasError) {
-                        return Center(
-                          child: Text(
-                            'Failed to load notifications',
-                            style: GoogleFonts.montserrat(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w300,
-                            ),
-                          ),
-                        );
-                      }
+    final scale = MediaQuery.sizeOf(context).width / appShellDesignWidth;
 
-                      final items = snap.data ?? const [];
-                      if (items.isEmpty) {
-                        return Center(
-                          child: Text(
-                            'No notifications yet',
-                            style: GoogleFonts.montserrat(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w300,
-                            ),
-                          ),
-                        );
-                      }
+    return LightScreenScaffold(
+      title: 'Notifications',
+      creditCategory: CreditCategory.server,
+      body: FutureBuilder<List<AppNotification>>(
+        future: _future,
+        builder: (context, snap) {
+          if (snap.connectionState != ConnectionState.done) {
+            return Center(
+              child: CircularProgressIndicator(color: LightScreenTheme.accent),
+            );
+          }
+          if (snap.hasError) {
+            return Center(
+              child: Text(
+                'Failed to load notifications',
+                style: LightScreenTheme.emptyState(scale),
+              ),
+            );
+          }
 
-                      return RefreshIndicator(
-                        onRefresh: _refresh,
-                        child: ListView.separated(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          itemCount: items.length,
-                          separatorBuilder: (_, __) =>
-                              const SizedBox(height: 10),
-                          itemBuilder: (context, i) {
-                            final n = items[i];
-                            final created = n.createdAt;
-                            final subtitle = [
-                              if (created != null)
-                                '${created.toLocal()}'.split('.').first,
-                            ].join('\n');
-                            final marking = _markingIds.contains(n.id);
+          final items = snap.data ?? const [];
+          if (items.isEmpty) {
+            return Center(
+              child: Text(
+                'No notifications yet',
+                style: LightScreenTheme.emptyState(scale),
+              ),
+            );
+          }
 
-                            return Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 14,
-                                vertical: 12,
+          return RefreshIndicator(
+            color: LightScreenTheme.accent,
+            onRefresh: _refresh,
+            child: ListView.separated(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: EdgeInsets.fromLTRB(
+                20 * scale,
+                8 * scale,
+                20 * scale,
+                24 * scale,
+              ),
+              itemCount: items.length,
+              separatorBuilder: (_, __) => SizedBox(height: 12 * scale),
+              itemBuilder: (context, i) {
+                final n = items[i];
+                final created = n.createdAt;
+                final subtitle = [
+                  if (created != null)
+                    '${created.toLocal()}'.split('.').first,
+                ].join('\n');
+                final marking = _markingIds.contains(n.id);
+
+                return LightListCard(
+                  scale: scale,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 16 * scale,
+                    vertical: 14 * scale,
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: 10 * scale,
+                        height: 10 * scale,
+                        margin: EdgeInsets.only(top: 5 * scale),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFEF4444),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      SizedBox(width: 10 * scale),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              n.displayText.isNotEmpty ? n.displayText : n.title,
+                              style: LightScreenTheme.listTitle(scale).copyWith(
+                                fontWeight: FontWeight.w500,
                               ),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
-                                  color: const Color(0xFF3F1163),
-                                  width: 1,
+                            ),
+                            if (subtitle.isNotEmpty) ...[
+                              SizedBox(height: 6 * scale),
+                              Text(
+                                subtitle,
+                                style: LightScreenTheme.listSubtitle(scale),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      SizedBox(width: 8 * scale),
+                      TextButton(
+                        onPressed: marking ? null : () => _markAsRead(n),
+                        style: TextButton.styleFrom(
+                          foregroundColor: LightScreenTheme.accent,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 8 * scale,
+                            vertical: 4 * scale,
+                          ),
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        child: marking
+                            ? SizedBox(
+                                width: 16 * scale,
+                                height: 16 * scale,
+                                child: AutobusLoadingIndicator(size: 16 * scale),
+                              )
+                            : Text(
+                                'Mark read',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Container(
-                                    width: 10,
-                                    height: 10,
-                                    margin: const EdgeInsets.only(top: 6),
-                                    decoration: const BoxDecoration(
-                                      color: Color(0xFFEF4444),
-                                      shape: BoxShape.circle,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          n.displayText.isNotEmpty
-                                              ? n.displayText
-                                              : n.title,
-                                          style: GoogleFonts.montserrat(
-                                            color: Colors.white,
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w400,
-                                          ),
-                                        ),
-                                        if (subtitle.isNotEmpty) ...[
-                                          const SizedBox(height: 6),
-                                          Text(
-                                            subtitle,
-                                            style: GoogleFonts.montserrat(
-                                              color: Colors.white70,
-                                              fontSize: 11,
-                                              fontWeight: FontWeight.w300,
-                                            ),
-                                          ),
-                                        ],
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  TextButton(
-                                    onPressed: marking
-                                        ? null
-                                        : () => _markAsRead(n),
-                                    style: TextButton.styleFrom(
-                                      foregroundColor: const Color(0xFFA855F7),
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 4,
-                                      ),
-                                      minimumSize: Size.zero,
-                                      tapTargetSize:
-                                          MaterialTapTargetSize.shrinkWrap,
-                                    ),
-                                    child: marking
-                                        ? const AutobusLoadingIndicator(
-                                            size: 16,
-                                          )
-                                        : Text(
-                                            'Mark read',
-                                            style: GoogleFonts.montserrat(
-                                              fontSize: 11,
-                                              fontWeight: FontWeight.w400,
-                                            ),
-                                          ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                        ),
-                      );
-                    },
+                      ),
+                    ],
                   ),
-                ),
-              ],
+                );
+              },
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }

@@ -47,8 +47,8 @@ class ProductFormImageSection extends StatelessWidget {
             Expanded(
               child: Text(
                 'Product media',
-                style: GoogleFonts.outfit(
-                  color: Colors.white.withValues(alpha: 0.9),
+                style: GoogleFonts.poppins(
+                  color: Colors.black,
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                 ),
@@ -60,8 +60,8 @@ class ProductFormImageSection extends StatelessWidget {
                   if (_imageCount > 0) '$_imageCount photo${_imageCount == 1 ? '' : 's'}',
                   if (_videoCount > 0) '$_videoCount video${_videoCount == 1 ? '' : 's'}',
                 ].join(' · '),
-                style: GoogleFonts.outfit(
-                  color: Colors.white.withValues(alpha: 0.45),
+                style: GoogleFonts.poppins(
+                  color: const Color(0xFF64748B),
                   fontSize: 12,
                 ),
               ),
@@ -70,8 +70,8 @@ class ProductFormImageSection extends StatelessWidget {
         const SizedBox(height: 6),
         Text(
           'Add photos, video, or both. You can post with video only. The first photo is the cover when present.',
-          style: GoogleFonts.outfit(
-            color: Colors.white.withValues(alpha: 0.5),
+          style: GoogleFonts.poppins(
+            color: const Color(0xFF4D4D4D),
             fontSize: 12,
             height: 1.4,
           ),
@@ -147,20 +147,20 @@ class _FormThumb extends StatelessWidget {
             width: ProductFormImageSection.thumbSize,
             height: ProductFormImageSection.thumbSize,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.06),
+              color: const Color(0xFFF8FAFC),
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
                 color: isCover
                     ? const Color(0xFFA855F7)
-                    : const Color(0xFF3F1163).withValues(alpha: 0.85),
+                    : const Color(0xFFE2E8F0),
                 width: isCover ? 1.6 : 1,
               ),
             ),
             clipBehavior: Clip.antiAlias,
             child: empty
-                ? Icon(
+                ? const Icon(
                     Icons.add_photo_alternate_outlined,
-                    color: Colors.white.withValues(alpha: 0.35),
+                    color: Color(0xFF94A3B8),
                     size: 28,
                   )
                 : _preview(),
@@ -209,12 +209,12 @@ class _FormThumb extends StatelessWidget {
 
   Widget _preview() {
     if (slot.looksLikeVideo) {
-      return ColoredBox(
-        color: const Color(0xFF1E0A32),
+      return const ColoredBox(
+        color: Color(0xFFF1F5F9),
         child: Center(
           child: Icon(
             Icons.videocam_outlined,
-            color: Colors.white.withValues(alpha: 0.55),
+            color: Color(0xFF64748B),
             size: 32,
           ),
         ),
@@ -228,9 +228,9 @@ class _FormThumb extends StatelessWidget {
     if (!kIsWeb && path != null && path.isNotEmpty && File(path).existsSync()) {
       return Image.file(File(path), fit: BoxFit.cover, gaplessPlayback: true);
     }
-    return Icon(
+    return const Icon(
       Icons.broken_image_outlined,
-      color: Colors.white.withValues(alpha: 0.35),
+      color: Color(0xFF94A3B8),
       size: 28,
     );
   }

@@ -1,4 +1,5 @@
 import 'package:autobus/barrel.dart';
+import 'package:autobus/common_design/widgets/light_screen_scaffold.dart';
 
 const List<String> kOrderStatuses = [
   'pending',
@@ -469,76 +470,41 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         ? widget.initialTitle!
         : (_order != null ? orderDisplayTitle(_order!) : 'Order');
 
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          const DecoratedBox(
-            decoration: ManageScreenStyle.homeDashboardBodyDecoration,
-          ),
-          SafeArea(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 18, 24, 0),
-                  child: Row(
-                    children: [
-                      const ManageScreenBackButton(),
-                      const SizedBox(width: 18),
-                      Expanded(
-                        child: Text(
-                          title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: ManageScreenStyle.headerTitleStyle(),
+    return LightScreenScaffold(
+      title: title,
+      creditCategory: CreditCategory.server,
+      body: _loading
+          ? const Center(child: AutobusLoadingIndicator(size: 32))
+          : _loadError != null
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      _loadError!,
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.outfit(
+                        color: Colors.black54,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextButton(
+                      onPressed: _load,
+                      child: Text(
+                        'Retry',
+                        style: GoogleFonts.outfit(
+                          color: const Color(0xFFA855F7),
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-                Expanded(
-                  child: _loading
-                      ? const Center(
-                          child: AutobusLoadingIndicator(size: 32),
-                        )
-                      : _loadError != null
-                      ? Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(24),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  _loadError!,
-                                  textAlign: TextAlign.center,
-                                  style: GoogleFonts.outfit(
-                                    color: Colors.white.withValues(alpha: 0.75),
-                                    fontSize: 14,
-                                  ),
-                                ),
-                                const SizedBox(height: 16),
-                                TextButton(
-                                  onPressed: _load,
-                                  child: Text(
-                                    'Retry',
-                                    style: GoogleFonts.outfit(
-                                      color: const Color(0xFFA855F7),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        )
-                      : _buildContent(),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+              ),
+            )
+          : _buildContent(),
     );
   }
 }

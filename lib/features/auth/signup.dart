@@ -1,4 +1,6 @@
 import 'package:autobus/barrel.dart';
+import 'package:autobus/common_design/widgets/auth_field.dart';
+import 'package:autobus/common_design/widgets/auth_screen_layout.dart';
 import 'package:flutter/services.dart';
 
 class Signup extends StatefulWidget {
@@ -9,97 +11,128 @@ class Signup extends StatefulWidget {
 }
 
 class _SignupState extends State<Signup> {
-  final TextEditingController emailController = TextEditingController();
-  final TextEditingController usernameController = TextEditingController();
-  final TextEditingController phoneController = TextEditingController();
-  final TextEditingController companyController = TextEditingController();
-  final TextEditingController ghanaCardTenController = TextEditingController();
-  final TextEditingController ghanaCardCheckController =
-      TextEditingController();
-  final TextEditingController _ghaPrefixController = TextEditingController(
-    text: 'GHA',
-  );
-  final FocusNode _ghanaCardCheckFocusNode = FocusNode();
+  final _emailController = TextEditingController();
+  final _usernameController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _companyController = TextEditingController();
+  final _ghanaTenController = TextEditingController();
+  final _ghanaCheckController = TextEditingController();
+  final _ghanaCardCheckFocusNode = FocusNode();
 
   String _pin = '';
 
   String get _ghanaCardValue {
-    final ten = ghanaCardTenController.text.trim();
-    final one = ghanaCardCheckController.text.trim();
+    final ten = _ghanaTenController.text.trim();
+    final one = _ghanaCheckController.text.trim();
     if (ten.isEmpty && one.isEmpty) return '';
     return 'GHA-$ten-$one';
   }
 
-  static TextStyle _ghanaTenStyle() {
-    return GoogleFonts.montserrat(fontSize: 14, fontWeight: FontWeight.w500);
-  }
-
-  static TextStyle _fieldHintStyle() {
-    return GoogleFonts.montserrat(
-      color: Colors.black38,
-      fontSize: 14,
-      fontWeight: FontWeight.w400,
-    );
-  }
-
-  static TextStyle _fieldLabelStyle() {
-    return GoogleFonts.montserrat(
-      color: Colors.black,
-      fontSize: 13,
-      fontWeight: FontWeight.w500,
-    );
-  }
-
-  static TextStyle _fieldTextStyle() {
-    return GoogleFonts.montserrat(fontSize: 14, fontWeight: FontWeight.w500);
-  }
-
-  /// Width for the middle Ghana Card segment: grows with typed digits, capped at 10-wide sample.
-  double _ghanaTenFieldWidth(BuildContext context) {
-    final scaler = MediaQuery.textScalerOf(context);
-    final style = _ghanaTenStyle();
-    final digits = ghanaCardTenController.text;
-    final probe = digits.isEmpty ? 'XXXXXXXXXX' : digits;
-    final painter = TextPainter(
-      text: TextSpan(text: probe, style: style),
-      textDirection: TextDirection.ltr,
-      textScaler: scaler,
-    )..layout();
-    final maxPainter = TextPainter(
-      text: TextSpan(text: '8888888888', style: style),
-      textDirection: TextDirection.ltr,
-      textScaler: scaler,
-    )..layout();
-    return (painter.width + 28).clamp(52.0, maxPainter.width + 36);
-  }
-
-  void _onGhanaTenChanged() => setState(() {});
-
-  @override
-  void initState() {
-    super.initState();
-    ghanaCardTenController.addListener(_onGhanaTenChanged);
-  }
-
   @override
   void dispose() {
-    ghanaCardTenController.removeListener(_onGhanaTenChanged);
-    emailController.dispose();
-    usernameController.dispose();
-    phoneController.dispose();
-    companyController.dispose();
-    ghanaCardTenController.dispose();
-    ghanaCardCheckController.dispose();
-    _ghaPrefixController.dispose();
+    _emailController.dispose();
+    _usernameController.dispose();
+    _phoneController.dispose();
+    _companyController.dispose();
+    _ghanaTenController.dispose();
+    _ghanaCheckController.dispose();
     _ghanaCardCheckFocusNode.dispose();
     super.dispose();
   }
 
+  void _submitSignup() {
+    final username = _usernameController.text.trim();
+    if (username.isEmpty) {
+      showAppSnackBar(context, 'Please enter a username');
+      return;
+    }
+    if (_pin.length != 4) {
+      showAppSnackBar(context, 'Please enter a 4-digit PIN');
+      return;
+    }
+
+    context.read<AuthBloc>().add(
+      SignupEvent(
+        username: username,
+        phone: _phoneController.text.trim(),
+        email: _emailController.text.trim(),
+        password: _pin,
+        company: _companyController.text.trim(),
+        ghanaCard: _ghanaCardValue,
+      ),
+    );
+  }
+
+  Widget _ghanaCardField(double scale, bool enabled) {
+    final style = GoogleFonts.poppins(
+      fontSize: 14,
+      color: Colors.black87,
+    );
+
+    return AuthField(
+      width: AuthScreenTokens.fieldWidth(scale),
+      height: AuthScreenTokens.fieldHeight(scale),
+      scale: scale,
+      icon: Icons.badge_outlined,
+      enabled: enabled,
+      child: Row(
+        children: [
+          Text('GHA-', style: style),
+          Expanded(
+            flex: 3,
+            child: TextField(
+              controller: _ghanaTenController,
+              enabled: enabled,
+              keyboardType: TextInputType.number,
+              maxLength: 10,
+              style: style,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              onChanged: (v) {
+                if (v.length == 10) {
+                  FocusScope.of(context).requestFocus(_ghanaCardCheckFocusNode);
+                }
+              },
+              decoration: const InputDecoration(
+                border: InputBorder.none,
+                counterText: '',
+                isDense: true,
+                hintText: 'XXXXXXXXXX',
+              ),
+            ),
+          ),
+          Text('-', style: style),
+          SizedBox(
+            width: 28 * scale,
+            child: TextField(
+              controller: _ghanaCheckController,
+              focusNode: _ghanaCardCheckFocusNode,
+              enabled: enabled,
+              keyboardType: TextInputType.number,
+              maxLength: 1,
+              textAlign: TextAlign.center,
+              style: style,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              decoration: const InputDecoration(
+                border: InputBorder.none,
+                counterText: '',
+                isDense: true,
+                hintText: 'X',
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: MultiBlocListener(
+    final scale = AuthScreenTokens.scaleOf(context);
+    final fieldWidth = AuthScreenTokens.fieldWidth(scale);
+    final fieldHeight = AuthScreenTokens.fieldHeight(scale);
+
+    return AuthScreenScaffold(
+      child: MultiBlocListener(
         listeners: [
           BlocListener<AuthBloc, AuthState>(
             listener: (context, state) {
@@ -107,9 +140,12 @@ class _SignupState extends State<Signup> {
                 Navigator.of(context).pushReplacement(
                   PageTransition(
                     type: PageTransitionType.rightToLeftWithFade,
-                    duration: const Duration(milliseconds: 1000),
-                    reverseDuration: const Duration(milliseconds: 600),
-                    child: SignupOtp(phone: phoneController.text.trim()),
+                    duration: const Duration(milliseconds: 800),
+                    child: SignupOtp(
+                      phone: _phoneController.text.trim(),
+                      userEmail: _emailController.text.trim(),
+                      initialBusinessName: _companyController.text.trim(),
+                    ),
                   ),
                 );
               } else if (state is AuthError && state.source == 'signup') {
@@ -123,333 +159,108 @@ class _SignupState extends State<Signup> {
         ],
         child: BlocBuilder<AuthBloc, AuthState>(
           builder: (context, state) {
-            final bool isLoading = state is AuthLoading;
-            return SafeArea(
-              child: SingleChildScrollView(
-                keyboardDismissBehavior:
-                    ScrollViewKeyboardDismissBehavior.onDrag,
-                child: Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      AuthPageHeader(
-                        title: 'Sign Up',
-                        onBack: () => Navigator.of(context).pop(),
-                      ),
-                      const SizedBox(height: 28),
-                      const Center(
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: AutobusBranding(
-                            wordmarkFontSize: 26,
-                            markCircleSize: 34,
-                            spacing: 14,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 48),
-                      Center(
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 360),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Text(
-                                'Username',
-                                style: _fieldLabelStyle(),
-                              ),
-                              TextField(
-                                onTapOutside: dismissAppKeyboard,
-                                controller: usernameController,
-                                autocorrect: false,
-                                enableSuggestions: false,
-                                textCapitalization: TextCapitalization.none,
-                                style: _fieldTextStyle(),
-                                decoration: InputDecoration(
-                                  border: const UnderlineInputBorder(),
-                                  hintText: 'Enter your username',
-                                  hintStyle: _fieldHintStyle(),
-                                ),
-                              ),
-                              const SizedBox(height: 20),
-                              Text(
-                                'Phone',
-                                style: _fieldLabelStyle(),
-                              ),
-                              TextField(
-                                onTapOutside: dismissAppKeyboard,
-                                controller: phoneController,
-                                keyboardType: TextInputType.phone,
-                                style: _fieldTextStyle(),
-                                decoration: InputDecoration(
-                                  border: const UnderlineInputBorder(),
-                                  hintText: '0241234567',
-                                  hintStyle: _fieldHintStyle(),
-                                ),
-                              ),
-                              const SizedBox(height: 20),
-                              Text(
-                                'Company',
-                                style: _fieldLabelStyle(),
-                              ),
-                              TextField(
-                                onTapOutside: dismissAppKeyboard,
-                                controller: companyController,
-                                style: _fieldTextStyle(),
-                                decoration: InputDecoration(
-                                  border: const UnderlineInputBorder(),
-                                  hintText: 'Enter your company name',
-                                  hintStyle: _fieldHintStyle(),
-                                ),
-                              ),
-                              const SizedBox(height: 20),
-                              Text(
-                                'Ghana Card',
-                                style: _fieldLabelStyle(),
-                              ),
-                              Align(
-                                alignment: Alignment.centerLeft,
-                                child: SingleChildScrollView(
-                                  scrollDirection: Axis.horizontal,
-                                  child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: [
-                                    SizedBox(
-                                      width: 56,
-                                      child: TextField(
-                                        onTapOutside: dismissAppKeyboard,
-                                        controller: _ghaPrefixController,
-                                        readOnly: true,
-                                        enableInteractiveSelection: false,
-                                        textAlign: TextAlign.center,
-                                        style: GoogleFonts.montserrat(
-                                          color: Colors.black,
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                        decoration: const InputDecoration(
-                                          border: UnderlineInputBorder(),
-                                          counterText: '',
-                                          isDense: true,
-                                          contentPadding: EdgeInsets.symmetric(
-                                            vertical: 12,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    Padding(
-                                      padding: const EdgeInsets.only(
-                                        left: 4,
-                                        right: 4,
-                                        bottom: 12,
-                                      ),
-                                      child: Text(
-                                        '-',
-                                        style: GoogleFonts.montserrat(
-                                          color: Colors.black54,
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w400,
-                                        ),
-                                      ),
-                                    ),
-                                    SizedBox(
-                                      width: _ghanaTenFieldWidth(context),
-                                      child: TextField(
-                                        onTapOutside: dismissAppKeyboard,
-                                        controller: ghanaCardTenController,
-                                        keyboardType: TextInputType.number,
-                                        inputFormatters: [
-                                          FilteringTextInputFormatter
-                                              .digitsOnly,
-                                          LengthLimitingTextInputFormatter(10),
-                                        ],
-                                        style: GoogleFonts.montserrat(
-                                          color: Colors.black,
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                        decoration: InputDecoration(
-                                          border: const UnderlineInputBorder(),
-                                          counterText: '',
-                                          isDense: true,
-                                          contentPadding:
-                                              const EdgeInsets.symmetric(
-                                            vertical: 12,
-                                          ),
-                                          hintText: 'XXXXXXXXXX',
-                                          hintStyle: _fieldHintStyle(),
-                                        ),
-                                        onChanged: (v) {
-                                          if (v.length == 10) {
-                                            FocusScope.of(context).requestFocus(
-                                              _ghanaCardCheckFocusNode,
-                                            );
-                                          }
-                                        },
-                                      ),
-                                    ),
-                                    Padding(
-                                      padding: const EdgeInsets.only(
-                                        left: 4,
-                                        right: 4,
-                                        bottom: 12,
-                                      ),
-                                      child: Text(
-                                        '-',
-                                        style: GoogleFonts.montserrat(
-                                          color: Colors.black54,
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w400,
-                                        ),
-                                      ),
-                                    ),
-                                    SizedBox(
-                                      width: 44,
-                                      child: TextField(
-                                        onTapOutside: dismissAppKeyboard,
-                                        controller: ghanaCardCheckController,
-                                        focusNode: _ghanaCardCheckFocusNode,
-                                        keyboardType: TextInputType.number,
-                                        textAlign: TextAlign.center,
-                                        inputFormatters: [
-                                          FilteringTextInputFormatter
-                                              .digitsOnly,
-                                          LengthLimitingTextInputFormatter(1),
-                                        ],
-                                        style: GoogleFonts.montserrat(
-                                          color: Colors.black,
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                        decoration: InputDecoration(
-                                          border: const UnderlineInputBorder(),
-                                          counterText: '',
-                                          isDense: true,
-                                          contentPadding:
-                                              const EdgeInsets.symmetric(
-                                            vertical: 12,
-                                          ),
-                                          hintText: 'X',
-                                          hintStyle: _fieldHintStyle(),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                ),
-                              ),
-                              const SizedBox(height: 20),
-                              Text(
-                                'Email',
-                                style: _fieldLabelStyle(),
-                              ),
-                              TextField(
-                                onTapOutside: dismissAppKeyboard,
-                                controller: emailController,
-                                keyboardType: TextInputType.emailAddress,
-                                style: _fieldTextStyle(),
-                                decoration: InputDecoration(
-                                  border: const UnderlineInputBorder(),
-                                  hintText: 'name@example.com',
-                                  hintStyle: _fieldHintStyle(),
-                                ),
-                              ),
-                              const SizedBox(height: 20),
-                              Text(
-                                'PIN',
-                                style: _fieldLabelStyle(),
-                              ),
-                              PinDigitInput(
-                                enabled: !isLoading,
-                                onChanged: (v) => _pin = v,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 52),
-                      Center(
-                        child: AppButton(
-                          onPressed: isLoading
-                              ? null
-                              : () async {
-                                  final username = usernameController.text.trim();
-                                  if (username.isEmpty) {
-                                    showAppSnackBar(
-                                      context,
-                                      'Please enter a username',
-                                    );
-                                    return;
-                                  }
-                                  if (_pin.length != 4) {
-                                    showAppSnackBar(
-                                      context,
-                                      'Please enter a 4-digit PIN',
-                                    );
-                                    return;
-                                  }
-                                  context.read<AuthBloc>().add(
-                                    SignupEvent(
-                                      username: username,
-                                      phone: phoneController.text.trim(),
-                                      email: emailController.text.trim(),
-                                      password: _pin,
-                                      company: companyController.text.trim(),
-                                      ghanaCard: _ghanaCardValue,
-                                    ),
-                                  );
-                                },
-                          buttonText: 'Sign Up',
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      const AuthLegalNotice(
-                        prefix: 'By signing up, you agree to the ',
-                        textColor: Colors.black54,
-                        linkColor: CustColors.mainCol,
-                      ),
-                      const SizedBox(height: 20),
-                      Center(
-                        child: Text(
-                          'Have an Account ?',
-                          style: GoogleFonts.montserrat(
-                            color: Colors.black,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 5),
-                      Center(
-                        child: GestureDetector(
-                          onTap: () {
-                            Navigator.of(context).push(
-                              PageTransition(
-                                type: PageTransitionType.leftToRightWithFade,
-                                childCurrent: widget,
-                                duration: const Duration(milliseconds: 350),
-                                reverseDuration: const Duration(
-                                  milliseconds: 300,
-                                ),
-                                child: const Signin(),
-                              ),
-                            ); // Handle sign up navigation
-                          },
-                          child: Text(
-                            'Log In',
-                            style: GoogleFonts.montserrat(
-                              color: CustColors.mainCol,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+            final isLoading = state is AuthLoading;
+
+            return SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              padding: EdgeInsets.fromLTRB(
+                24 * scale,
+                8 * scale,
+                24 * scale,
+                24 * scale,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const AuthBackButton(),
+                  SizedBox(height: 12 * scale),
+                  AuthScreenHeader(
+                    scale: scale,
+                    title: 'Sign Up',
+                    subtitle: 'Create your Autobus account',
                   ),
-                ),
+                  SizedBox(height: 28 * scale),
+                  AuthFieldLabel(scale: scale, label: 'Username'),
+                  SizedBox(height: 8 * scale),
+                  AuthField(
+                    width: fieldWidth,
+                    height: fieldHeight,
+                    scale: scale,
+                    icon: Icons.person_outline,
+                    controller: _usernameController,
+                    enabled: !isLoading,
+                    hintText: 'Enter your username',
+                  ),
+                  SizedBox(height: 16 * scale),
+                  AuthFieldLabel(scale: scale, label: 'Phone'),
+                  SizedBox(height: 8 * scale),
+                  AuthField(
+                    width: fieldWidth,
+                    height: fieldHeight,
+                    scale: scale,
+                    icon: Icons.phone_outlined,
+                    controller: _phoneController,
+                    enabled: !isLoading,
+                    hintText: '0241234567',
+                    keyboardType: TextInputType.phone,
+                  ),
+                  SizedBox(height: 16 * scale),
+                  AuthFieldLabel(scale: scale, label: 'Company'),
+                  SizedBox(height: 8 * scale),
+                  AuthField(
+                    width: fieldWidth,
+                    height: fieldHeight,
+                    scale: scale,
+                    icon: Icons.business_outlined,
+                    controller: _companyController,
+                    enabled: !isLoading,
+                    hintText: 'Enter your company name',
+                  ),
+                  SizedBox(height: 16 * scale),
+                  AuthFieldLabel(scale: scale, label: 'Ghana Card'),
+                  SizedBox(height: 8 * scale),
+                  _ghanaCardField(scale, !isLoading),
+                  SizedBox(height: 16 * scale),
+                  AuthFieldLabel(scale: scale, label: 'Email'),
+                  SizedBox(height: 8 * scale),
+                  AuthField(
+                    width: fieldWidth,
+                    height: fieldHeight,
+                    scale: scale,
+                    icon: Icons.email_outlined,
+                    controller: _emailController,
+                    enabled: !isLoading,
+                    hintText: 'name@example.com',
+                    keyboardType: TextInputType.emailAddress,
+                  ),
+                  SizedBox(height: 16 * scale),
+                  AuthFieldLabel(scale: scale, label: 'Pin'),
+                  SizedBox(height: 8 * scale),
+                  PinDigitInput(
+                    enabled: !isLoading,
+                    onChanged: (v) => _pin = v,
+                  ),
+                  SizedBox(height: 28 * scale),
+                  AuthPrimaryButton(
+                    scale: scale,
+                    label: 'Sign up',
+                    loading: isLoading,
+                    onPressed: _submitSignup,
+                  ),
+                  SizedBox(height: 16 * scale),
+                  AuthLegalNotice(
+                    prefix: 'By signing up, you agree to the ',
+                    textColor: AuthScreenTokens.labelColor,
+                    linkColor: AuthScreenTokens.accentColor,
+                  ),
+                  SizedBox(height: 28 * scale),
+                  AuthLinkText(
+                    scale: scale,
+                    prompt: 'Already have an account?',
+                    action: 'Sign In',
+                    onTap: () => Navigator.of(context).maybePop(),
+                  ),
+                ],
               ),
             );
           },

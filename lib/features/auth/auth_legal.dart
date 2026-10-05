@@ -26,7 +26,7 @@ class AuthLegalNotice extends StatelessWidget {
   final double fontSize;
   final TextAlign textAlign;
 
-  TextStyle get _base => GoogleFonts.montserrat(
+  TextStyle get _base => GoogleFonts.poppins(
         fontSize: fontSize,
         fontWeight: FontWeight.w400,
         color: textColor,

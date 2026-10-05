@@ -1,4 +1,5 @@
 import 'package:autobus/barrel.dart';
+import 'package:autobus/icons/figma_icons.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -471,7 +472,7 @@ class _SubscriptionBillPageState extends State<SubscriptionBillPage> {
           context,
         ).showSnackBar(
           SnackBar(
-            content: Text(userFacingError(e, action: 'starting payment')),
+            content: Text(userFacingError(e, fallback: AppUserMessages.payment)),
           ),
         );
       }
@@ -505,8 +506,9 @@ class _SubscriptionBillPageState extends State<SubscriptionBillPage> {
                       Row(
                         children: [
                           IconButton(
-                            icon: const Icon(
-                              Icons.arrow_back,
+                            icon: FigmaSvgIcon(
+                              FigmaIcons.back,
+                              size: 22,
                               color: Colors.white,
                             ),
                             onPressed: () => Navigator.of(context).pop(),
@@ -514,7 +516,7 @@ class _SubscriptionBillPageState extends State<SubscriptionBillPage> {
                           Expanded(
                             child: AppFitText(
                               'Subscription Bill',
-                              style: GoogleFonts.montserrat(
+                              style: GoogleFonts.poppins(
                                 color: Colors.white,
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
@@ -528,7 +530,7 @@ class _SubscriptionBillPageState extends State<SubscriptionBillPage> {
                 Text(
                   '${widget.plan.name} \nAccount',
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.montserrat(
+                  style: GoogleFonts.poppins(
                     color: Colors.white,
                     fontSize: 34,
                     fontWeight: FontWeight.w800,
@@ -570,7 +572,7 @@ class _SubscriptionBillPageState extends State<SubscriptionBillPage> {
                     '24 hours before the end of the current period. Manage or cancel '
                     'in your Apple ID account settings.',
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.montserrat(
+                    style: GoogleFonts.poppins(
                       color: Colors.white.withOpacity(0.7),
                       fontSize: 11,
                       height: 1.35,
@@ -585,7 +587,7 @@ class _SubscriptionBillPageState extends State<SubscriptionBillPage> {
                         onPressed: () => _openUrl(AppConfig.privacyPolicyUrl),
                         child: Text(
                           'Privacy Policy',
-                          style: GoogleFonts.montserrat(
+                          style: GoogleFonts.poppins(
                             color: Colors.white,
                             fontSize: 12,
                             decoration: TextDecoration.underline,
@@ -596,7 +598,7 @@ class _SubscriptionBillPageState extends State<SubscriptionBillPage> {
                         onPressed: () => _openUrl(AppConfig.termsOfServiceUrl),
                         child: Text(
                           'Terms of Use',
-                          style: GoogleFonts.montserrat(
+                          style: GoogleFonts.poppins(
                             color: Colors.white,
                             fontSize: 12,
                             decoration: TextDecoration.underline,
@@ -609,7 +611,7 @@ class _SubscriptionBillPageState extends State<SubscriptionBillPage> {
                     onPressed: _isLoading ? null : _restoreApplePurchases,
                     child: Text(
                       'Restore Purchases',
-                      style: GoogleFonts.montserrat(
+                      style: GoogleFonts.poppins(
                         color: Colors.white.withOpacity(0.9),
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
@@ -652,7 +654,7 @@ class _AccountMeta extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    TextStyle metaStyle(Color c) => GoogleFonts.montserrat(
+    TextStyle metaStyle(Color c) => GoogleFonts.poppins(
       color: c,
       fontSize: 13,
       fontWeight: FontWeight.w500,
@@ -755,7 +757,7 @@ class _BillingOptionTile extends StatelessWidget {
           children: [
             AppFitText(
               option.label,
-              style: GoogleFonts.montserrat(
+              style: GoogleFonts.poppins(
                 color: labelColor,
                 fontSize: 16,
                 fontWeight: FontWeight.w800,
@@ -764,7 +766,7 @@ class _BillingOptionTile extends StatelessWidget {
             const SizedBox(height: 2),
             AppFitText(
               option.subtitle,
-              style: GoogleFonts.montserrat(
+              style: GoogleFonts.poppins(
                 color: labelColor.withOpacity(0.85),
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
@@ -773,7 +775,7 @@ class _BillingOptionTile extends StatelessWidget {
             const SizedBox(height: 10),
             AppFitText(
               priceLabel ?? '\$ ${option.price.toStringAsFixed(0)}',
-              style: GoogleFonts.montserrat(
+              style: GoogleFonts.poppins(
                 color: labelColor,
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
@@ -813,16 +815,14 @@ class _BottomCta extends StatelessWidget {
               Expanded(
                 child: AppFitText(
                   label,
-                  style: GoogleFonts.montserrat(
+                  style: GoogleFonts.poppins(
                     color: Colors.white,
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
-              const Icon(Icons.chevron_right, color: Colors.white, size: 18),
-              const Icon(Icons.chevron_right, color: Colors.white54, size: 18),
-              const Icon(Icons.chevron_right, color: Colors.white38, size: 18),
+              const FigmaChevronTrail(),
             ],
           ),
         ),

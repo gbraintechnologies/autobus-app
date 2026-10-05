@@ -1,4 +1,9 @@
 import 'package:autobus/barrel.dart';
+import 'package:autobus/common_design/light_screen_theme.dart';
+import 'package:autobus/common_design/widgets/app_bottom_nav.dart';
+import 'package:autobus/common_design/widgets/light_screen_scaffold.dart';
+import 'package:autobus/icons/figma_icons.dart';
+import 'package:autobus/icons/home_figma_icons.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -8,6 +13,12 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
+  static const _switchColor = Color(0xFF2D0C51);
+  static const _switchSubtitle = Color(0xFFBABABA);
+  static const _rowText = Color(0xFF3E3E3E);
+  static const _deleteColor = Color(0xFFE60B51);
+  static const _logoutColor = Color(0xFFE11D48);
+
   Map<String, dynamic>? _credits;
   bool _creditsLoading = true;
 
@@ -48,13 +59,17 @@ class _SettingsPageState extends State<SettingsPage> {
   String _creditsTitle() {
     if (_creditsLoading) return 'Loading…';
     final wallet = _credits?['wallet'];
-    if (wallet is! Map) return 'Credits';
-    final v = wallet['remaining'];
-    final remaining = v is num ? v.toDouble() : double.tryParse(v?.toString() ?? '') ?? 0;
-    final text = remaining == remaining.roundToDouble()
-        ? remaining.toStringAsFixed(0)
-        : remaining.toStringAsFixed(1);
-    return '$text credits';
+    if (wallet is Map) {
+      final v = wallet['remaining'];
+      final remaining = v is num
+          ? v.toDouble()
+          : double.tryParse(v?.toString() ?? '') ?? 0;
+      final text = remaining == remaining.roundToDouble()
+          ? remaining.toStringAsFixed(0)
+          : remaining.toStringAsFixed(1);
+      return '$text credits';
+    }
+    return 'Credits';
   }
 
   String _creditsSubtitle() {
@@ -62,278 +77,219 @@ class _SettingsPageState extends State<SettingsPage> {
     return 'Tap Credits below to buy more';
   }
 
+  String _usernameFromState(AuthState state) {
+    if (state is Authenticated) {
+      return state.user['fullname'] ?? state.user['email'] ?? 'User';
+    }
+    return 'Guest';
+  }
+
+  void _openSubscription() {
+    Navigator.push<void>(
+      context,
+      MaterialPageRoute<void>(
+        settings: const RouteSettings(name: kManageSubscriptionRouteName),
+        builder: (_) => const ManageSubscriptionPage(),
+      ),
+    ).then((_) {
+      if (mounted) _loadCreditsSummary();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    final scale = MediaQuery.sizeOf(context).width / appShellDesignWidth;
+
     return BlocListener<AuthBloc, AuthState>(
       listener: (context, state) {
-        // Handle unauthenticated state (successful logout)
         if (state is Unauthenticated) {
-          // Navigate to signin page and remove all previous routes
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(builder: (_) => const LoggedOutGate()),
             (route) => false,
           );
-        }
-        // Handle logout errors
-        else if (state is AuthError && state.source == 'logout') {
+        } else if (state is AuthError && state.source == 'logout') {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
                 state.message.isNotEmpty
                     ? userFacingError(state.message)
                     : 'Error signing out',
-                style: GoogleFonts.montserrat(color: Colors.white),
+                style: GoogleFonts.poppins(color: Colors.white),
               ),
               backgroundColor: Colors.red,
             ),
           );
         }
       },
-      child: Scaffold(
-        body: _SettingsBackground(
-          child: SafeArea(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(18, 0, 18, 24),
-                child: Column(
-                  children: [
-                  const SizedBox(height: 20),
-
-                  /// 🔝 Top Bar
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      /// Back Button
-                      GestureDetector(
-                        onTap: () => Navigator.pop(context),
-                        child: Container(
-                          width: 48,
-                          height: 48,
-                          decoration: const BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: CustColors.mainCol,
-                          ),
-                          child: const Icon(
-                            Icons.arrow_back_ios_new,
-                            color: Colors.white,
-                            size: 18,
-                          ),
-                        ),
-                      ),
-
-                      /// Company Name / Username
-                      BlocBuilder<AuthBloc, AuthState>(
-                        builder: (context, state) {
-                          String username = 'User';
-                          if (state is Authenticated) {
-                            username =
-                                state.user['fullname'] ??
-                                state.user['email'] ??
-                                'User';
-                          }
-                          return Text(
-                            username,
-                            style: GoogleFonts.montserrat(
-                              color: Colors.black,
-                              fontSize: 20,
-                              fontWeight: FontWeight.w400,
-                            ),
-                          );
-                        },
-                      ),
-
-                      /// Keeps the title centered against the back button.
-                      const SizedBox(width: 48),
-                    ],
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  GestureDetector(
+      child: BlocBuilder<AuthBloc, AuthState>(
+        builder: (context, state) {
+          return LightScreenScaffold(
+            title: _usernameFromState(state),
+            body: SingleChildScrollView(
+              padding: LightScreenTheme.listPagePadding(scale),
+              child: Column(
+                children: [
+                  _SettingsCard(
+                    scale: scale,
+                    color: _switchColor,
                     onTap: () => showBusinessSwitcher(context),
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 14,
-                      ),
-                      decoration: BoxDecoration(
-                        color: CustColors.mainCol,
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.swap_horiz,
-                            color: Colors.white,
-                            size: 22,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Switch business',
-                                  style: GoogleFonts.montserrat(
-                                    color: Colors.white,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  'Add, switch, or detach businesses on this login',
-                                  style: GoogleFonts.montserrat(
-                                    color: Colors.white.withValues(alpha: 0.8),
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w400,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const Icon(
-                            Icons.chevron_right,
-                            color: Colors.white,
-                            size: 22,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 40),
-
-                  /// Credits summary (under top bar)
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.75),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Row(
                       children: [
-                        Text(
-                          _creditsTitle(),
-                          style: GoogleFonts.montserrat(
-                            color: Colors.black87,
-                            fontSize: 20,
-                            fontWeight: FontWeight.w800,
-                            height: 1.2,
-                          ),
+                        FigmaSvgIcon(
+                          FigmaIcons.switchBusiness,
+                          size: 24 * scale,
+                          color: Colors.white,
                         ),
-                        const SizedBox(height: 6),
-                        Text(
-                          _creditsSubtitle(),
-                          style: GoogleFonts.montserrat(
-                            color: Colors.black54,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w400,
+                        SizedBox(width: 12 * scale),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Switch Business',
+                                style: GoogleFonts.poppins(
+                                  color: Colors.white,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              Text(
+                                'Add, switch, or detach businesses on this login',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: GoogleFonts.poppins(
+                                  color: _switchSubtitle,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
                   ),
-
-                  const SizedBox(height: 20),
-
-                  /// ⚙️ Settings Card
-                  Container(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.6),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Column(
-                      children: _buildMenuItems()
-                          .map((item) => _SettingsMenuTile(item: item))
-                          .toList(),
-                    ),
-                  ),
-
-                  const SizedBox(height: 26),
-
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const DeleteAccountPage(),
+                  SizedBox(height: 20 * scale),
+                  _SettingsCard(
+                    scale: scale,
+                    onTap: _openSubscription,
+                    child: Row(
+                      children: [
+                        FigmaSvgIcon(
+                          FigmaIcons.token,
+                          size: 30 * scale,
                         ),
-                      );
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 18,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.6),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Delete account',
-                            style: GoogleFonts.montserrat(
-                              color: Colors.red,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w400,
-                            ),
-                          ),
-                          const Icon(
-                            Icons.delete_outline,
-                            color: Colors.red,
-                            size: 20,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  /// 🚪 Logout Card with loading state
-                  BlocBuilder<AuthBloc, AuthState>(
-                    builder: (context, state) {
-                      bool isLoading = state is AuthLoading;
-
-                      return GestureDetector(
-                        onTap: isLoading ? null : () => _handleLogout(context),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 18,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.6),
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        SizedBox(width: 12 * scale),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                isLoading ? 'Logging out...' : "Logout",
-                                style: GoogleFonts.montserrat(
-                                  color: isLoading ? Colors.grey : Colors.red,
-                                  fontSize: 14,
+                                _creditsTitle(),
+                                style: GoogleFonts.poppins(
+                                  color: Colors.black,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              Text(
+                                _creditsSubtitle(),
+                                style: GoogleFonts.poppins(
+                                  color: _rowText,
+                                  fontSize: 11,
                                   fontWeight: FontWeight.w400,
                                 ),
                               ),
-                              if (isLoading)
-                                const AutobusLoadingIndicator(size: 20)
-                              else
-                                const Icon(
-                                  Icons.logout,
-                                  color: Colors.red,
-                                  size: 20,
-                                ),
                             ],
                           ),
+                        ),
+                        FigmaSvgIcon(
+                          FigmaIcons.chevronDown,
+                          size: 30 * scale,
+                          color: const Color(0xFF4C4C4C),
+                          chevronRight: true,
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: LightScreenTheme.sectionGap * scale),
+                  _SettingsCard(
+                    scale: scale,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 16 * scale,
+                      vertical: 10 * scale,
+                    ),
+                    child: Column(
+                      children: [
+                        for (final item in _buildMenuItems())
+                          _SettingsMenuTile(scale: scale, item: item),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: LightScreenTheme.sectionGap * scale),
+                  BlocBuilder<AuthBloc, AuthState>(
+                    builder: (context, authState) {
+                      final isLoading = authState is AuthLoading;
+                      return _SettingsCard(
+                        scale: scale,
+                        padding: EdgeInsets.fromLTRB(
+                          30 * scale,
+                          18 * scale,
+                          30 * scale,
+                          18 * scale,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            InkWell(
+                              onTap: isLoading
+                                  ? null
+                                  : () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) =>
+                                              const DeleteAccountPage(),
+                                        ),
+                                      );
+                                    },
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(vertical: 10 * scale),
+                                child: Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                    'Delete account',
+                                    style: GoogleFonts.poppins(
+                                      color: _deleteColor,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            InkWell(
+                              onTap: isLoading
+                                  ? null
+                                  : () => _handleLogout(context),
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(vertical: 10 * scale),
+                                child: Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                    isLoading ? 'Logging out...' : 'Logout',
+                                    style: GoogleFonts.poppins(
+                                      color: isLoading
+                                          ? Colors.grey
+                                          : _logoutColor,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       );
                     },
@@ -341,52 +297,49 @@ class _SettingsPageState extends State<SettingsPage> {
                 ],
               ),
             ),
-          ),
-        ),
-      ),
+          );
+        },
       ),
     );
   }
 
   List<SettingsMenuItem> _buildMenuItems() {
     return [
-      SettingsMenuItem("Profile", Icons.person_outline, () {
+      SettingsMenuItem('Profile', FigmaIcons.profile, () {
         Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const Profile()),
         );
       }),
-      SettingsMenuItem("Credits", Icons.toll_rounded, () {
+      SettingsMenuItem('Credits', FigmaIcons.tokenOutline, _openSubscription),
+      SettingsMenuItem('Payment method', FigmaIcons.invoice, () {
         Navigator.push(
           context,
-          MaterialPageRoute(
-            settings: const RouteSettings(name: kManageSubscriptionRouteName),
-            builder: (_) => const ManageSubscriptionPage(),
-          ),
-        ).then((_) => _loadCreditsSummary());
+          MaterialPageRoute(builder: (_) => const PaymentMethodPage()),
+        );
       }),
-      SettingsMenuItem("Notifications", Icons.notifications_none, () {
+      SettingsMenuItem('Notifications', FigmaIcons.notification, () {
         Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const NotificationsPage()),
         );
       }),
-      SettingsMenuItem("Password & Security", Icons.lock_outline, () {
+      SettingsMenuItem('Password & Security', FigmaIcons.password, () {
         Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const Security()),
         );
       }),
-      SettingsMenuItem("Help & Support", Icons.help_outline, () {
+      SettingsMenuItem('Help & Support', FigmaIcons.info, () {
         Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const HelpPage()),
         );
       }),
-      SettingsMenuItem("Terms and Conditions", Icons.description_outlined, () {
+      SettingsMenuItem('Terms and Conditions', FigmaIcons.documents, () {
         openAuthLegalUrl(AppConfig.termsOfServiceUrl);
       }),
-      SettingsMenuItem("Privacy Policy", Icons.privacy_tip_outlined, () {
+      SettingsMenuItem('Privacy Policy', FigmaIcons.documents, () {
         openAuthLegalUrl(AppConfig.privacyPolicyUrl);
       }),
     ];
@@ -407,7 +360,7 @@ class _SettingsPageState extends State<SettingsPage> {
               borderRadius: BorderRadius.circular(18),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.12),
+                  color: Colors.black.withValues(alpha: 0.12),
                   blurRadius: 24,
                   offset: const Offset(0, 12),
                 ),
@@ -422,17 +375,21 @@ class _SettingsPageState extends State<SettingsPage> {
                   height: 54,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Colors.red.withOpacity(0.10),
+                    color: Colors.red.withValues(alpha: 0.10),
                   ),
-                  child: const Icon(Icons.logout, color: Colors.red, size: 26),
+                  child: HomeSfIcon(
+                    icon: HomeFigmaIcons.logout,
+                    color: Colors.red,
+                    size: 26,
+                  ),
                 ),
                 const SizedBox(height: 14),
                 Text(
                   'Log out?',
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.montserrat(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+                  style: GoogleFonts.poppins(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
                     color: Colors.black87,
                   ),
                 ),
@@ -440,7 +397,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 Text(
                   'You can log back in at any time.',
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.montserrat(
+                  style: GoogleFonts.poppins(
                     fontSize: 13.5,
                     height: 1.35,
                     fontWeight: FontWeight.w400,
@@ -456,7 +413,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         style: OutlinedButton.styleFrom(
                           foregroundColor: Colors.black87,
                           side: BorderSide(
-                            color: Colors.black.withOpacity(0.12),
+                            color: Colors.black.withValues(alpha: 0.12),
                           ),
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
@@ -468,7 +425,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         ),
                         child: Text(
                           'Cancel',
-                          style: GoogleFonts.montserrat(
+                          style: GoogleFonts.poppins(
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -478,7 +435,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     Expanded(
                       child: ElevatedButton(
                         onPressed: () {
-                          Navigator.pop(context); // Close dialog
+                          Navigator.pop(context);
                           context.read<AuthBloc>().add(LogoutEvent());
                         },
                         style: ElevatedButton.styleFrom(
@@ -494,7 +451,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         ),
                         child: Text(
                           'Continue',
-                          style: GoogleFonts.montserrat(
+                          style: GoogleFonts.poppins(
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -511,52 +468,102 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 }
 
-class _SettingsMenuTile extends StatelessWidget {
-  final SettingsMenuItem item;
+class _SettingsCard extends StatelessWidget {
+  final double scale;
+  final Widget child;
+  final VoidCallback? onTap;
+  final Color? color;
+  final EdgeInsetsGeometry? padding;
 
-  const _SettingsMenuTile({required this.item});
+  const _SettingsCard({
+    required this.scale,
+    required this.child,
+    this.onTap,
+    this.color,
+    this.padding,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      onTap: item.onTap,
-      leading: Icon(item.icon, color: Colors.black87),
-      title: Text(
-        item.title,
-        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+    final radius = 15 * scale;
+    final content = Container(
+      width: double.infinity,
+      constraints: BoxConstraints(minHeight: 88 * scale),
+      padding: padding ??
+          EdgeInsets.symmetric(horizontal: 16 * scale, vertical: 20 * scale),
+      decoration: BoxDecoration(
+        color: color ?? LightScreenTheme.surface,
+        borderRadius: BorderRadius.circular(radius),
       ),
-      trailing: const Icon(Icons.chevron_right, color: Colors.black54),
+      child: child,
+    );
+
+    if (onTap == null) return content;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(radius),
+        child: content,
+      ),
+    );
+  }
+}
+
+class _SettingsMenuTile extends StatelessWidget {
+  final double scale;
+  final SettingsMenuItem item;
+
+  const _SettingsMenuTile({required this.scale, required this.item});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: item.onTap,
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 12 * scale),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 28 * scale,
+                child: FigmaSvgIcon(
+                  item.iconAsset,
+                  size: 20 * scale,
+                  color: const Color(0xFF4E4E4E),
+                ),
+              ),
+              SizedBox(width: 10 * scale),
+              Expanded(
+                child: Text(
+                  item.title,
+                  style: GoogleFonts.poppins(
+                    color: _SettingsPageState._rowText,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              FigmaSvgIcon(
+                FigmaIcons.chevronDown,
+                size: 24 * scale,
+                color: const Color(0xFF4C4C4C),
+                chevronRight: true,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
 
 class SettingsMenuItem {
   final String title;
-  final IconData icon;
+  final String iconAsset;
   final VoidCallback onTap;
 
-  SettingsMenuItem(this.title, this.icon, this.onTap);
-}
-
-class _SettingsBackground extends StatelessWidget {
-  final Widget child;
-  const _SettingsBackground({required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Color.fromARGB(255, 244, 244, 244),
-            Color.fromARGB(255, 240, 240, 240),
-            Color.fromARGB(255, 236, 236, 236),
-          ],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
-      ),
-      child: child,
-    );
-  }
+  SettingsMenuItem(this.title, this.iconAsset, this.onTap);
 }

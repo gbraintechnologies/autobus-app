@@ -34,6 +34,7 @@ class SubscriptionPlan extends Equatable {
   final String description;
   final bool isActive;
   final Map<String, String> appleProductIds;
+  final double? creditsTotal;
 
   const SubscriptionPlan({
     required this.id,
@@ -44,6 +45,7 @@ class SubscriptionPlan extends Equatable {
     required this.description,
     required this.isActive,
     this.appleProductIds = const {},
+    this.creditsTotal,
   });
 
   factory SubscriptionPlan.fromJson(Map<String, dynamic> json) {
@@ -77,7 +79,18 @@ class SubscriptionPlan extends Equatable {
       description: (json['description'] ?? '').toString(),
       isActive: json['is_active'] == true,
       appleProductIds: appleIds,
+      creditsTotal: _creditsFromJson(json),
     );
+  }
+
+  static double? _creditsFromJson(Map<String, dynamic> json) {
+    final v =
+        json['credits'] ??
+        json['total_credits'] ??
+        json['credit_amount'] ??
+        json['allocated_credits'];
+    if (v is num) return v.toDouble();
+    return double.tryParse(v?.toString() ?? '');
   }
 
   Map<String, dynamic> toJson() {
@@ -90,6 +103,7 @@ class SubscriptionPlan extends Equatable {
       'description': description,
       'is_active': isActive,
       'apple_product_ids': appleProductIds,
+      if (creditsTotal != null) 'credits': creditsTotal,
     };
   }
 
@@ -121,6 +135,27 @@ class SubscriptionPlan extends Equatable {
 
   String get priceText => price == 0 ? 'Free' : 'from GHS $price/mo';
 
+  String get shortPriceLabel {
+    if (price == 0) return 'Free';
+    return '\$${price.toStringAsFixed(2)}';
+  }
+
+  String get creditsInTotalLabel {
+    final fromField = creditsTotal;
+    if (fromField != null && fromField > 0) {
+      final shown = fromField == fromField.roundToDouble()
+          ? fromField.toStringAsFixed(0)
+          : fromField.toStringAsFixed(1);
+      return '$shown credits in total';
+    }
+    final pattern = RegExp(r'(\d+(?:\.\d+)?)\s*credits', caseSensitive: false);
+    for (final source in [description, ...features]) {
+      final match = pattern.firstMatch(source);
+      if (match != null) return '${match.group(1)} credits in total';
+    }
+    return priceText;
+  }
+
   /// API agent ids are often snake_case (e.g. `email_agent`); show as title text.
   static String formatAgentLabel(String raw) {
     final normalized = raw.trim().replaceAll('_', ' ');
@@ -145,5 +180,6 @@ class SubscriptionPlan extends Equatable {
     description,
     isActive,
     appleProductIds,
+    creditsTotal,
   ];
 }

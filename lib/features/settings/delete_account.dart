@@ -86,11 +86,11 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
         return AlertDialog(
           title: Text(
             'Delete permanently?',
-            style: GoogleFonts.montserrat(fontWeight: FontWeight.w600),
+            style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
           ),
           content: Text(
             'This cannot be undone. Your Autobus login, every attached business, and the data listed on the previous screen will be deleted.',
-            style: GoogleFonts.montserrat(fontSize: 14, height: 1.4),
+            style: GoogleFonts.poppins(fontSize: 14, height: 1.4),
           ),
           actions: [
             TextButton(
@@ -125,11 +125,11 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
           return AlertDialog(
             title: Text(
               'Account deleted',
-              style: GoogleFonts.montserrat(fontWeight: FontWeight.w600),
+              style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
             ),
             content: Text(
               'Your Autobus account has been deleted.',
-              style: GoogleFonts.montserrat(fontSize: 14),
+              style: GoogleFonts.poppins(fontSize: 14),
             ),
             actions: [
               TextButton(
@@ -194,7 +194,7 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
                         child: Text(
                           'Delete account',
                           textAlign: TextAlign.center,
-                          style: GoogleFonts.montserrat(
+                          style: GoogleFonts.poppins(
                             fontSize: 18,
                             fontWeight: FontWeight.w500,
                           ),
@@ -214,7 +214,7 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
                             children: [
                               Text(
                                 'This permanently deletes your Autobus login and every business attached to it. Connections are removed automatically — you do not need to unlink them first.',
-                                style: GoogleFonts.montserrat(
+                                style: GoogleFonts.poppins(
                                   fontSize: 13.5,
                                   height: 1.4,
                                   color: Colors.black87,
@@ -224,7 +224,7 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
                                 const SizedBox(height: 16),
                                 Text(
                                   _error!,
-                                  style: GoogleFonts.montserrat(
+                                  style: GoogleFonts.poppins(
                                     color: Colors.red,
                                     fontSize: 13,
                                   ),
@@ -234,7 +234,7 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
                               const SizedBox(height: 28),
                               Text(
                                 'Enter your PIN to confirm',
-                                style: GoogleFonts.montserrat(
+                                style: GoogleFonts.poppins(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -276,7 +276,7 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
                                         )
                                       : Text(
                                           'Delete permanently',
-                                          style: GoogleFonts.montserrat(
+                                          style: GoogleFonts.poppins(
                                             fontWeight: FontWeight.w700,
                                           ),
                                         ),
@@ -364,7 +364,7 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
                   onPressed: _openApplePurchases,
                   child: Text(
                     'View Apple purchases',
-                    style: GoogleFonts.montserrat(fontWeight: FontWeight.w600),
+                    style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
                   ),
                 ),
               ),
@@ -377,7 +377,7 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
   Widget _sectionTitle(String text) {
     return Text(
       text,
-      style: GoogleFonts.montserrat(
+      style: GoogleFonts.poppins(
         fontSize: 14,
         fontWeight: FontWeight.w700,
       ),
@@ -400,13 +400,13 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
       dense: true,
       title: Text(
         title,
-        style: GoogleFonts.montserrat(fontSize: 13, fontWeight: FontWeight.w500),
+        style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w500),
       ),
       subtitle: (subtitle == null || subtitle.isEmpty)
           ? null
           : Text(
               subtitle,
-              style: GoogleFonts.montserrat(fontSize: 12, color: Colors.black54),
+              style: GoogleFonts.poppins(fontSize: 12, color: Colors.black54),
             ),
     );
   }

@@ -1,4 +1,4 @@
-import 'package:autobus/common_design/app_error.dart';
+import 'package:autobus/common_design/user_facing_error.dart';
 import 'package:autobus/config/glob_navigator.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -27,7 +27,7 @@ void showAppSnackBar(
       SnackBar(
         content: Text(
           message,
-          style: GoogleFonts.montserrat(color: Colors.white),
+          style: GoogleFonts.poppins(color: Colors.white),
         ),
         backgroundColor: backgroundColor,
         behavior: SnackBarBehavior.floating,

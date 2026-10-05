@@ -739,7 +739,7 @@ class _MarketingChatPageState extends State<_MarketingChatPage> {
             padding: const EdgeInsets.symmetric(horizontal: 18),
             child: Text(
               widget.readOnly ? 'Campaign conversation' : 'Create with Autobus',
-              style: GoogleFonts.montserrat(
+              style: GoogleFonts.poppins(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: Colors.black87,
@@ -793,7 +793,7 @@ class _MarketingChatPageState extends State<_MarketingChatPage> {
                       ? 'No messages were saved for this campaign.'
                       : 'What would you like to create?',
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.montserrat(
+                  style: GoogleFonts.poppins(
                     fontSize: 20,
                     fontWeight: FontWeight.w600,
                     color: _kPrimary,
@@ -805,7 +805,7 @@ class _MarketingChatPageState extends State<_MarketingChatPage> {
                       ? 'Generated images, videos, and captions will show here when they are part of the saved conversation.'
                       : 'Describe an image, video, or caption. Attach up to 3 references if you want the AI to follow them. Each reference uses extra credits.',
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.montserrat(
+                  style: GoogleFonts.poppins(
                     fontSize: 13,
                     color: Colors.black45,
                     height: 1.4,
@@ -836,7 +836,7 @@ class _MarketingChatPageState extends State<_MarketingChatPage> {
     return ActionChip(
       label: Text(
         label,
-        style: GoogleFonts.montserrat(fontSize: 12, color: _kHeaderPurple),
+        style: GoogleFonts.poppins(fontSize: 12, color: _kHeaderPurple),
       ),
       backgroundColor: const Color(0xFFF7F5FB),
       side: const BorderSide(color: Color(0xFFE8E0F0)),
@@ -871,7 +871,7 @@ class _MarketingChatPageState extends State<_MarketingChatPage> {
               ],
               Text(
                 msg.text,
-                style: GoogleFonts.montserrat(
+                style: GoogleFonts.poppins(
                   fontSize: 14,
                   color: Colors.white,
                   height: 1.4,
@@ -912,7 +912,7 @@ class _MarketingChatPageState extends State<_MarketingChatPage> {
             else if (msg.error != null)
               Text(
                 msg.error!,
-                style: GoogleFonts.montserrat(
+                style: GoogleFonts.poppins(
                   fontSize: 13,
                   color: CustColors.accentRed,
                 ),
@@ -925,7 +925,7 @@ class _MarketingChatPageState extends State<_MarketingChatPage> {
                 if (content != null) const SizedBox(height: 8),
                 Text(
                   msg.text,
-                  style: GoogleFonts.montserrat(
+                  style: GoogleFonts.poppins(
                     fontSize: 13,
                     color: Colors.black87,
                     height: 1.4,
@@ -943,7 +943,7 @@ class _MarketingChatPageState extends State<_MarketingChatPage> {
     if (content.type == MarketingContentType.text) {
       return Text(
         content.displayText,
-        style: GoogleFonts.montserrat(
+        style: GoogleFonts.poppins(
           fontSize: 14,
           color: Colors.black87,
           height: 1.45,
@@ -1080,7 +1080,7 @@ class _MarketingChatPageState extends State<_MarketingChatPage> {
                       'Reference: ${_references[i].name}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.montserrat(fontSize: 12, color: Colors.black54),
+                      style: GoogleFonts.poppins(fontSize: 12, color: Colors.black54),
                     ),
                   ),
                   GestureDetector(
@@ -1125,10 +1125,10 @@ class _MarketingChatPageState extends State<_MarketingChatPage> {
             keyboardType: TextInputType.multiline,
             textInputAction: TextInputAction.newline,
             onTapOutside: dismissAppKeyboard,
-            style: GoogleFonts.montserrat(fontSize: 14, height: 1.4),
+            style: GoogleFonts.poppins(fontSize: 14, height: 1.4),
             decoration: InputDecoration(
               hintText: 'Describe an image, video, or caption…',
-              hintStyle: GoogleFonts.montserrat(fontSize: 14, color: Colors.black38),
+              hintStyle: GoogleFonts.poppins(fontSize: 14, color: Colors.black38),
               border: InputBorder.none,
               isDense: true,
               contentPadding: EdgeInsets.zero,
@@ -1215,7 +1215,7 @@ class _ChatNextButton extends StatelessWidget {
             children: [
               Text(
                 'Next',
-                style: GoogleFonts.montserrat(
+                style: GoogleFonts.poppins(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                   color: enabled ? Colors.white : Colors.white70,

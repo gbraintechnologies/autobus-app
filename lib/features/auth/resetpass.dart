@@ -1,4 +1,5 @@
 import 'package:autobus/barrel.dart';
+import 'package:autobus/common_design/widgets/auth_screen_layout.dart';
 
 class ResetPassword extends StatefulWidget {
   final String email;
@@ -11,6 +12,7 @@ class ResetPassword extends StatefulWidget {
     this.phone = '',
     required this.code,
   });
+
   @override
   State<ResetPassword> createState() => _ResetPasswordState();
 }
@@ -19,135 +21,92 @@ class _ResetPasswordState extends State<ResetPassword> {
   String _newPin = '';
   String _confirmPin = '';
 
+  void _submit() {
+    if (_newPin.length != 4 || _confirmPin.length != 4) {
+      showAppSnackBar(
+        context,
+        'Please enter and confirm your 4-digit PIN',
+      );
+      return;
+    }
+
+    if (_newPin != _confirmPin) {
+      showAppSnackBar(context, 'PINs do not match');
+      return;
+    }
+
+    context.read<AuthBloc>().add(
+      ResetPasswordEvent(
+        email: widget.email,
+        phone: widget.phone,
+        code: widget.code,
+        newPassword: _newPin,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return BlocListener<AuthBloc, AuthState>(
-      listener: (context, state) {
-        if (state is PasswordResetSuccess) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.message)),
-          );
-          Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (_) => const Signin()),
-            (route) => false,
-          );
-        } else if (state is AuthError && state.source == 'reset_password') {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(userFacingError(state.message, action: 'resetting password')),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      },
-      child: Scaffold(
-        resizeToAvoidBottomInset: false,
-        backgroundColor: Colors.white,
-        body: BlocBuilder<AuthBloc, AuthState>(
-          builder: (context, state) {
-            return Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(height: MediaQuery.of(context).size.height * 0.03),
-                  AuthPageHeader(
-                    title: 'Reset Password',
-                    fontWeight: FontWeight.w300,
-                    onBack: () => Navigator.of(context).pop(),
-                  ),
-                  SizedBox(height: MediaQuery.of(context).size.height * 0.1),
-                  Center(
-                    child: SizedBox(
-                      width: 100,
-                      height: 100,
-                      child: Image.asset('assets/img/bot.png'),
-                    ),
-                  ),
-                  SizedBox(height: MediaQuery.of(context).size.height * 0.1),
-                  Padding(
-                    padding: EdgeInsets.only(left: 20.0, right: 20.0),
-                    child: Text(
-                      'New PIN',
-                      style: GoogleFonts.montserrat(
-                        color: const Color.fromARGB(255, 12, 12, 12),
-                        fontSize: 13,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(left: 20.0, right: 20.0),
-                    child: PinDigitInput(
-                      onChanged: (v) => _newPin = v,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Padding(
-                    padding: EdgeInsets.only(left: 20.0, right: 20.0),
-                    child: Text(
-                      'Confirm PIN',
-                      style: GoogleFonts.montserrat(
-                        color: Colors.black,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(left: 20.0, right: 20.0),
-                    child: PinDigitInput(
-                      onChanged: (v) => _confirmPin = v,
-                    ),
-                  ),
-                  const SizedBox(height: 15),
-                  Padding(
-                    padding: const EdgeInsets.only(left: 20.0, right: 20.0),
-                    child: Text(
-                      'Enter a 4-digit PIN',
-                      style: GoogleFonts.montserrat(
-                        color: Colors.black,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: MediaQuery.of(context).size.height * 0.1),
-                  Center(
-                    child: AppButton(
-                      onPressed: () {
-                        if (_newPin.length != 4 || _confirmPin.length != 4) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'Please enter and confirm your 4-digit PIN',
-                              ),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
-                          return;
-                        }
+    final scale = AuthScreenTokens.scaleOf(context);
 
-                        if (_newPin != _confirmPin) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('PINs do not match'),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
-                          return;
-                        }
-                        context.read<AuthBloc>().add(
-                          ResetPasswordEvent(
-                            email: widget.email,
-                            phone: widget.phone,
-                            code: widget.code,
-                            newPassword: _newPin,
-                          ),
-                        );
-                      },
-                      buttonText: 'Reset Password',
-                    ),
+    return AuthScreenScaffold(
+      child: BlocListener<AuthBloc, AuthState>(
+        listener: (context, state) {
+          if (state is PasswordResetSuccess) {
+            showAppSnackBar(context, state.message);
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (_) => const Signin()),
+              (route) => false,
+            );
+          } else if (state is AuthError && state.source == 'reset_password') {
+            showAppSnackBar(
+              context,
+              userFacingError(state.message, action: 'resetting password'),
+            );
+          }
+        },
+        child: BlocBuilder<AuthBloc, AuthState>(
+          builder: (context, state) {
+            final isLoading = state is AuthLoading;
+
+            return SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              padding: EdgeInsets.fromLTRB(
+                24 * scale,
+                8 * scale,
+                24 * scale,
+                24 * scale,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const AuthBackButton(),
+                  SizedBox(height: 12 * scale),
+                  AuthScreenHeader(
+                    scale: scale,
+                    title: 'New Pin',
+                    subtitle: 'Enter your new pin',
+                  ),
+                  SizedBox(height: 32 * scale),
+                  AuthFieldLabel(scale: scale, label: 'New Pin'),
+                  SizedBox(height: 8 * scale),
+                  PinDigitInput(
+                    enabled: !isLoading,
+                    onChanged: (v) => _newPin = v,
+                  ),
+                  SizedBox(height: 16 * scale),
+                  AuthFieldLabel(scale: scale, label: 'Confirm Pin'),
+                  SizedBox(height: 8 * scale),
+                  PinDigitInput(
+                    enabled: !isLoading,
+                    onChanged: (v) => _confirmPin = v,
+                  ),
+                  SizedBox(height: 32 * scale),
+                  AuthPrimaryButton(
+                    scale: scale,
+                    label: 'Confirm',
+                    loading: isLoading,
+                    onPressed: _submit,
                   ),
                 ],
               ),

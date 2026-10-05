@@ -1,4 +1,6 @@
 import 'package:autobus/barrel.dart';
+import 'package:autobus/common_design/widgets/auth_field.dart';
+import 'package:autobus/common_design/widgets/auth_screen_layout.dart';
 
 class Signin extends StatefulWidget {
   const Signin({super.key, this.initialIdentifier});
@@ -11,7 +13,7 @@ class Signin extends StatefulWidget {
 }
 
 class _SigninState extends State<Signin> {
-  late final TextEditingController emailController = TextEditingController(
+  late final TextEditingController _emailController = TextEditingController(
     text: widget.initialIdentifier?.trim() ?? '',
   );
   String _pin = '';
@@ -19,17 +21,17 @@ class _SigninState extends State<Signin> {
   @override
   void initState() {
     super.initState();
-    if (emailController.text.isEmpty) {
+    if (_emailController.text.isEmpty) {
       LastLoginStore.read().then((id) {
-        if (!mounted || id == null || emailController.text.isNotEmpty) return;
-        emailController.text = id;
+        if (!mounted || id == null || _emailController.text.isNotEmpty) return;
+        _emailController.text = id;
       });
     }
   }
 
   @override
   void dispose() {
-    emailController.dispose();
+    _emailController.dispose();
     super.dispose();
   }
 
@@ -47,22 +49,22 @@ class _SigninState extends State<Signin> {
   }
 
   void _submitLogin() {
-    if (emailController.text.isEmpty || _pin.length != 4) {
-      return;
-    }
+    final email = _emailController.text.trim();
+    if (email.isEmpty || _pin.length != 4) return;
 
     context.read<AuthBloc>().add(
-      LoginEvent(identifier: emailController.text.trim(), password: _pin),
+      LoginEvent(identifier: email, password: _pin),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    print('=== SIGNIN SCREEN BUILDING ===');
-    return Scaffold(
-      resizeToAvoidBottomInset: false,
-      backgroundColor: Colors.white,
-      body: BlocConsumer<AuthBloc, AuthState>(
+    final scale = AuthScreenTokens.scaleOf(context);
+    final fieldWidth = AuthScreenTokens.fieldWidth(scale);
+    final fieldHeight = AuthScreenTokens.fieldHeight(scale);
+
+    return AuthScreenScaffold(
+      child: BlocConsumer<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is Authenticated) {
             Navigator.of(context).pushAndRemoveUntil(
@@ -70,171 +72,101 @@ class _SigninState extends State<Signin> {
               (route) => false,
             );
           } else if (state is AuthError && state.source == 'login') {
-            showAppSnackBar(context, userFacingError(state.message, action: 'signing in'));
+            showAppSnackBar(
+              context,
+              userFacingError(state.message, action: 'signing in'),
+            );
           }
         },
         builder: (context, state) {
-          final bool isLoading = state is AuthLoading;
+          final isLoading = state is AuthLoading;
 
-          return SafeArea(
-            child: SingleChildScrollView(
-              keyboardDismissBehavior:
-                  ScrollViewKeyboardDismissBehavior.onDrag,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24.0,
-                  vertical: 24.0,
+          return SingleChildScrollView(
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            padding: EdgeInsets.fromLTRB(
+              24 * scale,
+              8 * scale,
+              24 * scale,
+              24 * scale,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                AuthBackButton(onTap: _onBack),
+                SizedBox(height: 12 * scale),
+                AuthScreenHeader(
+                  scale: scale,
+                  title: 'Sign In',
+                  subtitle: 'Agentic business management',
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    AuthPageHeader(
-                      title: 'Login',
-                      onBack: _onBack,
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    const Center(
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: AutobusBranding(
-                          wordmarkFontSize: 26,
-                          markCircleSize: 34,
-                          spacing: 14,
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 40),
-
-                    Center(
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 360),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Text(
-                              'Email or Username',
-                              style: GoogleFonts.montserrat(
-                                color: Colors.black87,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            TextField(
-                              onTapOutside: dismissAppKeyboard,
-                              controller: emailController,
-                              style: GoogleFonts.montserrat(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                              ),
-                              decoration: InputDecoration(
-                                border: const UnderlineInputBorder(),
-                                contentPadding: const EdgeInsets.symmetric(
-                                  vertical: 12,
-                                ),
-                                hintText: 'Enter email or username',
-                                hintStyle: GoogleFonts.montserrat(
-                                  color: Colors.black38,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w400,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 20),
-                            Text(
-                              'PIN',
-                              style: GoogleFonts.montserrat(
-                                color: Colors.black87,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            PinDigitInput(
-                              enabled: !isLoading,
-                              onChanged: (v) => _pin = v,
-                              onCompleted: (_) {
-                                if (emailController.text.isNotEmpty) {
-                                  _submitLogin();
-                                }
-                              },
-                            ),
-                            const SizedBox(height: 32),
-                            Align(
-                              alignment: Alignment.centerLeft,
-                              child: GestureDetector(
-                                onTap: () {
-                                  Navigator.of(context).push(
-                                    PageTransition(
-                                      type: PageTransitionType
-                                          .rightToLeftWithFade,
-                                      child: const RecoverAccount(),
-                                    ),
-                                  );
-                                },
-                                child: Text(
-                                  'Forgot Password ?',
-                                  style: GoogleFonts.montserrat(
-                                    color: Colors.black87,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 28),
-                            Center(
-                              child: AppButton(
-                                onPressed: isLoading ? null : _submitLogin,
-                                buttonText: 'Login',
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    SizedBox(height: MediaQuery.of(context).size.height * 0.25),
-
-                    Center(
-                      child: Column(
-                        children: [
-                          Text(
-                            "Dont have an Account ?",
-                            style: GoogleFonts.montserrat(
-                              color: Colors.black54,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w400,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          GestureDetector(
-                            onTap: () {
-                              Navigator.of(context).push(
-                                PageTransition(
-                                  type: PageTransitionType.leftToRightWithFade,
-                                  child: const Signup(),
-                                ),
-                              );
-                            },
-                            child: AppFitText(
-                              'Sign Up',
-                              style: GoogleFonts.montserrat(
-                                color: CustColors.mainCol,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                SizedBox(height: 32 * scale),
+                AuthField(
+                  width: fieldWidth,
+                  height: fieldHeight,
+                  scale: scale,
+                  icon: Icons.person_outline,
+                  controller: _emailController,
+                  enabled: !isLoading,
+                  hintText: 'Email or username',
+                  keyboardType: TextInputType.emailAddress,
+                  textInputAction: TextInputAction.next,
                 ),
-              ),
+                SizedBox(height: 16 * scale),
+                AuthFieldLabel(scale: scale, label: 'PIN'),
+                SizedBox(height: 8 * scale),
+                PinDigitInput(
+                  enabled: !isLoading,
+                  onChanged: (v) => _pin = v,
+                  onCompleted: (_) {
+                    if (_emailController.text.isNotEmpty) {
+                      _submitLogin();
+                    }
+                  },
+                ),
+                SizedBox(height: 16 * scale),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: GestureDetector(
+                    onTap: () {
+                      Navigator.of(context).push(
+                        PageTransition(
+                          type: PageTransitionType.rightToLeftWithFade,
+                          child: const RecoverAccount(),
+                        ),
+                      );
+                    },
+                    child: Text(
+                      'Forgot password?',
+                      style: GoogleFonts.poppins(
+                        color: AuthScreenTokens.labelColor,
+                            fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 28 * scale),
+                AuthPrimaryButton(
+                  scale: scale,
+                  label: 'Sign in',
+                  loading: isLoading,
+                  onPressed: _submitLogin,
+                ),
+                SizedBox(height: 32 * scale),
+                AuthLinkText(
+                  scale: scale,
+                  prompt: "Don't have an account?",
+                  action: 'Sign Up',
+                  onTap: () {
+                    Navigator.of(context).push(
+                      PageTransition(
+                        type: PageTransitionType.leftToRightWithFade,
+                        child: const Signup(),
+                      ),
+                    );
+                  },
+                ),
+              ],
             ),
           );
         },

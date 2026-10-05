@@ -1,4 +1,5 @@
 import 'package:autobus/barrel.dart';
+import 'package:autobus/features/onboarding/onboarding_page.dart';
 import 'package:autobus/features/onboarding/onboarding_storage.dart';
 
 class SplashWrapper extends StatefulWidget {
@@ -13,15 +14,25 @@ class _SplashWrapperState extends State<SplashWrapper> {
   bool? _hasSeenSplash;
   bool _forceMarketingSplash = false;
   Timer? _splashTimer;
+  Timer? _authStallTimer;
   Timer? _failsafeTimer;
 
   @override
   void initState() {
     super.initState();
     print('=== SPLASH WRAPPER INIT ===');
+    _startAuthStallTimer();
     _loadSplashPref();
-    // Never stay on the orbiting loader if session check / prefs hang.
     _failsafeTimer = Timer(const Duration(seconds: 4), _onFailsafe);
+  }
+
+  void _startAuthStallTimer() {
+    _authStallTimer?.cancel();
+    _authStallTimer = Timer(const Duration(seconds: 12), () {
+      if (_navigated || !mounted) return;
+      print('=== AUTH STALL TIMEOUT - PROCEEDING ===');
+      _goToAuth();
+    });
   }
 
   Future<void> _loadSplashPref() async {
@@ -43,6 +54,7 @@ class _SplashWrapperState extends State<SplashWrapper> {
     if (_navigated || !mounted) return;
     _navigated = true;
     _splashTimer?.cancel();
+    _authStallTimer?.cancel();
     _failsafeTimer?.cancel();
     print('=== NAVIGATING TO AUTH WRAPPER ===');
     if (_hasSeenSplash == false) {
@@ -101,6 +113,7 @@ class _SplashWrapperState extends State<SplashWrapper> {
   @override
   void dispose() {
     _splashTimer?.cancel();
+    _authStallTimer?.cancel();
     _failsafeTimer?.cancel();
     super.dispose();
   }
@@ -119,11 +132,11 @@ class _SplashWrapperState extends State<SplashWrapper> {
           );
         }
 
-        final showMarketing =
+        final showOnboarding =
             _forceMarketingSplash ||
             ((_hasSeenSplash == false) && _isLoggedOut(state));
-        if (showMarketing) {
-          return SplashPge(onFinished: _goToAuth);
+        if (showOnboarding) {
+          return OnboardingPage(onFinished: _goToAuth);
         }
 
         return const Scaffold(

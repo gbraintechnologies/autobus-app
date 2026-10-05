@@ -129,7 +129,7 @@ class _CustomerPickerSheetState extends State<_CustomerPickerSheet> {
                     Expanded(
                       child: Text(
                         'Select recipients',
-                        style: GoogleFonts.montserrat(
+                        style: GoogleFonts.poppins(
                           fontSize: 16,
                           fontWeight: FontWeight.w500,
                           color: _purple,
@@ -140,7 +140,7 @@ class _CustomerPickerSheetState extends State<_CustomerPickerSheet> {
                       onPressed: () => Navigator.pop(context, _selected),
                       child: Text(
                         'Done (${_selected.length})',
-                        style: GoogleFonts.montserrat(
+                        style: GoogleFonts.poppins(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
                           color: CustColors.logolight,
@@ -165,7 +165,7 @@ class _CustomerPickerSheetState extends State<_CustomerPickerSheet> {
                       borderSide: BorderSide.none,
                     ),
                   ),
-                  style: GoogleFonts.montserrat(fontSize: 14, color: _purple),
+                  style: GoogleFonts.poppins(fontSize: 14, color: _purple),
                 ),
                 const SizedBox(height: 12),
                 Expanded(
@@ -179,7 +179,7 @@ class _CustomerPickerSheetState extends State<_CustomerPickerSheet> {
                               Text(
                                 _loadError!,
                                 textAlign: TextAlign.center,
-                                style: GoogleFonts.montserrat(
+                                style: GoogleFonts.poppins(
                                   fontSize: 13,
                                   color: Colors.red,
                                 ),
@@ -189,7 +189,7 @@ class _CustomerPickerSheetState extends State<_CustomerPickerSheet> {
                                 onPressed: _loadCustomers,
                                 child: Text(
                                   'Retry',
-                                  style: GoogleFonts.montserrat(
+                                  style: GoogleFonts.poppins(
                                     color: CustColors.logolight,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -205,7 +205,7 @@ class _CustomerPickerSheetState extends State<_CustomerPickerSheet> {
                                 ? 'No customers yet. Add contacts from the Customers screen.'
                                 : 'No matches for your search.',
                             textAlign: TextAlign.center,
-                            style: GoogleFonts.montserrat(
+                            style: GoogleFonts.poppins(
                               fontSize: 13,
                               color: _purple.withValues(alpha: 0.65),
                             ),
@@ -231,7 +231,7 @@ class _CustomerPickerSheetState extends State<_CustomerPickerSheet> {
                               contentPadding: EdgeInsets.zero,
                               title: Text(
                                 _customerName(c),
-                                style: GoogleFonts.montserrat(
+                                style: GoogleFonts.poppins(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w500,
                                   color: _purple,
@@ -239,7 +239,7 @@ class _CustomerPickerSheetState extends State<_CustomerPickerSheet> {
                               ),
                               subtitle: Text(
                                 _customerSubtitle(c),
-                                style: GoogleFonts.montserrat(
+                                style: GoogleFonts.poppins(
                                   fontSize: 12,
                                   color: _purple.withValues(alpha: 0.55),
                                 ),

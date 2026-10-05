@@ -1,4 +1,4 @@
-import 'package:autobus/common_design/app_error.dart';
+import 'package:autobus/common_design/user_facing_error.dart';
 import 'package:autobus/features/agent/agent_event.dart';
 import 'package:autobus/features/agent/agent_repository.dart';
 import 'package:autobus/features/agent/agent_state.dart';

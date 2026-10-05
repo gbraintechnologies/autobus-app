@@ -1,4 +1,5 @@
 import 'package:autobus/barrel.dart';
+import 'package:autobus/icons/figma_icons.dart';
 
 class TransparentCtaButton extends StatelessWidget {
   final String label;
@@ -29,16 +30,14 @@ class TransparentCtaButton extends StatelessWidget {
             Expanded(
               child: AppFitText(
                 label,
-                style: GoogleFonts.montserrat(
+                style: GoogleFonts.poppins(
                   color: Colors.white,
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
                 ),
               ),
             ),
-            const Icon(Icons.chevron_right, color: Colors.white, size: 18),
-            const Icon(Icons.chevron_right, color: Colors.white54, size: 18),
-            const Icon(Icons.chevron_right, color: Colors.white38, size: 18),
+            const FigmaChevronTrail(),
           ],
         ),
       ),

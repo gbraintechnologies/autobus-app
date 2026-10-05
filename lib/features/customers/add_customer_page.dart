@@ -1,4 +1,9 @@
 import 'package:autobus/barrel.dart';
+import 'package:autobus/common_design/light_screen_theme.dart';
+import 'package:autobus/common_design/widgets/app_bottom_nav.dart';
+import 'package:autobus/common_design/widgets/light_screen_scaffold.dart';
+import 'package:autobus/icons/home_figma_icons.dart';
+import 'package:flutter_sficon/flutter_sficon.dart';
 
 class AddCustomerPage extends StatefulWidget {
   final Map<String, dynamic>? existing;
@@ -19,6 +24,12 @@ class AddCustomerPage extends StatefulWidget {
 }
 
 class _AddCustomerPageState extends State<AddCustomerPage> {
+  static const _fieldFill = Color(0xFFFAFAFA);
+  static const _labelColor = Color(0xFF4E4E4E);
+  static const _hintColor = Color(0xFFB7B0B0);
+  static const _iconColor = Color(0xFF7F03B9);
+  static const _buttonColor = Color(0xFF2D0C51);
+
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameController;
   late final TextEditingController _phoneController;
@@ -94,7 +105,7 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
         SnackBar(
           content: Text(
             widget.isEditing ? 'Customer updated' : 'Customer added',
-            style: GoogleFonts.montserrat(),
+            style: GoogleFonts.poppins(),
           ),
         ),
       );
@@ -105,7 +116,7 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
         SnackBar(
           content: Text(
             userFacingError(e),
-            style: GoogleFonts.montserrat(),
+            style: GoogleFonts.poppins(),
           ),
           backgroundColor: Colors.red.shade700,
         ),
@@ -115,144 +126,200 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
     }
   }
 
-  InputDecoration _fieldDecoration(String label, {String? hint}) {
-    return InputDecoration(
-      labelText: label,
-      hintText: hint,
-      labelStyle: GoogleFonts.montserrat(
-        color: Colors.white.withValues(alpha: 0.7),
-        fontSize: 13,
-      ),
-      hintStyle: GoogleFonts.montserrat(
-        color: Colors.white.withValues(alpha: 0.35),
-        fontSize: 13,
-      ),
-      filled: true,
-      fillColor: Colors.white.withValues(alpha: 0.06),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: Color(0xFF3F1163)),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: Color(0xFFA855F7), width: 1.2),
-      ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: Colors.red.shade400),
-      ),
-      focusedErrorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: Colors.red.shade400, width: 1.2),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final title = widget.isEditing ? 'Edit customer' : 'Add customer';
+    final scale = MediaQuery.sizeOf(context).width / appShellDesignWidth;
+    final title = widget.isEditing ? 'Edit Customer' : 'Add Customer';
+    final buttonLabel = _saving
+        ? 'Saving…'
+        : (widget.isEditing ? 'Save changes' : 'Add customer');
 
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          const DecoratedBox(
-            decoration: ManageScreenStyle.homeDashboardBodyDecoration,
-          ),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const ManageScreenBackButton(),
-                      const SizedBox(width: 18),
-                      Expanded(
-                        child: Text(
-                          title,
-                          style: ManageScreenStyle.headerTitleStyle(),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 32),
-                  Expanded(
-                    child: Form(
-                      key: _formKey,
-                      child: ListView(
-                        keyboardDismissBehavior:
-                            ScrollViewKeyboardDismissBehavior.onDrag,
-                        children: [
-                          TextFormField(
-                            controller: _nameController,
-                            onTapOutside: dismissAppKeyboard,
-                            style: GoogleFonts.montserrat(color: Colors.white),
-                            cursorColor: const Color(0xFFA855F7),
-                            decoration: _fieldDecoration('Name'),
-                            validator: (v) =>
-                                (v == null || v.trim().isEmpty) ? 'Required' : null,
-                          ),
-                          const SizedBox(height: 16),
-                          TextFormField(
-                            controller: _phoneController,
-                            keyboardType: TextInputType.phone,
-                            onTapOutside: dismissAppKeyboard,
-                            style: GoogleFonts.montserrat(color: Colors.white),
-                            cursorColor: const Color(0xFFA855F7),
-                            decoration: _fieldDecoration(
-                              'Phone number',
-                              hint: 'e.g. 0550748724',
-                            ),
-                            validator: (v) =>
-                                (v == null || v.trim().isEmpty) ? 'Required' : null,
-                          ),
-                          const SizedBox(height: 16),
-                          TextFormField(
-                            controller: _emailController,
-                            keyboardType: TextInputType.emailAddress,
-                            onTapOutside: dismissAppKeyboard,
-                            style: GoogleFonts.montserrat(color: Colors.white),
-                            cursorColor: const Color(0xFFA855F7),
-                            decoration: _fieldDecoration(
-                              'Email (optional)',
-                              hint: 'For email messages',
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          TextFormField(
-                            controller: _networkController,
-                            onTapOutside: dismissAppKeyboard,
-                            style: GoogleFonts.montserrat(color: Colors.white),
-                            cursorColor: const Color(0xFFA855F7),
-                            decoration: _fieldDecoration(
-                              'Network (optional)',
-                              hint: 'Auto-detected if left blank',
-                            ),
-                          ),
-                          const SizedBox(height: 32),
-                          Center(
-                            child: AppButton(
-                              buttonText: _saving
-                                  ? 'Saving…'
-                                  : (widget.isEditing
-                                        ? 'Save changes'
-                                        : 'Add customer'),
-                              onPressed: _saving ? null : _save,
-                            ),
-                          ),
-                        ],
+    return LightScreenScaffold(
+      title: title,
+      titleFontSize: 16,
+      creditCategory: CreditCategory.server,
+      resizeToAvoidBottomInset: true,
+      body: Form(
+        key: _formKey,
+        child: ListView(
+          padding: EdgeInsets.fromLTRB(35 * scale, 20 * scale, 35 * scale, 32 * scale),
+          children: [
+            _LabeledPillField(
+              scale: scale,
+              label: 'Name',
+              hintText: 'Enter your full name',
+              icon: SFIcons.sf_person_fill,
+              controller: _nameController,
+              textInputAction: TextInputAction.next,
+              validator: (v) =>
+                  (v == null || v.trim().isEmpty) ? 'Required' : null,
+            ),
+            SizedBox(height: 10 * scale),
+            _LabeledPillField(
+              scale: scale,
+              label: 'Phone',
+              hintText: '0244123456',
+              icon: SFIcons.sf_phone_fill,
+              controller: _phoneController,
+              keyboardType: TextInputType.phone,
+              textInputAction: TextInputAction.next,
+              validator: (v) =>
+                  (v == null || v.trim().isEmpty) ? 'Required' : null,
+            ),
+            SizedBox(height: 10 * scale),
+            _LabeledPillField(
+              scale: scale,
+              label: 'Email(Optional)',
+              hintText: 'johndoe@example.com',
+              icon: SFIcons.sf_envelope_fill,
+              controller: _emailController,
+              keyboardType: TextInputType.emailAddress,
+              textInputAction: TextInputAction.next,
+            ),
+            SizedBox(height: 10 * scale),
+            _LabeledPillField(
+              scale: scale,
+              label: 'Network(Optional)',
+              controller: _networkController,
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) {
+                if (!_saving) _save();
+              },
+            ),
+            SizedBox(height: 40 * scale),
+            Material(
+              color: _buttonColor,
+              borderRadius: BorderRadius.circular(30 * scale),
+              child: InkWell(
+                onTap: _saving ? null : _save,
+                borderRadius: BorderRadius.circular(30 * scale),
+                child: SizedBox(
+                  height: 64 * scale,
+                  child: Center(
+                    child: Text(
+                      buttonLabel,
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
                       ),
                     ),
                   ),
-                ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
+    );
+  }
+}
+
+class _LabeledPillField extends StatelessWidget {
+  final double scale;
+  final String label;
+  final String? hintText;
+  final IconData? icon;
+  final TextEditingController controller;
+  final TextInputType keyboardType;
+  final TextInputAction textInputAction;
+  final String? Function(String?)? validator;
+  final ValueChanged<String>? onSubmitted;
+
+  const _LabeledPillField({
+    required this.scale,
+    required this.label,
+    this.hintText,
+    this.icon,
+    required this.controller,
+    this.keyboardType = TextInputType.text,
+    this.textInputAction = TextInputAction.next,
+    this.validator,
+    this.onSubmitted,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final fontSize = 14 * scale.clamp(0.9, 1.05);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.poppins(
+            color: _AddCustomerPageState._labelColor,
+            fontSize: 14,
+            fontWeight: FontWeight.w400,
+          ),
+        ),
+        SizedBox(height: 8 * scale),
+        TextFormField(
+          controller: controller,
+          keyboardType: keyboardType,
+          textInputAction: textInputAction,
+          onFieldSubmitted: onSubmitted,
+          validator: validator,
+          style: GoogleFonts.poppins(
+            color: Colors.black87,
+            fontSize: fontSize,
+          ),
+          cursorColor: LightScreenTheme.accent,
+          decoration: InputDecoration(
+            isDense: true,
+            hintText: hintText,
+            hintStyle: GoogleFonts.poppins(
+              color: _AddCustomerPageState._hintColor,
+              fontSize: fontSize,
+            ),
+            prefixIcon: icon == null
+                ? null
+                : Padding(
+                    padding: EdgeInsets.only(left: 16 * scale, right: 8 * scale),
+                    child: HomeSfIcon(
+                      icon: icon!,
+                      size: 20 * scale,
+                      color: _AddCustomerPageState._iconColor,
+                    ),
+                  ),
+            prefixIconConstraints: icon == null
+                ? null
+                : BoxConstraints(
+                    minWidth: 44 * scale,
+                    minHeight: 20 * scale,
+                  ),
+            filled: true,
+            fillColor: _AddCustomerPageState._fieldFill,
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: 16 * scale,
+              vertical: 18 * scale,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(30 * scale),
+              borderSide: BorderSide.none,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(30 * scale),
+              borderSide: BorderSide.none,
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(30 * scale),
+              borderSide: BorderSide(
+                color: LightScreenTheme.accent,
+                width: 1.2,
+              ),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(30 * scale),
+              borderSide: BorderSide(color: Colors.red.shade400),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(30 * scale),
+              borderSide: BorderSide(color: Colors.red.shade400, width: 1.2),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

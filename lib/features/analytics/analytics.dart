@@ -1,4 +1,7 @@
 import 'package:autobus/barrel.dart';
+import 'package:autobus/common_design/light_screen_theme.dart';
+import 'package:autobus/common_design/widgets/app_bottom_nav.dart';
+import 'package:autobus/common_design/widgets/app_screen_header.dart';
 
 class AnalyticsPage extends StatefulWidget {
   const AnalyticsPage({super.key});
@@ -121,148 +124,116 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final scale = MediaQuery.sizeOf(context).width / appShellDesignWidth;
+
     return Scaffold(
-      body: _AnalyticsBackground(
-        child: SafeArea(
-          child: Column(
-            children: [
-              const SizedBox(height: 20),
-
-              _buildTopBar(),
-
-              const SizedBox(height: 30),
-
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 18),
-                  child: Column(
-                    children: [
-                      // Growth & Average Card
-                      _buildGrowthAverageCard(),
-
-                      const SizedBox(height: 20),
-
-                      // Metrics Grid
-                      _buildMetricsGrid(),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTopBar() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 18),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      backgroundColor: LightScreenTheme.background,
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          GestureDetector(
-            onTap: () => Navigator.pop(context),
-            child: Container(
-              width: 48,
-              height: 48,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: Color(0xFF2D2D44),
+          AppScreenHeader(
+            scale: scale,
+            title: 'Reports',
+            leading: AppScreenBackButton(scale: scale),
+            trailing: UserAvatar(
+              size: 36 * scale.clamp(0.9, 1.0),
+              onLightBackground: true,
+            ),
+          ),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.fromLTRB(
+                20 * scale,
+                20 * scale,
+                20 * scale,
+                32 * scale,
               ),
-              child: const Icon(
-                Icons.arrow_back_ios_new,
-                color: Colors.white,
-                size: 18,
+              child: Column(
+                children: [
+                  _buildGrowthAverageCard(scale),
+                  SizedBox(height: 20 * scale),
+                  _buildMetricsGrid(scale),
+                ],
               ),
             ),
           ),
-
-          Text(
-            'Reports',
-            style: GoogleFonts.montserrat(
-              color: Colors.black,
-              fontSize: 20,
-              fontWeight: FontWeight.w400,
-            ),
-          ),
-
-          const UserAvatar(size: 48, onLightBackground: true),
         ],
       ),
     );
   }
 
-  Widget _buildGrowthAverageCard() {
+  Widget _buildGrowthAverageCard(double scale) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20 * scale),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        color: LightScreenTheme.surface,
+        borderRadius: BorderRadius.circular(20 * scale),
       ),
       child: Row(
         children: [
           Expanded(
             child: _GrowthWidget(
+              scale: scale,
               percentage: _growthPercentage,
               month: _growthMonth,
             ),
           ),
-          const SizedBox(width: 20),
-
+          SizedBox(width: 20 * scale),
           Expanded(
-            child: _AverageWidget(rmaValue: _rmaValue, valValue: _valValue),
+            child: _AverageWidget(
+              scale: scale,
+              rmaValue: _rmaValue,
+              valValue: _valValue,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildMetricsGrid() {
+  Widget _buildMetricsGrid(double scale) {
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        childAspectRatio: 1.4,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
+        mainAxisExtent: 112,
+        crossAxisSpacing: 12 * scale,
+        mainAxisSpacing: 12 * scale,
       ),
       itemCount: _metrics.length,
       itemBuilder: (context, index) {
-        return _MetricCard(metric: _metrics[index]);
+        return _MetricCard(scale: scale, metric: _metrics[index]);
       },
     );
   }
 }
 
 class _GrowthWidget extends StatelessWidget {
+  final double scale;
   final double percentage;
   final String month;
 
-  const _GrowthWidget({required this.percentage, required this.month});
+  const _GrowthWidget({
+    required this.scale,
+    required this.percentage,
+    required this.month,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16 * scale),
       decoration: BoxDecoration(
-        color: const Color(0xFFF5F5F5),
-        borderRadius: BorderRadius.circular(12),
+        color: LightScreenTheme.background,
+        borderRadius: BorderRadius.circular(12 * scale),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             'Growth',
-            style: GoogleFonts.montserrat(
+            style: GoogleFonts.poppins(
               fontSize: 14,
               fontWeight: FontWeight.w500,
               color: Colors.black87,
@@ -273,14 +244,14 @@ class _GrowthWidget extends StatelessWidget {
           Row(
             children: [
               SizedBox(
-                width: 56,
-                height: 56,
+                width: 48,
+                height: 48,
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
                     SizedBox(
-                      width: 56,
-                      height: 56,
+                      width: 48,
+                      height: 48,
                       child: CircularProgressIndicator(
                         value: percentage / 100,
                         strokeWidth: 5,
@@ -293,8 +264,8 @@ class _GrowthWidget extends StatelessWidget {
                     ),
                     Text(
                       '${percentage.toInt()}%',
-                      style: GoogleFonts.montserrat(
-                        fontSize: 13,
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
                         fontWeight: FontWeight.w600,
                         color: Colors.black87,
                       ),
@@ -302,29 +273,35 @@ class _GrowthWidget extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
 
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Progress',
-                    style: GoogleFonts.montserrat(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.black87,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Progress',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black87,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    month,
-                    style: GoogleFonts.montserrat(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w400,
-                      color: Colors.black54,
+                    const SizedBox(height: 2),
+                    Text(
+                      month,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.poppins(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w400,
+                        color: Colors.black54,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ],
           ),
@@ -335,25 +312,30 @@ class _GrowthWidget extends StatelessWidget {
 }
 
 class _AverageWidget extends StatelessWidget {
+  final double scale;
   final int rmaValue;
   final int valValue;
 
-  const _AverageWidget({required this.rmaValue, required this.valValue});
+  const _AverageWidget({
+    required this.scale,
+    required this.rmaValue,
+    required this.valValue,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16 * scale),
       decoration: BoxDecoration(
-        color: const Color(0xFFF5F5F5),
-        borderRadius: BorderRadius.circular(12),
+        color: LightScreenTheme.background,
+        borderRadius: BorderRadius.circular(12 * scale),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             'Average',
-            style: GoogleFonts.montserrat(
+            style: GoogleFonts.poppins(
               fontSize: 14,
               fontWeight: FontWeight.w500,
               color: Colors.black87,
@@ -372,58 +354,16 @@ class _AverageWidget extends StatelessWidget {
                   borderRadius: BorderRadius.circular(3),
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 12),
 
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        'RMA',
-                        style: GoogleFonts.montserrat(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w400,
-                          color: Colors.black54,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Text(
-                        'VAL',
-                        style: GoogleFonts.montserrat(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w400,
-                          color: Colors.black54,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                    textBaseline: TextBaseline.alphabetic,
-                    children: [
-                      Text(
-                        rmaValue.toString(),
-                        style: GoogleFonts.montserrat(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black87,
-                        ),
-                      ),
-                      const SizedBox(width: 24),
-                      Text(
-                        valValue.toString(),
-                        style: GoogleFonts.montserrat(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black87,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+              Expanded(
+                child: Row(
+                  children: [
+                    Expanded(child: _averageValue('RMA', rmaValue)),
+                    const SizedBox(width: 8),
+                    Expanded(child: _averageValue('VAL', valValue)),
+                  ],
+                ),
               ),
             ],
           ),
@@ -433,10 +373,41 @@ class _AverageWidget extends StatelessWidget {
   }
 }
 
+Widget _averageValue(String label, int value) {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        label,
+        maxLines: 1,
+        style: GoogleFonts.poppins(
+          fontSize: 11,
+          fontWeight: FontWeight.w400,
+          color: Colors.black54,
+        ),
+      ),
+      const SizedBox(height: 4),
+      FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.centerLeft,
+        child: Text(
+          value.toString(),
+          style: GoogleFonts.poppins(
+            fontSize: 22,
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
+          ),
+        ),
+      ),
+    ],
+  );
+}
+
 class _MetricCard extends StatelessWidget {
+  final double scale;
   final MetricData metric;
 
-  const _MetricCard({required this.metric});
+  const _MetricCard({required this.scale, required this.metric});
 
   @override
   Widget build(BuildContext context) {
@@ -446,17 +417,10 @@ class _MetricCard extends StatelessWidget {
         : const Color(0xFFE63946);
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16 * scale),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        color: LightScreenTheme.surface,
+        borderRadius: BorderRadius.circular(20 * scale),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -466,7 +430,7 @@ class _MetricCard extends StatelessWidget {
           // Title
           Text(
             metric.title,
-            style: GoogleFonts.montserrat(
+            style: GoogleFonts.poppins(
               fontSize: 12,
               fontWeight: FontWeight.w500,
               color: Colors.black87,
@@ -484,17 +448,21 @@ class _MetricCard extends StatelessWidget {
             // number and the badge pill sit on the same vertical midpoint.
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Main Value
-              Text(
-                metric.value.toString(),
-                style: GoogleFonts.montserrat(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black87,
+              Expanded(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    metric.value.toString(),
+                    style: GoogleFonts.poppins(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                    ),
+                  ),
                 ),
               ),
-
-              // Percentage Change Badge
+              const SizedBox(width: 6),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                 decoration: BoxDecoration(
@@ -506,7 +474,7 @@ class _MetricCard extends StatelessWidget {
                   children: [
                     Text(
                       '${isPositive ? '+' : ''}${metric.percentageChange.toStringAsFixed(2)}%',
-                      style: GoogleFonts.montserrat(
+                      style: GoogleFonts.poppins(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
                         color: changeColor,
@@ -553,22 +521,3 @@ class MetricData {
   }
 }
 
-class _AnalyticsBackground extends StatelessWidget {
-  final Widget child;
-
-  const _AnalyticsBackground({required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFFE8E8E8), Color(0xFFE0E0E0), Color(0xFFD8D8D8)],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
-      ),
-      child: child,
-    );
-  }
-}

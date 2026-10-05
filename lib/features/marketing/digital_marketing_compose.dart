@@ -286,8 +286,8 @@ ${_campaign.conversationTranscript}
     return InputDecoration(
       labelText: label,
       hintText: hint,
-      labelStyle: GoogleFonts.montserrat(fontSize: 12, color: Colors.black54),
-      hintStyle: GoogleFonts.montserrat(fontSize: 12, color: Colors.black38),
+      labelStyle: GoogleFonts.poppins(fontSize: 12, color: Colors.black54),
+      hintStyle: GoogleFonts.poppins(fontSize: 12, color: Colors.black38),
       filled: true,
       fillColor: const Color(0xFFF7F5FB),
       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -313,7 +313,7 @@ ${_campaign.conversationTranscript}
       minLines: 3,
       maxLines: 6,
       onTapOutside: dismissAppKeyboard,
-      style: GoogleFonts.montserrat(fontSize: 13, height: 1.4),
+      style: GoogleFonts.poppins(fontSize: 13, height: 1.4),
       decoration: _fieldDecoration('Caption', hint: 'Post caption / description'),
       onChanged: (v) {
         d.caption = v;
@@ -331,7 +331,7 @@ ${_campaign.conversationTranscript}
             children: [
               Text(
                 'Choose what to post',
-                style: GoogleFonts.montserrat(
+                style: GoogleFonts.poppins(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                   color: Colors.black87,
@@ -341,7 +341,7 @@ ${_campaign.conversationTranscript}
               Text(
                 'Select generated content, platforms, and captions',
                 textAlign: TextAlign.center,
-                style: GoogleFonts.montserrat(fontSize: 12, color: Colors.black45),
+                style: GoogleFonts.poppins(fontSize: 12, color: Colors.black45),
               ),
               const SizedBox(height: 14),
               Expanded(
@@ -353,7 +353,7 @@ ${_campaign.conversationTranscript}
                     if (_campaign.generatedContents.isEmpty)
                       Text(
                         'No generated content yet.',
-                        style: GoogleFonts.montserrat(fontSize: 13, color: Colors.black45),
+                        style: GoogleFonts.poppins(fontSize: 13, color: Colors.black45),
                       ),
                     const SizedBox(height: 22),
                     _sectionTitle('Platforms'),
@@ -415,7 +415,7 @@ ${_campaign.conversationTranscript}
                       const SizedBox(height: 16),
                       Text(
                         'Writing captions…',
-                        style: GoogleFonts.montserrat(
+                        style: GoogleFonts.poppins(
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
                         ),
@@ -433,7 +433,7 @@ ${_campaign.conversationTranscript}
   Widget _sectionTitle(String text) {
     return Text(
       text,
-      style: GoogleFonts.montserrat(
+      style: GoogleFonts.poppins(
         fontSize: 13,
         fontWeight: FontWeight.w700,
         color: Colors.black87,
@@ -473,7 +473,7 @@ ${_campaign.conversationTranscript}
                     children: [
                       Text(
                         content.label,
-                        style: GoogleFonts.montserrat(
+                        style: GoogleFonts.poppins(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
                         ),
@@ -485,7 +485,7 @@ ${_campaign.conversationTranscript}
                             : (content.prompt ?? content.label),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.montserrat(
+                        style: GoogleFonts.poppins(
                           fontSize: 11,
                           color: Colors.black45,
                         ),
@@ -622,7 +622,7 @@ ${_campaign.conversationTranscript}
                   children: [
                     Text(
                       label,
-                      style: GoogleFonts.montserrat(
+                      style: GoogleFonts.poppins(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                         color: Colors.black87,
@@ -634,7 +634,7 @@ ${_campaign.conversationTranscript}
                         subtitle,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.montserrat(
+                        style: GoogleFonts.poppins(
                           fontSize: 11,
                           color: Colors.black45,
                         ),
@@ -694,7 +694,7 @@ ${_campaign.conversationTranscript}
                   children: [
                     Text(
                       title,
-                      style: GoogleFonts.montserrat(
+                      style: GoogleFonts.poppins(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                       ),
@@ -702,7 +702,7 @@ ${_campaign.conversationTranscript}
                     const SizedBox(height: 2),
                     Text(
                       subtitle,
-                      style: GoogleFonts.montserrat(
+                      style: GoogleFonts.poppins(
                         fontSize: 11,
                         color: Colors.black45,
                         height: 1.35,
@@ -788,7 +788,7 @@ ${_campaign.conversationTranscript}
                     Expanded(
                       child: Text(
                         label,
-                        style: GoogleFonts.montserrat(
+                        style: GoogleFonts.poppins(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
                         ),
@@ -827,7 +827,7 @@ ${_campaign.conversationTranscript}
             key: ValueKey('yt-title-${identityHashCode(d)}'),
             initialValue: d.youtubeTitle,
             onTapOutside: dismissAppKeyboard,
-            style: GoogleFonts.montserrat(fontSize: 13),
+            style: GoogleFonts.poppins(fontSize: 13),
             decoration: _fieldDecoration('Title', hint: '2–100 characters'),
             onChanged: (v) {
               d.youtubeTitle = v;
@@ -846,7 +846,7 @@ ${_campaign.conversationTranscript}
             key: ValueKey('tt-title-${identityHashCode(d)}'),
             initialValue: d.tiktokTitle,
             onTapOutside: dismissAppKeyboard,
-            style: GoogleFonts.montserrat(fontSize: 13),
+            style: GoogleFonts.poppins(fontSize: 13),
             decoration: _fieldDecoration('Title', hint: 'Max 90 characters'),
             onChanged: (v) {
               d.tiktokTitle = v;
@@ -865,7 +865,7 @@ ${_campaign.conversationTranscript}
           const SizedBox(height: 8),
           Text(
             'Autobus Instagram publishes caption + media only.',
-            style: GoogleFonts.montserrat(fontSize: 11, color: Colors.black45),
+            style: GoogleFonts.poppins(fontSize: 11, color: Colors.black45),
           ),
         ],
       ],

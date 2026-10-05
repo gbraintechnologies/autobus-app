@@ -1,4 +1,6 @@
 import 'package:autobus/barrel.dart';
+import 'package:autobus/common_design/light_screen_theme.dart';
+import 'package:autobus/common_design/widgets/light_screen_scaffold.dart';
 import 'package:autobus/features/marketing/models/postiz_integration.dart';
 import 'package:autobus/features/products/product_chat_image_attachments.dart';
 import 'package:autobus/features/products/product_form_images.dart';
@@ -89,16 +91,16 @@ class _AddProductScreenState extends State<AddProductScreen> {
     return InputDecoration(
       labelText: label,
       hintText: hint,
-      labelStyle: GoogleFonts.outfit(
-        color: Colors.white.withValues(alpha: 0.7),
+      labelStyle: GoogleFonts.poppins(
+        color: Colors.black54,
         fontSize: 13,
       ),
-      hintStyle: GoogleFonts.outfit(
-        color: Colors.white.withValues(alpha: 0.35),
+      hintStyle: GoogleFonts.poppins(
+        color: Colors.black38,
         fontSize: 13,
       ),
       filled: true,
-      fillColor: Colors.white.withValues(alpha: 0.06),
+      fillColor: const Color(0xFFF8FAFC),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
         borderSide: BorderSide.none,
@@ -106,12 +108,12 @@ class _AddProductScreenState extends State<AddProductScreen> {
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
         borderSide: BorderSide(
-          color: const Color(0xFF3F1163).withValues(alpha: 0.8),
+          color: LightScreenTheme.hint.withValues(alpha: 0.5),
         ),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: Color(0xFFA855F7)),
+        borderSide: const BorderSide(color: LightScreenTheme.accent),
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
     );
@@ -234,40 +236,21 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
-        fit: StackFit.expand,
+    return LightScreenScaffold(
+      title: 'Add Product',
+      titleFontSize: 16,
+      creditCategory: CreditCategory.storageMb,
+      resizeToAvoidBottomInset: true,
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const DecoratedBox(
-            decoration: ManageScreenStyle.homeDashboardBodyDecoration,
-          ),
-          SafeArea(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 18, 24, 0),
-                  child: Row(
-                    children: [
-                      const ManageScreenBackButton(),
-                      const SizedBox(width: 18),
-                      Expanded(
-                        child: Text(
-                          'Add Product',
-                          style: ManageScreenStyle.headerTitleStyle(),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: Form(
-                    key: _formKey,
-                    child: ListView(
-                      keyboardDismissBehavior:
-                          ScrollViewKeyboardDismissBehavior.onDrag,
-                      padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
+          Expanded(
+            child: Form(
+              key: _formKey,
+              child: ListView(
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
+                padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
                       children: [
                         ProductFormImageSection(
                           slots: _imageSlots,
@@ -397,9 +380,6 @@ class _AddProductScreenState extends State<AddProductScreen> {
                 ),
               ],
             ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -416,8 +396,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
       keyboardType: keyboardType,
       maxLines: maxLines,
       onTapOutside: dismissAppKeyboard,
-      style: GoogleFonts.outfit(color: Colors.white, fontSize: 14),
-      cursorColor: const Color(0xFFA855F7),
+      style: GoogleFonts.poppins(color: Colors.black87, fontSize: 14),
+      cursorColor: LightScreenTheme.accent,
       decoration: _fieldDecoration(label),
     );
   }

@@ -4,7 +4,7 @@ import 'dart:developer';
 
 import 'package:in_app_purchase/in_app_purchase.dart';
 
-import 'package:autobus/common_design/app_error.dart';
+import 'package:autobus/common_design/user_facing_error.dart';
 import 'package:autobus/features/home/services/api_service.dart';
 import 'package:autobus/features/subscription/data/apple_iap_ids.dart';
 
@@ -156,7 +156,7 @@ class AppleIapService {
     } catch (e) {
       return AppleIapPurchaseResult(
         success: false,
-        error: userFacingError(e, action: 'completing purchase'),
+        error: userFacingError(e, fallback: AppUserMessages.payment),
       );
     } finally {
       _inflight.remove(product.id);
@@ -197,7 +197,7 @@ class AppleIapService {
     } catch (e) {
       return AppleIapPurchaseResult(
         success: false,
-        error: userFacingError(e, action: 'adding credits'),
+        error: userFacingError(e, fallback: AppUserMessages.payment),
       );
     }
   }
@@ -309,7 +309,7 @@ class AppleIapService {
     } catch (e) {
       return AppleIapPurchaseResult(
         success: false,
-        error: userFacingError(e, action: 'restoring purchase'),
+        error: userFacingError(e, fallback: AppUserMessages.payment),
       );
     }
   }

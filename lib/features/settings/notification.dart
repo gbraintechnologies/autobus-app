@@ -1,4 +1,9 @@
 import 'package:autobus/barrel.dart';
+import 'package:autobus/common_design/light_screen_theme.dart';
+import 'package:autobus/common_design/widgets/app_bottom_nav.dart';
+import 'package:autobus/common_design/widgets/light_list_card.dart';
+import 'package:autobus/common_design/widgets/light_screen_scaffold.dart';
+import 'package:autobus/icons/home_figma_icons.dart';
 
 class NotificationsPage extends StatefulWidget {
   const NotificationsPage({super.key});
@@ -14,8 +19,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
   bool _saving = false;
   String? _error;
 
-  bool showNotifications = true; // in_app_notifications
-  bool smsNotifications = true; // sms_notifications
+  bool showNotifications = true;
+  bool smsNotifications = true;
   String sound = "Pulse";
 
   @override
@@ -36,11 +41,11 @@ class _NotificationsPageState extends State<NotificationsPage> {
 
       final inApp =
           user['in_app_notification'] ??
-          user['in_app_notifications']; // legacy fallback
+          user['in_app_notifications'];
       final sms =
           user['sms_notification'] ??
           user['sms_notifications'] ??
-          user['sms_nofiticaitons']; // legacy fallback
+          user['sms_nofiticaitons'];
 
       setState(() {
         showNotifications = inApp is bool ? inApp : true;
@@ -48,7 +53,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
       });
     } catch (e) {
       if (!mounted) return;
-      setState(() => _error = userFacingError(e));
+      setState(() => _error = userFacingError(e, fallback: AppUserMessages.load));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -67,10 +72,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
         smsNotification: smsNotifications,
       );
 
-      // Fetch fresh user profile so local cache stays consistent
       final updated = await _apiService.getUserProfile();
 
-      // Keep local cached user in sync (used by AuthBloc on next session check)
       try {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('user', jsonEncode(updated));
@@ -80,7 +83,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to update notification settings: $e'),
+          content: Text(userFacingError(e, fallback: AppUserMessages.save)),
           backgroundColor: Colors.red,
           behavior: SnackBarBehavior.floating,
         ),
@@ -92,222 +95,113 @@ class _NotificationsPageState extends State<NotificationsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: _NotificationBackground(
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 18),
-            child: Column(
-              children: [
-                const SizedBox(height: 20),
+    final scale = MediaQuery.sizeOf(context).width / appShellDesignWidth;
 
-                /// 🔝 Top Bar
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return LightScreenScaffold(
+      title: 'Notifications',
+      creditCategory: CreditCategory.server,
+      body: SingleChildScrollView(
+        padding: EdgeInsets.fromLTRB(
+          20 * scale,
+          20 * scale,
+          20 * scale,
+          32 * scale,
+        ),
+        child: LightListCard(
+          scale: scale,
+          padding: EdgeInsets.symmetric(vertical: 4 * scale),
+          child: Column(
+            children: [
+              if (_loading)
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 16 * scale,
+                    vertical: 10 * scale,
+                  ),
+                  child: LinearProgressIndicator(
+                    minHeight: 2,
+                    color: LightScreenTheme.accent,
+                  ),
+                ),
+              if (_error != null && _error!.trim().isNotEmpty)
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 16 * scale,
+                    vertical: 8 * scale,
+                  ),
+                  child: Text(
+                    _error!,
+                    style: GoogleFonts.poppins(
+                      color: Colors.red,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              _PreferenceSwitchTile(
+                scale: scale,
+                title: 'Show Notifications',
+                value: showNotifications,
+                enabled: !(_loading || _saving),
+                onChanged: (val) {
+                  final prev = showNotifications;
+                  setState(() => showNotifications = val);
+                  _persist(
+                    inAppNotifications: val,
+                    rollback: () => setState(() => showNotifications = prev),
+                  );
+                },
+              ),
+              ListTile(
+                onTap: () {},
+                contentPadding: EdgeInsets.symmetric(horizontal: 16 * scale),
+                title: Text('Sound', style: LightScreenTheme.listTitle(scale)),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    /// Back Button
-                    GestureDetector(
-                      onTap: () => Navigator.pop(context),
-                      child: Container(
-                        width: 48,
-                        height: 48,
-                        decoration: const BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: CustColors.mainCol,
-                        ),
-                        child: const Icon(
-                          Icons.arrow_back_ios_new,
-                          color: Colors.white,
-                          size: 18,
-                        ),
-                      ),
+                    Text(
+                      sound,
+                      style: LightScreenTheme.listSubtitle(scale),
                     ),
-
-                    /// Company Name
-                    BlocBuilder<AuthBloc, AuthState>(
-                      builder: (context, state) {
-                        String username = 'User';
-                        if (state is Authenticated) {
-                          username =
-                              state.user['fullname'] ??
-                              state.user['email'] ??
-                              'User';
-                        }
-                        return Text(
-                          username,
-                          style: GoogleFonts.montserrat(
-                            color: Colors.black,
-                            fontSize: 20,
-                            fontWeight: FontWeight.w400,
-                          ),
-                        );
-                      },
-                    ),
-
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const Profile()),
-                        );
-                      },
-                      child: _circleIcon(Icons.share_outlined),
+                    SizedBox(width: 6 * scale),
+                    HomeSfIcon(
+                      icon: HomeFigmaIcons.chevronRight,
+                      color: LightScreenTheme.muted,
+                      size: 20 * scale,
                     ),
                   ],
                 ),
-
-                const SizedBox(height: 40),
-
-                /// 🔔 Notifications Card
-                Container(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.6),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Column(
-                    children: [
-                      if (_loading)
-                        const Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 10,
-                          ),
-                          child: LinearProgressIndicator(minHeight: 2),
-                        ),
-                      if (_error != null && _error!.trim().isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          child: Text(
-                            _error!,
-                            style: const TextStyle(
-                              color: Colors.red,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ),
-
-                      /// Show Notifications Toggle
-                      _PreferenceSwitchTile(
-                        title: 'Show Notifications',
-                        value: showNotifications,
-                        enabled: !(_loading || _saving),
-                        onChanged: (val) {
-                          final prev = showNotifications;
-                          setState(() => showNotifications = val);
-                          _persist(
-                            inAppNotifications: val,
-                            rollback: () =>
-                                setState(() => showNotifications = prev),
-                          );
-                        },
-                      ),
-
-                      /// Sound Tile
-                      ListTile(
-                        onTap: () {
-                          /// Open sound picker later
-                        },
-                        title: const Text(
-                          "Sound",
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              sound,
-                              style: TextStyle(
-                                color: Colors.grey.shade600,
-                                fontSize: 13,
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            const Icon(
-                              Icons.chevron_right,
-                              color: Colors.black54,
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      /// SMS Notifications Toggle
-                      _PreferenceSwitchTile(
-                        title: 'SMS Notifications',
-                        value: smsNotifications,
-                        enabled: !(_loading || _saving),
-                        onChanged: (val) {
-                          final prev = smsNotifications;
-                          setState(() => smsNotifications = val);
-                          _persist(
-                            smsNotifications: val,
-                            rollback: () =>
-                                setState(() => smsNotifications = prev),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+              ),
+              _PreferenceSwitchTile(
+                scale: scale,
+                title: 'SMS Notifications',
+                value: smsNotifications,
+                enabled: !(_loading || _saving),
+                onChanged: (val) {
+                  final prev = smsNotifications;
+                  setState(() => smsNotifications = val);
+                  _persist(
+                    smsNotifications: val,
+                    rollback: () => setState(() => smsNotifications = prev),
+                  );
+                },
+              ),
+            ],
           ),
         ),
       ),
     );
   }
-
-  Widget _circleIcon(dynamic icon) {
-    return Container(
-      width: 54,
-      height: 54,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(color: Colors.white24),
-      ),
-      child: icon is IconData
-          ? Icon(icon, color: Colors.white70, size: 18)
-          : Iconify(icon, color: Colors.white70, size: 8),
-    );
-  }
-}
-
-class _NotificationBackground extends StatelessWidget {
-  final Widget child;
-  const _NotificationBackground({required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Color.fromARGB(255, 244, 244, 244),
-            Color.fromARGB(255, 240, 240, 240),
-            Color.fromARGB(255, 236, 236, 236),
-          ],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
-      ),
-      child: child,
-    );
-  }
 }
 
 class _PreferenceSwitchTile extends StatelessWidget {
+  final double scale;
   final String title;
   final bool value;
   final bool enabled;
   final ValueChanged<bool> onChanged;
 
   const _PreferenceSwitchTile({
+    required this.scale,
     required this.title,
     required this.value,
     required this.enabled,
@@ -319,18 +213,14 @@ class _PreferenceSwitchTile extends StatelessWidget {
     return InkWell(
       onTap: enabled ? () => onChanged(!value) : null,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: EdgeInsets.symmetric(
+          horizontal: 16 * scale,
+          vertical: 12 * scale,
+        ),
         child: Row(
           children: [
             Expanded(
-              child: Text(
-                title,
-                style: GoogleFonts.montserrat(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.black87,
-                ),
-              ),
+              child: Text(title, style: LightScreenTheme.listTitle(scale)),
             ),
             _AnimatedToggleSwitch(value: value, enabled: enabled),
           ],

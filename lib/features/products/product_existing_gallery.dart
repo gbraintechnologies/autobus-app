@@ -35,7 +35,7 @@ class ProductGalleryPhoto {
   }
 }
 
-Widget _remoteProductImage(
+Widget productRemoteImage(
   String url, {
   required BoxFit fit,
   double? width,
@@ -52,7 +52,7 @@ Widget _remoteProductImage(
     loadingBuilder: (context, child, progress) {
       if (progress == null) return child;
       return Container(
-        color: const Color(0xFF1E0A32),
+        color: const Color(0xFFF1F5F9),
         alignment: Alignment.center,
         child: const SizedBox(
           width: 22,
@@ -65,11 +65,11 @@ Widget _remoteProductImage(
       );
     },
     errorBuilder: (_, __, ___) => Container(
-      color: const Color(0xFF1E0A32),
+      color: const Color(0xFFF1F5F9),
       alignment: Alignment.center,
-      child: Icon(
+      child: const Icon(
         Icons.broken_image_outlined,
-        color: Colors.white.withValues(alpha: 0.35),
+        color: Color(0xFF94A3B8),
       ),
     ),
   );
@@ -104,8 +104,8 @@ class ProductExistingGallery extends StatelessWidget {
             Expanded(
               child: Text(
                 'Product media',
-                style: GoogleFonts.outfit(
-                  color: Colors.white.withValues(alpha: 0.9),
+                style: GoogleFonts.poppins(
+                  color: Colors.black,
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                 ),
@@ -114,8 +114,8 @@ class ProductExistingGallery extends StatelessWidget {
             if (photos.isNotEmpty)
               Text(
                 '${photos.length} item${photos.length == 1 ? '' : 's'}',
-                style: GoogleFonts.outfit(
-                  color: Colors.white.withValues(alpha: 0.45),
+                style: GoogleFonts.poppins(
+                  color: const Color(0xFF64748B),
                   fontSize: 12,
                 ),
               ),
@@ -124,8 +124,8 @@ class ProductExistingGallery extends StatelessWidget {
         const SizedBox(height: 6),
         Text(
           'Tap media to view it. Set a cover or remove it from the viewer.',
-          style: GoogleFonts.outfit(
-            color: Colors.white.withValues(alpha: 0.5),
+          style: GoogleFonts.poppins(
+            color: const Color(0xFF4D4D4D),
             fontSize: 12,
             height: 1.4,
           ),
@@ -184,23 +184,23 @@ class _ExistingThumb extends StatelessWidget {
               border: Border.all(
                 color: photo.isPrimary
                     ? const Color(0xFFA855F7)
-                    : const Color(0xFF3F1163).withValues(alpha: 0.85),
+                    : const Color(0xFFE2E8F0),
                 width: photo.isPrimary ? 1.6 : 1,
               ),
             ),
             clipBehavior: Clip.antiAlias,
             child: photo.isVideo
                 ? const ColoredBox(
-                    color: Color(0xFF1E0A32),
+                    color: Color(0xFFF1F5F9),
                     child: Center(
                       child: Icon(
                         Icons.play_circle_fill,
-                        color: Colors.white,
+                        color: Color(0xFF64748B),
                         size: 32,
                       ),
                     ),
                   )
-                : _remoteProductImage(photo.url, fit: BoxFit.cover),
+                : productRemoteImage(photo.url, fit: BoxFit.cover),
           ),
           if (photo.isPrimary)
             Positioned(
@@ -389,7 +389,7 @@ Future<String?> showProductPhotoViewer(
                           minScale: 0.6,
                           maxScale: 4,
                           child: Center(
-                            child: _remoteProductImage(
+                            child: productRemoteImage(
                               photo.url,
                               fit: BoxFit.contain,
                               width: size.width,

@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:autobus/common_design/app_error.dart';
 import 'package:autobus/common_design/plain_ai_text.dart';
 import 'package:autobus/config/app_config.dart';
+import 'package:autobus/common_design/user_facing_error.dart';
 import 'assistant_event.dart';
 import 'assistant_state.dart';
 

@@ -126,7 +126,7 @@ class ProductChatImageStrip extends StatelessWidget {
       children: [
         Text(
           'Product photos',
-          style: GoogleFonts.montserrat(
+          style: GoogleFonts.poppins(
             fontSize: 12,
             fontWeight: FontWeight.w600,
             color: purple.withValues(alpha: 0.85),
@@ -135,7 +135,7 @@ class ProductChatImageStrip extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           'Tap to add one or more images. They upload when you send your message.',
-          style: GoogleFonts.montserrat(
+          style: GoogleFonts.poppins(
             fontSize: 10,
             fontWeight: FontWeight.w400,
             color: purple.withValues(alpha: 0.55),
@@ -255,7 +255,7 @@ class _AddThumb extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               'Add',
-              style: GoogleFonts.montserrat(fontSize: 9, color: purple.withValues(alpha: 0.65)),
+              style: GoogleFonts.poppins(fontSize: 9, color: purple.withValues(alpha: 0.65)),
             ),
           ],
         ),
@@ -386,12 +386,12 @@ Future<void> showProductSlotActionsSheet(
         children: [
           ListTile(
             leading: const Icon(Icons.refresh, color: Colors.white70),
-            title: Text('Replace', style: GoogleFonts.outfit(color: Colors.white)),
+            title: Text('Replace', style: GoogleFonts.poppins(color: Colors.white)),
             onTap: () => Navigator.pop(ctx, 'replace'),
           ),
           ListTile(
             leading: const Icon(Icons.delete_outline, color: Colors.redAccent),
-            title: Text('Remove', style: GoogleFonts.outfit(color: Colors.redAccent)),
+            title: Text('Remove', style: GoogleFonts.poppins(color: Colors.redAccent)),
             onTap: () => Navigator.pop(ctx, 'remove'),
           ),
         ],

@@ -1,6 +1,10 @@
 import 'package:autobus/barrel.dart';
+import 'package:autobus/common_design/light_screen_theme.dart';
+import 'package:autobus/common_design/widgets/app_bottom_nav.dart';
+import 'package:autobus/common_design/widgets/light_list_card.dart';
+import 'package:autobus/common_design/widgets/light_screen_scaffold.dart';
 import 'package:autobus/features/marketing/tiktok_creator_info.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:autobus/icons/home_figma_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 enum _RecentPostPhase { processing, success, fail }
@@ -163,300 +167,268 @@ class _RecentPostsPageState extends State<RecentPostsPage> {
       });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final visible = _visible;
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          const DecoratedBox(
-            decoration: ManageScreenStyle.homeDashboardBodyDecoration,
-          ),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const ManageScreenBackButton(),
-                      const SizedBox(width: 18),
-                      Expanded(
-                        child: Text(
-                          'Recent posts',
-                          style: ManageScreenStyle.headerTitleStyle(),
-                        ),
+  static const _metaGray = Color(0xFF938F8F);
+
+  static const _filterLabels = {
+    _RecentPostFilter.all: 'All platforms',
+    _RecentPostFilter.tiktok: 'TikTok',
+    _RecentPostFilter.youtube: 'YouTube',
+    _RecentPostFilter.instagram: 'Instagram',
+    _RecentPostFilter.other: 'Other',
+  };
+
+  Future<void> _showFilter() async {
+    final choice = await showModalBottomSheet<_RecentPostFilter>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Filter posts',
+                  style: GoogleFonts.poppins(
+                    color: Colors.black,
+                    fontSize: LightScreenTheme.typeTitle,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                for (final entry in _filterLabels.entries)
+                  ListTile(
+                    title: Text(
+                      entry.value,
+                      style: GoogleFonts.poppins(
+                        color: Colors.black87,
+                        fontSize: LightScreenTheme.typeBody,
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    _loading ? ' ' : '${_items.length} in the last 14 days',
-                    style: GoogleFonts.outfit(
-                      color: Colors.white.withValues(alpha: 0.5),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w300,
                     ),
+                    trailing: _filter == entry.key
+                        ? HomeSfIcon(
+                            icon: HomeFigmaIcons.check,
+                            color: LightScreenTheme.accent,
+                            size: 18,
+                          )
+                        : null,
+                    onTap: () => Navigator.of(ctx).pop(entry.key),
                   ),
-                  const SizedBox(height: 16),
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        _chip('All', _RecentPostFilter.all),
-                        const SizedBox(width: 8),
-                        _chip('TikTok', _RecentPostFilter.tiktok),
-                        const SizedBox(width: 8),
-                        _chip('YouTube', _RecentPostFilter.youtube),
-                        const SizedBox(width: 8),
-                        _chip('Instagram', _RecentPostFilter.instagram),
-                        const SizedBox(width: 8),
-                        _chip('Other', _RecentPostFilter.other),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Expanded(
-                    child: _loading
-                        ? const Center(child: AutobusLoadingIndicator(size: 32))
-                        : _loadError != null
-                            ? Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 16,
-                                      ),
-                                      child: Text(
-                                        _loadError!,
-                                        textAlign: TextAlign.center,
-                                        style: GoogleFonts.outfit(
-                                          color: Colors.white.withValues(
-                                            alpha: 0.75,
-                                          ),
-                                          fontSize: 14,
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 16),
-                                    TextButton(
-                                      onPressed: _load,
-                                      child: Text(
-                                        'Retry',
-                                        style: GoogleFonts.outfit(
-                                          color: const Color(0xFFA855F7),
-                                          fontSize: 16,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              )
-                            : RefreshIndicator(
-                                color: const Color(0xFFA855F7),
-                                onRefresh: _load,
-                                child: visible.isEmpty
-                                    ? ListView(
-                                        physics:
-                                            const AlwaysScrollableScrollPhysics(),
-                                        children: [
-                                          SizedBox(
-                                            height:
-                                                MediaQuery.sizeOf(context)
-                                                        .height *
-                                                    0.22,
-                                          ),
-                                          Center(
-                                            child: Padding(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                horizontal: 20,
-                                              ),
-                                              child: Text(
-                                                _items.isEmpty
-                                                    ? 'No posts yet. Publish from Digital Marketing and they will show up here.'
-                                                    : 'No posts in this filter.',
-                                                textAlign: TextAlign.center,
-                                                style: GoogleFonts.outfit(
-                                                  color: Colors.white
-                                                      .withValues(alpha: 0.6),
-                                                  fontSize: 15,
-                                                  height: 1.45,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      )
-                                    : ListView.separated(
-                                        physics:
-                                            const AlwaysScrollableScrollPhysics(),
-                                        itemCount: visible.length,
-                                        separatorBuilder: (_, __) =>
-                                            const SizedBox(height: 16),
-                                        itemBuilder: (_, i) =>
-                                            _postCard(visible[i]),
-                                      ),
-                              ),
-                  ),
-                ],
+              ],
+            ),
+          ),
+        );
+      },
+    );
+    if (choice != null && mounted) setState(() => _filter = choice);
+  }
+
+  Widget _messageList(double scale, String message, {bool retry = false}) {
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: EdgeInsets.symmetric(horizontal: 28 * scale),
+      children: [
+        SizedBox(height: MediaQuery.sizeOf(context).height * 0.22),
+        Text(
+          message,
+          textAlign: TextAlign.center,
+          style: LightScreenTheme.emptyState(scale),
+        ),
+        if (retry)
+          Center(
+            child: TextButton(
+              onPressed: _load,
+              child: Text(
+                'Retry',
+                style: GoogleFonts.poppins(
+                  color: LightScreenTheme.accent,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
           ),
-        ],
-      ),
+      ],
     );
   }
 
-  Widget _chip(String label, _RecentPostFilter value) {
-    final selected = _filter == value;
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () => setState(() => _filter = value),
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          decoration: BoxDecoration(
-            color: selected ? const Color(0xFFA855F7) : Colors.transparent,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: selected
-                  ? const Color(0xFFA855F7)
-                  : const Color(0xFF3F1163),
-            ),
-          ),
-          child: Text(
-            label,
-            style: GoogleFonts.montserrat(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: Colors.white.withValues(alpha: selected ? 1 : 0.75),
-            ),
-          ),
+  @override
+  Widget build(BuildContext context) {
+    final scale = MediaQuery.sizeOf(context).width / appShellDesignWidth;
+    final visible = _visible;
+
+    final Widget content;
+    if (_loading) {
+      content = const Center(child: AutobusLoadingIndicator(size: 32));
+    } else if (_loadError != null) {
+      content = _messageList(scale, _loadError!, retry: true);
+    } else if (visible.isEmpty) {
+      content = _messageList(
+        scale,
+        _items.isEmpty
+            ? 'No posts yet. Publish from Digital Marketing and they will show up here.'
+            : 'No ${_filterLabels[_filter]} posts in the last 14 days.',
+      );
+    } else {
+      content = ListView.separated(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.fromLTRB(
+          20 * scale,
+          20 * scale,
+          20 * scale,
+          32 * scale,
+        ),
+        itemCount: visible.length,
+        separatorBuilder: (_, __) => SizedBox(height: 8 * scale),
+        itemBuilder: (_, i) => _postCard(scale, visible[i]),
+      );
+    }
+
+    return LightScreenScaffold(
+      title: 'Recent posts',
+      trailing: IconButton(
+        onPressed: _showFilter,
+        padding: EdgeInsets.zero,
+        constraints: BoxConstraints(
+          minWidth: 32 * scale,
+          minHeight: 32 * scale,
+        ),
+        icon: HomeSfIcon(
+          icon: HomeFigmaIcons.analyticsFilter,
+          color: _filter == _RecentPostFilter.all
+              ? Colors.black
+              : LightScreenTheme.accent,
+          size: 22 * scale.clamp(0.9, 1.0),
         ),
       ),
+      body: RefreshIndicator(
+        color: LightScreenTheme.accent,
+        onRefresh: _load,
+        child: content,
+      ),
     );
   }
 
-  Widget _postCard(_RecentPost item) {
-    final color = switch (item.phase) {
-      _RecentPostPhase.processing => const Color(0xFFFBBF24),
-      _RecentPostPhase.success => const Color(0xFF4ADE80),
-      _RecentPostPhase.fail => const Color(0xFFF87171),
+  Widget _postCard(double scale, _RecentPost item) {
+    final statusColor = switch (item.phase) {
+      _RecentPostPhase.processing => LightScreenTheme.warning,
+      _RecentPostPhase.success => const Color(0xFF16A34A),
+      _RecentPostPhase.fail => const Color(0xFFDC2626),
     };
-    final badge = switch (item.phase) {
+    final status = switch (item.phase) {
       _RecentPostPhase.processing => 'Processing',
-      _RecentPostPhase.success => item.scheduled ? 'Scheduled' : 'Success',
+      _RecentPostPhase.success => item.scheduled ? 'Scheduled' : 'Published',
       _RecentPostPhase.fail => 'Failed',
     };
-    final icon = switch (item.filterKey) {
-      'tiktok' => FontAwesomeIcons.tiktok,
-      'youtube' => FontAwesomeIcons.youtube,
-      'instagram' => FontAwesomeIcons.instagram,
-      _ => item.platform.toLowerCase().contains('facebook')
-          ? FontAwesomeIcons.facebook
-          : FontAwesomeIcons.globe,
-    };
+    final releaseUrl = item.releaseUrl;
+    final metaStyle = LightScreenTheme.listSubtitle(scale).copyWith(
+      color: _metaGray,
+    );
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: item.releaseUrl == null
-            ? null
-            : () {
-                final uri = Uri.tryParse(item.releaseUrl!);
-                if (uri != null) launchUrl(uri, mode: LaunchMode.externalApplication);
-              },
-        borderRadius: BorderRadius.circular(28),
-        child: Ink(
-      padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(
-        border: Border.all(color: const Color(0xFF3F1163), width: 1),
-        borderRadius: BorderRadius.circular(28),
-      ),
+    return LightListCard(
+      scale: scale,
+      borderColor: Colors.black,
+      onTap: releaseUrl == null
+          ? null
+          : () {
+              final uri = Uri.tryParse(releaseUrl);
+              if (uri != null) {
+                launchUrl(uri, mode: LaunchMode.externalApplication);
+              }
+            },
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(
+                  text: '${item.label}: ',
+                  style: LightScreenTheme.listTitle(scale),
+                ),
+                TextSpan(
+                  text: item.preview.isNotEmpty ? item.preview : item.message,
+                  style: LightScreenTheme.listTitle(scale).copyWith(
+                    fontWeight: FontWeight.w400,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+          ),
+          SizedBox(height: 12 * scale),
           Row(
             children: [
-              FaIcon(icon, size: 16, color: Colors.white),
-              const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  item.label,
-                  style: GoogleFonts.outfit(
-                    color: Colors.white,
-                    fontSize: 16,
+                  item.accountName.isNotEmpty ? item.accountName : item.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: metaStyle,
+                ),
+              ),
+              SizedBox(width: 8 * scale),
+              Text(item.whenLabel, style: metaStyle),
+            ],
+          ),
+          if (item.phase != _RecentPostPhase.success &&
+              item.message.isNotEmpty &&
+              item.preview.isNotEmpty) ...[
+            SizedBox(height: 6 * scale),
+            Text(
+              item.message,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: metaStyle,
+            ),
+          ],
+          SizedBox(height: 12 * scale),
+          Row(
+            children: [
+              Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: 8 * scale,
+                  vertical: 3 * scale,
+                ),
+                decoration: BoxDecoration(
+                  color: statusColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  status,
+                  style: GoogleFonts.poppins(
+                    color: statusColor,
+                    fontSize: LightScreenTheme.typeMicro,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
               ),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.16),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  badge,
-                  style: GoogleFonts.montserrat(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    color: color,
+              const Spacer(),
+              if (releaseUrl != null) ...[
+                Text(
+                  'View post',
+                  style: GoogleFonts.poppins(
+                    color: LightScreenTheme.accent,
+                    fontSize: LightScreenTheme.typeLabel,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
-              ),
+                SizedBox(width: 6 * scale),
+                HomeSfIcon(
+                  icon: HomeFigmaIcons.chevronRight,
+                  color: LightScreenTheme.accent,
+                  size: 16 * scale.clamp(0.9, 1.05),
+                ),
+              ],
             ],
           ),
-          if (item.accountName.isNotEmpty) ...[
-            const SizedBox(height: 6),
-            Text(
-              item.accountName,
-              style: GoogleFonts.outfit(
-                color: Colors.white.withValues(alpha: 0.5),
-                fontSize: 12,
-              ),
-            ),
-          ],
-          if (item.preview.isNotEmpty) ...[
-            const SizedBox(height: 10),
-            Text(
-              item.preview,
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.outfit(
-                color: Colors.white.withValues(alpha: 0.85),
-                fontSize: 14,
-                height: 1.35,
-              ),
-            ),
-          ],
-          const SizedBox(height: 10),
-          Text(
-            item.message,
-            style: GoogleFonts.outfit(
-              color: Colors.white.withValues(alpha: 0.55),
-              fontSize: 12,
-              height: 1.35,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            item.whenLabel,
-            style: GoogleFonts.outfit(
-              color: Colors.white.withValues(alpha: 0.4),
-              fontSize: 11,
-            ),
-          ),
         ],
-      ),
-        ),
       ),
     );
   }
@@ -645,5 +617,5 @@ String _whenLabel(String raw) {
   final dd = d.day.toString().padLeft(2, '0');
   final hh = d.hour.toString().padLeft(2, '0');
   final min = d.minute.toString().padLeft(2, '0');
-  return '$dd / $mm / ${d.year}  $hh:$min';
+  return '$dd/$mm/${d.year}  $hh:$min';
 }

@@ -1,5 +1,10 @@
 import 'package:autobus/barrel.dart';
-
+import 'package:autobus/common_design/light_screen_theme.dart';
+import 'package:autobus/common_design/widgets/app_bottom_nav.dart';
+import 'package:autobus/common_design/widgets/light_hub_card.dart';
+import 'package:autobus/common_design/widgets/light_screen_scaffold.dart';
+import 'package:autobus/icons/home_figma_icons.dart';
+/// Manage Messaging hub — Figma ANALYTICS frame 3240:3170.
 class ManageEmails extends StatefulWidget {
   const ManageEmails({super.key});
 
@@ -8,12 +13,18 @@ class ManageEmails extends StatefulWidget {
 }
 
 class _ManageEmailsState extends State<ManageEmails> {
+  static const _surfaceColor = Color(0xFFF8FAFC);
+  static const _accentColor = Color(0xFF7F03B9);
+  static const _mutedColor = Color(0xFF64748B);
+  static const _bodyColor = Color(0xFF4D4D4D);
+  static const _warningColor = Color(0xFFE27C00);
+
   bool _profileRequested = false;
   bool _loading = true;
   String? _loadError;
-  String _senderEmail = '';
+  String _profileEmail = '';
 
-  bool get _hasSenderEmail => _senderEmail.trim().isNotEmpty;
+  bool get _hasSenderEmail => _profileEmail.trim().isNotEmpty;
 
   String _shortError(String raw, {int max = 160}) {
     final t = raw.trim();
@@ -32,17 +43,25 @@ class _ManageEmailsState extends State<ManageEmails> {
       final user = await api.getUserProfile();
       if (!mounted) return;
       setState(() {
-        _senderEmail = (user['sender_email'] ?? '').toString().trim();
+        _profileEmail = (user['email'] ?? '').toString().trim();
         _loading = false;
       });
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _loadError = userFacingError(e);
+        _loadError = userFacingError(e, fallback: AppUserMessages.load);
         _loading = false;
-        _senderEmail = '';
+        _profileEmail = '';
       });
     }
+  }
+
+  Future<void> _openFromEmail() async {
+    await Navigator.push<bool>(
+      context,
+      MaterialPageRoute<bool>(builder: (_) => const FromEmailPage()),
+    );
+    if (mounted) await _loadProfileEmail();
   }
 
   @override
@@ -55,330 +74,278 @@ class _ManageEmailsState extends State<ManageEmails> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          const DecoratedBox(
-            decoration: ManageScreenStyle.homeDashboardBodyDecoration,
-          ),
-          SafeArea(
-            child: Column(
-              children: [
-                const ManageScreenHeader(
-                  title: 'Manage Messaging',
-                  creditCategory: CreditCategory.email,
-                ),
-                Expanded(
-                  child: SingleChildScrollView(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      child: Column(
+    final scale = MediaQuery.sizeOf(context).width / appShellDesignWidth;
+
+    return LightScreenScaffold(
+      title: 'Manage messaging',
+      creditCategory: CreditCategory.email,
+      body: RefreshIndicator(
+        color: LightScreenTheme.accent,
+        onRefresh: _loadProfileEmail,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: LightScreenTheme.hubPagePadding(scale),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Welcome to Messaging',
+                textAlign: TextAlign.center,
+                style: LightScreenTheme.hubTitle(scale),
+              ),
+              SizedBox(height: LightScreenTheme.hubTitleGap * scale),
+              Text(
+                'Send emails to customers for support, updates, promotions, and notifications — with your AI assistant.',
+                textAlign: TextAlign.center,
+                style: LightScreenTheme.hubBody(scale),
+              ),
+              SizedBox(height: LightScreenTheme.hubToCards * scale),
+                    if (_loading)
+                      Padding(
+                        padding: EdgeInsets.symmetric(vertical: 12 * scale),
+                        child: Center(
+                          child: CircularProgressIndicator(color: _accentColor),
+                        ),
+                      )
+                    else if (_loadError != null)
+                      _MessagingNoticeCard(
+                        scale: scale,
+                        message:
+                            'Could not verify your profile email.\n${_shortError(_loadError!)}',
+                        trailing: IconButton(
+                          onPressed: _loadProfileEmail,
+                          icon: HomeSfIcon(
+                            icon: HomeFigmaIcons.refresh,
+                            color: _mutedColor,
+                            size: 22 * scale,
+                          ),
+                          padding: EdgeInsets.zero,
+                          constraints: BoxConstraints(
+                            minWidth: 32 * scale,
+                            minHeight: 32 * scale,
+                          ),
+                        ),
+                      )
+                    else if (!_hasSenderEmail)
+                      _MessagingNoticeCard(
+                        scale: scale,
+                        message:
+                            'You have not linked a sender address yet. Add an email on your profile so customers can recognize your messages.',
+                        trailing: TextButton(
+                          onPressed: _openFromEmail,
+                          style: TextButton.styleFrom(
+                            foregroundColor: _accentColor,
+                            padding: EdgeInsets.zero,
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          child: Text(
+                            'Add',
+                            style: GoogleFonts.poppins(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                    if (!_loading) ...[
+                      SizedBox(height: LightScreenTheme.sectionGap * scale),
+                      LightHubGrid(
+                        scale: scale,
                         children: [
-                          const SizedBox(height: 60),
-                          Text(
-                            'Welcome to Messaging',
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.montserrat(
-                              color: Colors.white,
-                              fontSize: 19,
-                              fontWeight: FontWeight.w500,
-                              letterSpacing: -0.3,
-                            ),
+                          _MessagingHubCard(
+                            scale: scale,
+                            title: 'Send Mails',
+                            subtitle: 'Send to customers',
+                            icon: HomeFigmaIcons.sendMail,
+                            gradient: HomeFigmaIcons.sendMailGradient,
+                            onTap: () {
+                              Navigator.push<void>(
+                                context,
+                                MaterialPageRoute<void>(
+                                  builder: (_) => const SendCustomerEmailPage(),
+                                ),
+                              );
+                            },
                           ),
-                          const SizedBox(height: 24),
-                          Text(
-                            'Send emails for customer support, updates, promotions, and notifications — with your AI assistant.',
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.montserrat(
-                              color: Colors.white.withValues(alpha: 0.9),
-                              fontSize: 14,
-                              fontWeight: FontWeight.w300,
-                              height: 1.6,
-                            ),
+                          _MessagingHubCard(
+                            scale: scale,
+                            title: 'Sent Emails',
+                            subtitle: 'View sent mails',
+                            icon: HomeFigmaIcons.sentEmails,
+                            gradient: HomeFigmaIcons.sentEmailsGradient,
+                            onTap: () {
+                              Navigator.push<void>(
+                                context,
+                                MaterialPageRoute<void>(
+                                  builder: (_) => const SentEmailsPage(),
+                                ),
+                              );
+                            },
                           ),
-                          const SizedBox(height: 32),
-                          if (_loading) ...[
-                            const SizedBox(height: 8),
-                            const Center(
-                              child:                               const AutobusLoadingIndicator(size: 28),
-                            ),
-                            const SizedBox(height: 24),
-                          ] else if (_loadError != null) ...[
-                            _EmailNoticePanel(
-                              backgroundColor: Colors.amber.withValues(
-                                alpha: 0.12,
-                              ),
-                              borderColor: Colors.amber.withValues(alpha: 0.45),
-                              icon: Icons.cloud_off_outlined,
-                              iconColor: Colors.amber.shade300,
-                              trailing: IconButton(
-                                onPressed: _loadProfileEmail,
-                                icon: Icon(
-                                  Icons.refresh,
-                                  color: Colors.white.withValues(alpha: 0.85),
-                                  size: 22,
-                                ),
-                                padding: EdgeInsets.zero,
-                                constraints: const BoxConstraints(
-                                  minWidth: 32,
-                                  minHeight: 32,
-                                ),
-                              ),
-                              child: Text(
-                                'Could not load your from email.\n${_shortError(_loadError!)}',
-                                style: GoogleFonts.montserrat(
-                                  color: Colors.white.withValues(alpha: 0.88),
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w400,
-                                  height: 1.45,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 32),
-                          ] else if (!_hasSenderEmail) ...[
-                            _EmailNoticePanel(
-                              backgroundColor: const Color(
-                                0xFF581C87,
-                              ).withValues(alpha: 0.1),
-                              borderColor: const Color(
-                                0xFF9333EA,
-                              ).withValues(alpha: 0.5),
-                              icon: Icons.warning_rounded,
-                              iconColor: Colors.red.shade400,
-                              trailing: TextButton(
-                                onPressed: () {
-                                  Navigator.push<void>(
-                                    context,
-                                    MaterialPageRoute<void>(
-                                      builder: (_) =>
-                                          const ManageSenderEmailPage(),
-                                    ),
-                                  ).then((_) {
-                                    if (mounted) _loadProfileEmail();
-                                  });
-                                },
-                                style: TextButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                  ),
-                                  minimumSize: Size.zero,
-                                  tapTargetSize:
-                                      MaterialTapTargetSize.shrinkWrap,
-                                ),
-                                child: Text(
-                                  'Add',
-                                  style: GoogleFonts.montserrat(
-                                    color: const Color(0xFFA855F7),
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                              child: Text(
-                                'Add a from email before sending, for example noreply@useautobus.com. Autobus sends on your behalf using this address.',
-                                style: GoogleFonts.montserrat(
-                                  color: Colors.white.withValues(alpha: 0.85),
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w400,
-                                  height: 1.45,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 32),
-                          ] else if (_hasSenderEmail) ...[
-                            _EmailNoticePanel(
-                              backgroundColor: const Color(
-                                0xFF14532D,
-                              ).withValues(alpha: 0.18),
-                              borderColor: const Color(
-                                0xFF22C55E,
-                              ).withValues(alpha: 0.45),
-                              icon: Icons.mark_email_read_outlined,
-                              iconColor: const Color(0xFF4ADE80),
-                              trailing: TextButton(
-                                onPressed: () {
-                                  Navigator.push<void>(
-                                    context,
-                                    MaterialPageRoute<void>(
-                                      builder: (_) =>
-                                          const ManageSenderEmailPage(),
-                                    ),
-                                  ).then((_) {
-                                    if (mounted) _loadProfileEmail();
-                                  });
-                                },
-                                style: TextButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                  ),
-                                  minimumSize: Size.zero,
-                                  tapTargetSize:
-                                      MaterialTapTargetSize.shrinkWrap,
-                                ),
-                                child: Text(
-                                  'Change',
-                                  style: GoogleFonts.montserrat(
-                                    color: const Color(0xFFA855F7),
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                              child: Text(
-                                'Sending from $_senderEmail',
-                                style: GoogleFonts.montserrat(
-                                  color: Colors.white.withValues(alpha: 0.85),
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w400,
-                                  height: 1.45,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 32),
-                          ] else
-                            const SizedBox(height: 8),
-                          const SizedBox(height: 40),
-                          GridView.count(
-                            crossAxisCount: 2,
-                            mainAxisSpacing: 16,
-                            crossAxisSpacing: 16,
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            childAspectRatio: 1.0,
-                            children: [
-                              _EmailHubCard(
-                                icon: Icons.auto_awesome_outlined,
-                                title: 'Send Mails',
-                                onTap: () {
-                                  Navigator.push<void>(
-                                    context,
-                                    MaterialPageRoute<void>(
-                                      builder: (_) => const SendCustomerEmailPage(),
-                                    ),
-                                  );
-                                },
-                              ),
-                              _EmailHubCard(
-                                icon: Icons.outbox_outlined,
-                                title: 'Sent Emails',
-                                onTap: () {
-                                  Navigator.push<void>(
-                                    context,
-                                    MaterialPageRoute<void>(
-                                      builder: (_) => const SentEmailsPage(),
-                                    ),
-                                  );
-                                },
-                              ),
-                              _EmailHubCard(
-                                icon: Icons.alternate_email,
-                                title: 'From email',
-                                onTap: () {
-                                  Navigator.push<void>(
-                                    context,
-                                    MaterialPageRoute<void>(
-                                      builder: (_) =>
-                                          const ManageSenderEmailPage(),
-                                    ),
-                                  ).then((_) {
-                                    if (mounted) _loadProfileEmail();
-                                  });
-                                },
-                              ),
-                            ],
+                          _MessagingHubCard(
+                            scale: scale,
+                            title: 'From Email',
+                            subtitle: _hasSenderEmail
+                                ? _profileEmail
+                                : 'Add a from email',
+                            icon: HomeFigmaIcons.fromEmail,
+                            gradient: HomeFigmaIcons.fromEmailGradient,
+                            onTap: _openFromEmail,
                           ),
-                          const SizedBox(height: 40),
                         ],
                       ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+                    ],
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 }
 
-class _EmailNoticePanel extends StatelessWidget {
-  final Color backgroundColor;
-  final Color borderColor;
-  final IconData icon;
-  final Color iconColor;
+class _MessagingNoticeCard extends StatelessWidget {
+  final double scale;
+  final String message;
   final Widget? trailing;
-  final Widget child;
 
-  const _EmailNoticePanel({
-    required this.backgroundColor,
-    required this.borderColor,
-    required this.icon,
-    required this.iconColor,
+  const _MessagingNoticeCard({
+    required this.scale,
+    required this.message,
     this.trailing,
-    required this.child,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: backgroundColor,
-        border: Border.all(color: borderColor, width: 1.2),
-        borderRadius: BorderRadius.circular(20),
+        color: _ManageEmailsState._surfaceColor,
+        borderRadius: BorderRadius.circular(20 * scale),
+        border: Border.all(color: Colors.black, width: 1),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: EdgeInsets.fromLTRB(20 * scale, 20 * scale, 16 * scale, 20 * scale),
+      child: Stack(
+        clipBehavior: Clip.none,
         children: [
-          Icon(icon, color: iconColor, size: 22),
-          const SizedBox(width: 12),
-          Expanded(child: child),
-          if (trailing != null) trailing!,
+          if (trailing != null)
+            Positioned(
+              top: 0,
+              right: 0,
+              child: trailing!,
+            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              HomeSfIcon(
+                icon: HomeFigmaIcons.warning,
+                color: _ManageEmailsState._warningColor,
+                size: 28 * scale.clamp(0.9, 1.05),
+              ),
+              SizedBox(height: 12 * scale),
+              Text(
+                message,
+                style: GoogleFonts.poppins(
+                  color: _ManageEmailsState._bodyColor,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w400,
+                  height: 1.5,
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
   }
 }
 
-class _EmailHubCard extends StatelessWidget {
-  final IconData icon;
+class _MessagingHubCard extends StatelessWidget {
+  final double scale;
   final String title;
+  final String subtitle;
+  final IconData icon;
+  final Gradient gradient;
   final VoidCallback onTap;
 
-  const _EmailHubCard({
-    required this.icon,
+  const _MessagingHubCard({
+    required this.scale,
     required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.gradient,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          border: Border.all(color: const Color(0xFF3F1163), width: 1),
-          borderRadius: BorderRadius.circular(32),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: Colors.white, size: 28),
-            const SizedBox(height: 14),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.montserrat(
-                color: Colors.white.withValues(alpha: 0.9),
-                fontSize: 13,
-                fontWeight: FontWeight.w400,
+    return Material(
+      color: _ManageEmailsState._surfaceColor,
+      borderRadius: BorderRadius.circular(20 * scale),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20 * scale),
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+            16 * scale,
+            16 * scale,
+            16 * scale,
+            14 * scale,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 40 * scale,
+                height: 40 * scale,
+                decoration: BoxDecoration(
+                  gradient: gradient,
+                  borderRadius: BorderRadius.circular(12 * scale),
+                ),
+                alignment: Alignment.center,
+                child: HomeSfIcon(
+                  icon: icon,
+                  size: 20 * scale.clamp(0.9, 1.05),
+                  color: Colors.white,
+                ),
               ),
-            ),
-          ],
+              SizedBox(height: 12 * scale),
+              Expanded(
+                child: Align(
+                  alignment: Alignment.bottomLeft,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.poppins(
+                          color: Colors.black,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          height: 1.25,
+                        ),
+                      ),
+                      SizedBox(height: 6 * scale),
+                      Text(
+                        subtitle,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.poppins(
+                          color: _ManageEmailsState._mutedColor,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w400,
+                          height: 1.3,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

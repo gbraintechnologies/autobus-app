@@ -36,8 +36,8 @@ class SessionAwareHttpClient extends http.BaseClient {
       request.headers['Authorization'] = 'Bearer $accessToken';
     }
 
-    // Send the request
-    var response = await _innerClient.send(request);
+    final timeout = _timeoutFor(request.url);
+    var response = await _innerClient.send(request).timeout(timeout);
 
     // If we get a 401, attempt token refresh and retry
     if (response.statusCode == 401) {
@@ -49,7 +49,7 @@ class SessionAwareHttpClient extends http.BaseClient {
         if (newAccessToken != null) {
           request.headers['Authorization'] = 'Bearer $newAccessToken';
           final clonedRequest = _cloneRequest(request);
-          response = await _innerClient.send(clonedRequest);
+          response = await _innerClient.send(clonedRequest).timeout(timeout);
           return response;
         }
       }
@@ -69,11 +69,13 @@ class SessionAwareHttpClient extends http.BaseClient {
           ? Uri.parse('$baseUrl/api/v1/auth/refresh')
           : Uri.parse('${AppConfig.backendUrl}/api/v1/auth/refresh');
 
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({'refresh_token': refreshToken}),
-      );
+      final response = await http
+          .post(
+            url,
+            headers: {'Content-Type': 'application/json'},
+            body: json.encode({'refresh_token': refreshToken}),
+          )
+          .timeout(AppConfig.networkTimeout);
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -91,6 +93,16 @@ class SessionAwareHttpClient extends http.BaseClient {
       print('Error refreshing token: $e');
       return false;
     }
+  }
+
+  Duration _timeoutFor(Uri url) {
+    final path = url.path.toLowerCase();
+    if (path.contains('start-dialog') ||
+        path.contains('/nlu/') ||
+        path.contains('/agent/')) {
+      return AppConfig.agentTimeout;
+    }
+    return AppConfig.networkTimeout;
   }
 
   /// Clone a request to resend it

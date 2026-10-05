@@ -1,4 +1,5 @@
 import 'package:autobus/barrel.dart';
+import 'package:autobus/common_design/credits_store.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 
 class TokenService {
@@ -141,6 +142,7 @@ class TokenService {
 
   /// Clear all tokens (logout)
   Future<void> clearTokens() async {
+    CreditsStore.instance.clear();
     try {
       await _secureStorage.delete(key: _tokenKey);
       await _secureStorage.delete(key: _tokenExpiryKey);

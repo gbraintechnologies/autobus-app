@@ -227,7 +227,7 @@ class _PublishStatusPageState extends State<_PublishStatusPage> {
           Text(
             'Publish status',
             textAlign: TextAlign.center,
-            style: GoogleFonts.montserrat(
+            style: GoogleFonts.poppins(
               fontSize: 16,
               fontWeight: FontWeight.w600,
               color: Colors.black87,
@@ -239,7 +239,7 @@ class _PublishStatusPageState extends State<_PublishStatusPage> {
                 ? 'We’re checking each platform. This can take a few minutes.'
                 : 'Here’s how each post finished.',
             textAlign: TextAlign.center,
-            style: GoogleFonts.montserrat(
+            style: GoogleFonts.poppins(
               fontSize: 12,
               color: Colors.black45,
               height: 1.35,
@@ -268,7 +268,7 @@ class _PublishStatusPageState extends State<_PublishStatusPage> {
                 ? Center(
                     child: Text(
                       'No posts in this filter.',
-                      style: GoogleFonts.montserrat(
+                      style: GoogleFonts.poppins(
                         fontSize: 13,
                         color: Colors.black45,
                       ),
@@ -310,7 +310,7 @@ class _PublishStatusPageState extends State<_PublishStatusPage> {
           ),
           child: Text(
             label,
-            style: GoogleFonts.montserrat(
+            style: GoogleFonts.poppins(
               fontSize: 12,
               fontWeight: FontWeight.w600,
               color: selected ? Colors.white : Colors.black87,
@@ -371,7 +371,7 @@ class _PublishStatusPageState extends State<_PublishStatusPage> {
               children: [
                 Text(
                   item.label,
-                  style: GoogleFonts.montserrat(
+                  style: GoogleFonts.poppins(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
                   ),
@@ -380,7 +380,7 @@ class _PublishStatusPageState extends State<_PublishStatusPage> {
                   const SizedBox(height: 2),
                   Text(
                     item.accountName,
-                    style: GoogleFonts.montserrat(
+                    style: GoogleFonts.poppins(
                       fontSize: 11,
                       color: Colors.black45,
                     ),
@@ -389,7 +389,7 @@ class _PublishStatusPageState extends State<_PublishStatusPage> {
                 const SizedBox(height: 6),
                 Text(
                   item.message,
-                  style: GoogleFonts.montserrat(
+                  style: GoogleFonts.poppins(
                     fontSize: 12,
                     color: Colors.black54,
                     height: 1.35,
@@ -409,7 +409,7 @@ class _PublishStatusPageState extends State<_PublishStatusPage> {
                 ),
                 child: Text(
                   badge,
-                  style: GoogleFonts.montserrat(
+                  style: GoogleFonts.poppins(
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
                     color: color,

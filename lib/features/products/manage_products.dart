@@ -1,5 +1,9 @@
 import 'package:autobus/barrel.dart';
-
+import 'package:autobus/common_design/light_screen_theme.dart';
+import 'package:autobus/common_design/widgets/app_bottom_nav.dart';
+import 'package:autobus/common_design/widgets/light_hub_card.dart';
+import 'package:autobus/common_design/widgets/light_screen_scaffold.dart';
+import 'package:autobus/icons/home_figma_icons.dart';
 class ManageProducts extends StatefulWidget {
   const ManageProducts({super.key});
 
@@ -44,7 +48,7 @@ class _ManageProductsState extends State<ManageProducts> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _loadError = userFacingError(e);
+        _loadError = userFacingError(e, fallback: AppUserMessages.load);
         _loading = false;
         _hasCatalogueFiles = false;
       });
@@ -61,177 +65,140 @@ class _ManageProductsState extends State<ManageProducts> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          const DecoratedBox(
-            decoration: ManageScreenStyle.homeDashboardBodyDecoration,
-          ),
-          SafeArea(
-            child: Column(
-              children: [
-                const ManageScreenHeader(title: 'Manage Products'),
-                Expanded(
-                  child: SingleChildScrollView(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      child: Column(
-                        children: [
-                          const SizedBox(height: 60),
-                          Text(
-                            'Welcome to Products',
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.montserrat(
-                              color: Colors.white,
-                              fontSize: 19,
-                              fontWeight: FontWeight.w500,
-                              letterSpacing: -0.3,
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          Text(
-                            'Manage and organize product documents with automated recommendations, updates, and insights from your AI assistant.',
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.montserrat(
-                              color: Colors.white.withValues(alpha: 0.9),
-                              fontSize: 14,
-                              fontWeight: FontWeight.w300,
-                              height: 1.6,
-                            ),
-                          ),
-                          const SizedBox(height: 32),
-                          if (_loading) ...[
-                            const SizedBox(height: 8),
-                            const Center(
-                              child:                               const AutobusLoadingIndicator(size: 28),
-                            ),
-                            const SizedBox(height: 24),
-                          ] else if (_loadError != null) ...[
-                            _ProductNoticePanel(
-                              backgroundColor: Colors.amber.withValues(
-                                alpha: 0.12,
-                              ),
-                              borderColor: Colors.amber.withValues(alpha: 0.45),
-                              icon: Icons.cloud_off_outlined,
-                              iconColor: Colors.amber.shade300,
-                              trailing: IconButton(
-                                onPressed: _loadCataloguePresence,
-                                icon: Icon(
-                                  Icons.refresh,
-                                  color: Colors.white.withValues(alpha: 0.85),
-                                  size: 22,
-                                ),
-                                padding: EdgeInsets.zero,
-                                constraints: const BoxConstraints(
-                                  minWidth: 32,
-                                  minHeight: 32,
-                                ),
-                              ),
-                              child: Text(
-                                'Could not verify your product catalogue.\n${_shortError(_loadError!)}',
-                                style: GoogleFonts.montserrat(
-                                  color: Colors.white.withValues(alpha: 0.88),
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w400,
-                                  height: 1.45,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 32),
-                          ] else if (!_hasCatalogueFiles) ...[
-                            _ProductNoticePanel(
-                              backgroundColor: const Color(
-                                0xFF581C87,
-                              ).withValues(alpha: 0.1),
-                              borderColor: const Color(
-                                0xFF9333EA,
-                              ).withValues(alpha: 0.5),
-                              icon: Icons.warning_rounded,
-                              iconColor: Colors.red.shade400,
-                              child: Text(
-                                'You have no products in your catalogue.',
-                                style: GoogleFonts.montserrat(
-                                  color: Colors.white.withValues(alpha: 0.85),
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w400,
-                                  height: 1.45,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 32),
-                          ] else
-                            const SizedBox(height: 8),
-                          const SizedBox(height: 40),
-                          GridView.count(
-                            crossAxisCount: 2,
-                            mainAxisSpacing: 16,
-                            crossAxisSpacing: 16,
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            childAspectRatio: 1.0,
-                            children: [
-                              _ProductHubCard(
-                                icon: Icons.add_box_outlined,
-                                title: 'Add Product',
-                                onTap: () {
-                                  Navigator.push<bool?>(
-                                    context,
-                                    MaterialPageRoute<bool?>(
-                                      builder: (context) =>
-                                          const AddProductScreen(),
-                                    ),
-                                  ).then((created) {
-                                    if (created == true && mounted) {
-                                      _loadCataloguePresence();
-                                    }
-                                  });
-                                },
-                              ),
-                              _ProductHubCard(
-                                icon: Icons.inventory_2_outlined,
-                                title: 'View Products',
-                                onTap: () {
-                                  Navigator.push<void>(
-                                    context,
-                                    MaterialPageRoute<void>(
-                                      builder: (context) =>
-                                          const ViewProductsPage(),
-                                    ),
-                                  ).then((_) {
-                                    if (mounted) _loadCataloguePresence();
-                                  });
-                                },
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 40),
-                        ],
-                      ),
-                    ),
+    final scale = MediaQuery.sizeOf(context).width / appShellDesignWidth;
+
+    return LightScreenScaffold(
+      title: 'Manage Products',
+      creditCategory: CreditCategory.storageMb,
+      body: SingleChildScrollView(
+        padding: LightScreenTheme.hubPagePadding(scale),
+        child: Column(
+          children: [
+            Text(
+              'Welcome to Products',
+              textAlign: TextAlign.center,
+              style: LightScreenTheme.hubTitle(scale),
+            ),
+            SizedBox(height: LightScreenTheme.hubTitleGap * scale),
+            Text(
+              'Add products, manage stock, and share them to your catalog and social channels.',
+              textAlign: TextAlign.center,
+              style: LightScreenTheme.hubBody(scale).copyWith(
+                color: const Color(0xFF4E4E4E),
+              ),
+            ),
+            SizedBox(height: LightScreenTheme.hubToCards * scale),
+            if (_loading) ...[
+              Padding(
+                padding: EdgeInsets.symmetric(vertical: 8 * scale),
+                child: const Center(
+                  child: AutobusLoadingIndicator(size: 28),
+                ),
+              ),
+              SizedBox(height: LightScreenTheme.sectionGap * scale),
+            ] else if (_loadError != null) ...[
+              _ProductNoticePanel(
+                scale: scale,
+                icon: HomeFigmaIcons.cloudOff,
+                iconColor: LightScreenTheme.warning,
+                trailing: IconButton(
+                  onPressed: _loadCataloguePresence,
+                  icon: HomeSfIcon(
+                    icon: HomeFigmaIcons.refresh,
+                    color: LightScreenTheme.accent,
+                    size: 22 * scale,
                   ),
+                  padding: EdgeInsets.zero,
+                  constraints: BoxConstraints(
+                    minWidth: 32 * scale,
+                    minHeight: 32 * scale,
+                  ),
+                ),
+                child: Text(
+                  'Could not verify your product catalogue.\n${_shortError(_loadError!)}',
+                  style: GoogleFonts.poppins(
+                    color: const Color(0xFF4E4E4E),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                    height: 1.45,
+                  ),
+                ),
+              ),
+              SizedBox(height: LightScreenTheme.hubToCards * scale),
+            ] else if (!_hasCatalogueFiles) ...[
+              _ProductNoticePanel(
+                scale: scale,
+                icon: HomeFigmaIcons.warning,
+                iconColor: const Color(0xFFE3800E),
+                child: Text(
+                  'You have no product in your catalogue',
+                  style: GoogleFonts.poppins(
+                    color: const Color(0xFF4E4E4E),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ),
+              SizedBox(height: LightScreenTheme.hubToCards * scale),
+            ] else
+              SizedBox(height: LightScreenTheme.rowGap * scale),
+            LightHubGrid(
+              scale: scale,
+              children: [
+                LightHubCard(
+                  scale: scale,
+                  title: 'Add Product',
+                  subtitle: 'New products',
+                  icon: HomeFigmaIcons.addProduct,
+                  iconGradient: HomeFigmaIcons.addProductGradient,
+                  onTap: () {
+                    Navigator.push<bool?>(
+                      context,
+                      MaterialPageRoute<bool?>(
+                        builder: (context) => const AddProductScreen(),
+                      ),
+                    ).then((created) {
+                      if (created == true && mounted) {
+                        _loadCataloguePresence();
+                      }
+                    });
+                  },
+                ),
+                LightHubCard(
+                  scale: scale,
+                  title: 'View Product',
+                  subtitle: 'Added products',
+                  icon: HomeFigmaIcons.viewProducts,
+                  iconGradient: HomeFigmaIcons.viewProductsGradient,
+                  onTap: () {
+                    Navigator.push<void>(
+                      context,
+                      MaterialPageRoute<void>(
+                        builder: (context) => const ViewProductsPage(),
+                      ),
+                    ).then((_) {
+                      if (mounted) _loadCataloguePresence();
+                    });
+                  },
                 ),
               ],
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 }
 
 class _ProductNoticePanel extends StatelessWidget {
-  final Color backgroundColor;
-  final Color borderColor;
+  final double scale;
   final IconData icon;
   final Color iconColor;
   final Widget? trailing;
   final Widget child;
 
   const _ProductNoticePanel({
-    required this.backgroundColor,
-    required this.borderColor,
+    required this.scale,
     required this.icon,
     required this.iconColor,
     this.trailing,
@@ -242,61 +209,23 @@ class _ProductNoticePanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      constraints: BoxConstraints(minHeight: 71 * scale),
+      padding: EdgeInsets.symmetric(
+        horizontal: 20 * scale,
+        vertical: 16 * scale,
+      ),
       decoration: BoxDecoration(
-        color: backgroundColor,
-        border: Border.all(color: borderColor, width: 1.2),
-        borderRadius: BorderRadius.circular(20),
+        color: LightScreenTheme.surface,
+        borderRadius: BorderRadius.circular(20 * scale),
+        border: Border.all(color: Colors.black, width: 1),
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: iconColor, size: 22),
-          const SizedBox(width: 12),
+          HomeSfIcon(icon: icon, color: iconColor, size: 28 * scale),
+          SizedBox(width: 10 * scale),
           Expanded(child: child),
           if (trailing != null) trailing!,
         ],
-      ),
-    );
-  }
-}
-
-class _ProductHubCard extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final VoidCallback onTap;
-
-  const _ProductHubCard({
-    required this.icon,
-    required this.title,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          border: Border.all(color: const Color(0xFF3F1163), width: 1),
-          borderRadius: BorderRadius.circular(32),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: Colors.white, size: 28),
-            const SizedBox(height: 14),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.montserrat(
-                color: Colors.white.withValues(alpha: 0.9),
-                fontSize: 13,
-                fontWeight: FontWeight.w400,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

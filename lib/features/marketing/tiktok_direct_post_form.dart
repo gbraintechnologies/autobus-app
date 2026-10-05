@@ -128,8 +128,8 @@ class _TikTokDirectPostFormState extends State<TikTokDirectPostForm> {
     return InputDecoration(
       labelText: label,
       hintText: hint,
-      labelStyle: GoogleFonts.montserrat(fontSize: 12, color: Colors.black54),
-      hintStyle: GoogleFonts.montserrat(fontSize: 12, color: Colors.black38),
+      labelStyle: GoogleFonts.poppins(fontSize: 12, color: Colors.black54),
+      hintStyle: GoogleFonts.poppins(fontSize: 12, color: Colors.black38),
       filled: true,
       fillColor: _kFill,
       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -179,7 +179,7 @@ class _TikTokDirectPostFormState extends State<TikTokDirectPostForm> {
         children: [
           Text(
             'Post to TikTok',
-            style: GoogleFonts.montserrat(
+            style: GoogleFonts.poppins(
               fontSize: 14,
               fontWeight: FontWeight.w700,
             ),
@@ -214,7 +214,7 @@ class _TikTokDirectPostFormState extends State<TikTokDirectPostForm> {
                 onPressed: _loadCreatorInfo,
                 child: Text(
                   'Retry',
-                  style: GoogleFonts.montserrat(fontWeight: FontWeight.w600),
+                  style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
                 ),
               ),
             ],
@@ -222,7 +222,7 @@ class _TikTokDirectPostFormState extends State<TikTokDirectPostForm> {
           const SizedBox(height: 12),
           Text(
             'Preview',
-            style: GoogleFonts.montserrat(
+            style: GoogleFonts.poppins(
               fontSize: 12,
               fontWeight: FontWeight.w600,
             ),
@@ -235,7 +235,7 @@ class _TikTokDirectPostFormState extends State<TikTokDirectPostForm> {
               widget.videoDuration == null
                   ? 'Longest video TikTok allows right now: ${info!.maxVideoPostDurationSec} seconds.'
                   : 'This video is ${widget.videoDuration!.inSeconds}s. TikTok allows up to ${info!.maxVideoPostDurationSec}s.',
-              style: GoogleFonts.montserrat(fontSize: 11, color: Colors.black45),
+              style: GoogleFonts.poppins(fontSize: 11, color: Colors.black45),
             ),
           ],
           const SizedBox(height: 12),
@@ -243,7 +243,7 @@ class _TikTokDirectPostFormState extends State<TikTokDirectPostForm> {
             key: ValueKey('tt-title-${widget.integration.id}'),
             initialValue: d.tiktokTitle,
             maxLength: 90,
-            style: GoogleFonts.montserrat(fontSize: 13),
+            style: GoogleFonts.poppins(fontSize: 13),
             decoration: _decoration('Title', hint: 'Edit before posting'),
             onChanged: (v) => _patch((x) => x.tiktokTitle = v),
           ),
@@ -253,7 +253,7 @@ class _TikTokDirectPostFormState extends State<TikTokDirectPostForm> {
             initialValue: d.caption,
             minLines: 2,
             maxLines: 5,
-            style: GoogleFonts.montserrat(fontSize: 13, height: 1.4),
+            style: GoogleFonts.poppins(fontSize: 13, height: 1.4),
             decoration: _decoration(
               'Caption / hashtags',
               hint: 'Editable before posting',
@@ -268,7 +268,7 @@ class _TikTokDirectPostFormState extends State<TikTokDirectPostForm> {
             decoration: _decoration('Privacy status'),
             hint: Text(
               'Select privacy status',
-              style: GoogleFonts.montserrat(fontSize: 13, color: Colors.black38),
+              style: GoogleFonts.poppins(fontSize: 13, color: Colors.black38),
             ),
             items: [
               for (final key in privacyOptions)
@@ -281,7 +281,7 @@ class _TikTokDirectPostFormState extends State<TikTokDirectPostForm> {
                         : '',
                     child: Text(
                       kTikTokPrivacyLabels[key] ?? key,
-                      style: GoogleFonts.montserrat(
+                      style: GoogleFonts.poppins(
                         fontSize: 13,
                         color: brandedLocksPrivate && key == 'SELF_ONLY'
                             ? Colors.black38
@@ -300,7 +300,7 @@ class _TikTokDirectPostFormState extends State<TikTokDirectPostForm> {
           const SizedBox(height: 12),
           Text(
             'Allow people to',
-            style: GoogleFonts.montserrat(
+            style: GoogleFonts.poppins(
               fontSize: 12,
               fontWeight: FontWeight.w600,
             ),
@@ -330,14 +330,14 @@ class _TikTokDirectPostFormState extends State<TikTokDirectPostForm> {
             contentPadding: EdgeInsets.zero,
             title: Text(
               'Disclose commercial content',
-              style: GoogleFonts.montserrat(
+              style: GoogleFonts.poppins(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
               ),
             ),
             subtitle: Text(
               'Turn on if this content promotes yourself, a brand, product, or service.',
-              style: GoogleFonts.montserrat(fontSize: 11, color: Colors.black45),
+              style: GoogleFonts.poppins(fontSize: 11, color: Colors.black45),
             ),
             value: d.tiktokDiscloseCommercial,
             activeThumbColor: _kPurple,
@@ -355,11 +355,11 @@ class _TikTokDirectPostFormState extends State<TikTokDirectPostForm> {
               controlAffinity: ListTileControlAffinity.leading,
               title: Text(
                 'Your brand',
-                style: GoogleFonts.montserrat(fontSize: 13),
+                style: GoogleFonts.poppins(fontSize: 13),
               ),
               subtitle: Text(
                 'You are promoting yourself or your own business.',
-                style: GoogleFonts.montserrat(fontSize: 11, color: Colors.black45),
+                style: GoogleFonts.poppins(fontSize: 11, color: Colors.black45),
               ),
               value: d.tiktokBrandOrganic,
               onChanged: (v) =>
@@ -372,7 +372,7 @@ class _TikTokDirectPostFormState extends State<TikTokDirectPostForm> {
                 controlAffinity: ListTileControlAffinity.leading,
                 title: Text(
                   'Branded content',
-                  style: GoogleFonts.montserrat(
+                  style: GoogleFonts.poppins(
                     fontSize: 13,
                     color: privateLocksBranded ? Colors.black38 : Colors.black87,
                   ),
@@ -381,7 +381,7 @@ class _TikTokDirectPostFormState extends State<TikTokDirectPostForm> {
                   privateLocksBranded
                       ? kTikTokBrandedPrivateHint
                       : 'You are promoting another brand or a third party.',
-                  style: GoogleFonts.montserrat(
+                  style: GoogleFonts.poppins(
                     fontSize: 11,
                     color: Colors.black45,
                   ),
@@ -397,7 +397,7 @@ class _TikTokDirectPostFormState extends State<TikTokDirectPostForm> {
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Text(
                   kTikTokDisclosureHint,
-                  style: GoogleFonts.montserrat(
+                  style: GoogleFonts.poppins(
                     fontSize: 11,
                     color: Colors.orange.shade800,
                   ),
@@ -411,7 +411,7 @@ class _TikTokDirectPostFormState extends State<TikTokDirectPostForm> {
           const SizedBox(height: 8),
           Text(
             kTikTokProcessingNotice,
-            style: GoogleFonts.montserrat(
+            style: GoogleFonts.poppins(
               fontSize: 11,
               color: Colors.black45,
               height: 1.35,
@@ -451,7 +451,7 @@ class _TikTokDirectPostFormState extends State<TikTokDirectPostForm> {
             children: [
               Text(
                 'Posting as $name',
-                style: GoogleFonts.montserrat(
+                style: GoogleFonts.poppins(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                 ),
@@ -459,7 +459,7 @@ class _TikTokDirectPostFormState extends State<TikTokDirectPostForm> {
               if (handle.isNotEmpty)
                 Text(
                   handle,
-                  style: GoogleFonts.montserrat(
+                  style: GoogleFonts.poppins(
                     fontSize: 11,
                     color: Colors.black45,
                   ),
@@ -482,7 +482,7 @@ class _TikTokDirectPostFormState extends State<TikTokDirectPostForm> {
       controlAffinity: ListTileControlAffinity.leading,
       title: Text(
         label,
-        style: GoogleFonts.montserrat(
+        style: GoogleFonts.poppins(
           fontSize: 13,
           color: disabled ? Colors.black38 : Colors.black87,
         ),
@@ -500,13 +500,13 @@ class _TikTokDirectPostFormState extends State<TikTokDirectPostForm> {
       children: [
         Text(
           text,
-          style: GoogleFonts.montserrat(fontSize: 11, height: 1.35),
+          style: GoogleFonts.poppins(fontSize: 11, height: 1.35),
         ),
         TextButton(
           onPressed: () => _open(kTikTokMusicUsageUrl),
           child: Text(
             'Music Usage Confirmation',
-            style: GoogleFonts.montserrat(
+            style: GoogleFonts.poppins(
               fontSize: 11,
               fontWeight: FontWeight.w600,
             ),
@@ -517,7 +517,7 @@ class _TikTokDirectPostFormState extends State<TikTokDirectPostForm> {
             onPressed: () => _open(kTikTokBrandedContentPolicyUrl),
             child: Text(
               'Branded Content Policy',
-              style: GoogleFonts.montserrat(
+              style: GoogleFonts.poppins(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
               ),
@@ -536,7 +536,7 @@ class _TikTokDirectPostFormState extends State<TikTokDirectPostForm> {
       ),
       child: Text(
         text,
-        style: GoogleFonts.montserrat(fontSize: 12, color: color, height: 1.35),
+        style: GoogleFonts.poppins(fontSize: 12, color: color, height: 1.35),
       ),
     );
   }

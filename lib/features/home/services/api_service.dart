@@ -1,4 +1,5 @@
 import 'package:autobus/barrel.dart';
+import 'package:autobus/common_design/credits_store.dart';
 import 'package:autobus/common_design/plain_ai_text.dart';
 import 'dart:developer';
 import 'package:autobus/features/chat/models/chatwoot_inbox.dart';
@@ -92,7 +93,14 @@ class ApiService {
       final response = await httpClient.get(Uri.parse('$baseUrl/user/me'));
 
       if (response.statusCode == 200) {
-        return json.decode(response.body);
+        final data = json.decode(response.body);
+        if (data is! Map) {
+          throw Exception('Unexpected profile response');
+        }
+        final map = Map<String, dynamic>.from(data);
+        final nested = map['user'] ?? map['profile'];
+        if (nested is Map) return Map<String, dynamic>.from(nested);
+        return map;
       } else if (response.statusCode == 401) {
         throw Exception('Session expired');
       } else {
@@ -154,8 +162,11 @@ class ApiService {
       final response = await httpClient.get(Uri.parse('$baseUrl/credits/me'));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        if (data is Map<String, dynamic>) return data;
-        if (data is Map) return Map<String, dynamic>.from(data);
+        if (data is Map) {
+          final map = Map<String, dynamic>.from(data);
+          CreditsStore.instance.ingest(map);
+          return map;
+        }
       }
       return null;
     } catch (e) {
@@ -430,6 +441,8 @@ class ApiService {
     bool? smsNotifications,
     // Business / membership
     String? company,
+    String? description,
+    String? industry,
     String? currentBranch,
     String? address,
     String? location,
@@ -464,6 +477,8 @@ class ApiService {
         body['sms_notifications'] = smsNotifications;
 
       if (company != null) body['company'] = company;
+      if (description != null) body['description'] = description;
+      if (industry != null) body['industry'] = industry;
       if (currentBranch != null) body['current_branch'] = currentBranch;
       if (address != null) body['address'] = address;
       if (location != null) body['location'] = location;
@@ -1339,11 +1354,13 @@ class ApiService {
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      final plans = (data['plans'] as List)
-          .map((e) => SubscriptionPlan.fromJson(e as Map<String, dynamic>))
+      final raw = data is Map ? (data['plans'] ?? data['items'] ?? data['data']) : data;
+      if (raw is! List) return [];
+      return raw
+          .whereType<Map>()
+          .map((e) => SubscriptionPlan.fromJson(Map<String, dynamic>.from(e)))
           .where((p) => p.isActive)
           .toList();
-      return plans;
     }
     return [];
   }
@@ -1413,11 +1430,7 @@ class ApiService {
     ).replace(queryParameters: qp);
     final response = await httpClient.get(uri);
     if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      if (data is Map) {
-        return _decodeMapList(data['items']);
-      }
-      if (data is List) return _decodeMapList(data);
+      return _decodeListPayload(jsonDecode(response.body));
     }
     if (response.statusCode == 401) {
       throw Exception('Session expired');
@@ -1434,16 +1447,60 @@ class ApiService {
       Uri.parse('$baseUrl/billing?page=$page&size=$size'),
     );
     if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      if (data is Map) {
-        return _decodeMapList(data['items']);
-      }
-      if (data is List) return _decodeMapList(data);
+      return _decodeListPayload(jsonDecode(response.body));
     }
     if (response.statusCode == 401) {
       throw Exception('Session expired');
     }
     return [];
+  }
+
+  /// GET /api/v1/billing/payment-methods — saved mobile money / card methods.
+  Future<List<Map<String, dynamic>>> listPaymentMethods() async {
+    final response = await httpClient.get(
+      Uri.parse('$baseUrl/billing/payment-methods'),
+    );
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data is Map && data['payment_methods'] is List) {
+        return _decodeMapList(data['payment_methods']);
+      }
+      return _decodeListPayload(data);
+    }
+    _fail(response, 'loading payment methods');
+  }
+
+  /// POST /api/v1/billing/payment-methods — save a mobile money wallet.
+  Future<Map<String, dynamic>> addMobileMoneyPaymentMethod({
+    required String accountName,
+    required String phoneNumber,
+    String provider = 'mtn',
+  }) async {
+    final response = await httpClient.post(
+      Uri.parse('$baseUrl/billing/payment-methods'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'type': 'mobile_money',
+        'provider': provider,
+        'account_name': accountName,
+        'phone_number': phoneNumber,
+      }),
+    );
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final data = jsonDecode(response.body);
+      if (data is Map) return Map<String, dynamic>.from(data);
+      return const {};
+    }
+    _fail(response, 'adding payment method');
+  }
+
+  /// DELETE /api/v1/billing/payment-methods/{id}
+  Future<void> deletePaymentMethod(String id) async {
+    final response = await httpClient.delete(
+      Uri.parse('$baseUrl/billing/payment-methods/${Uri.encodeComponent(id)}'),
+    );
+    if (response.statusCode == 200 || response.statusCode == 204) return;
+    _fail(response, 'removing payment method');
   }
 
   /// Get financial transaction history
@@ -1455,8 +1512,7 @@ class ApiService {
       Uri.parse('$baseUrl/user/me/financials?page=$page&page_size=$pageSize'),
     );
     if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      if (data is List) return List<Map<String, dynamic>>.from(data);
+      return _decodeListPayload(jsonDecode(response.body));
     }
     return [];
   }
@@ -2309,16 +2365,7 @@ class ApiService {
     final uri = Uri.parse('$baseUrl/orders/me').replace(queryParameters: qp);
     final response = await httpClient.get(uri);
     if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      if (data is! List) return [];
-      return data
-          .map((e) {
-            if (e is Map<String, dynamic>) return e;
-            if (e is Map) return Map<String, dynamic>.from(e);
-            return <String, dynamic>{};
-          })
-          .where((m) => m.isNotEmpty)
-          .toList();
+      return _decodeListPayload(jsonDecode(response.body));
     }
     if (response.statusCode == 401) {
       throw Exception('Session expired');
@@ -2340,16 +2387,7 @@ class ApiService {
     final uri = Uri.parse('$baseUrl/products/me').replace(queryParameters: qp);
     final response = await httpClient.get(uri);
     if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      if (data is! List) return [];
-      return data
-          .map((e) {
-            if (e is Map<String, dynamic>) return e;
-            if (e is Map) return Map<String, dynamic>.from(e);
-            return <String, dynamic>{};
-          })
-          .where((m) => m.isNotEmpty)
-          .toList();
+      return _decodeListPayload(jsonDecode(response.body));
     }
     if (response.statusCode == 401) {
       throw Exception('Session expired');
@@ -2815,8 +2853,12 @@ class ApiService {
         return {'completed': [], 'intervention_active': []};
       }
       return {
-        'completed': _decodeMapList(data['completed']),
-        'intervention_active': _decodeMapList(data['intervention_active']),
+        'completed': _decodeMapList(
+          data['completed'] ?? data['history'] ?? data['all'],
+        ),
+        'intervention_active': _decodeMapList(
+          data['intervention_active'] ?? data['active'] ?? data['live'],
+        ),
       };
     }
     if (response.statusCode == 401) {
@@ -2835,6 +2877,26 @@ class ApiService {
         })
         .where((m) => m.isNotEmpty)
         .toList();
+  }
+
+  List<Map<String, dynamic>> _decodeListPayload(dynamic data) {
+    if (data is List) return _decodeMapList(data);
+    if (data is Map) {
+      for (final key in [
+        'items',
+        'results',
+        'data',
+        'customers',
+        'products',
+        'orders',
+        'plans',
+        'financials',
+        'transactions',
+      ]) {
+        if (data[key] is List) return _decodeMapList(data[key]);
+      }
+    }
+    return [];
   }
 
   /// GET /api/v1/user/me/emails/sent — body `{ emails: [...], total_returned }`.
@@ -2993,14 +3055,7 @@ class ApiService {
   Future<List<Map<String, dynamic>>> listCustomers() async {
     final response = await httpClient.get(Uri.parse('$baseUrl/customers/list'));
     if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      if (data is List) {
-        return data
-            .whereType<Map>()
-            .map((e) => Map<String, dynamic>.from(e))
-            .toList();
-      }
-      return [];
+      return _decodeListPayload(json.decode(response.body));
     }
     if (response.statusCode == 401) throw Exception('Session expired');
     _fail(response, 'loading customers');

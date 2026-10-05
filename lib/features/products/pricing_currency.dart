@@ -1,4 +1,5 @@
 import 'package:autobus/barrel.dart';
+import 'package:autobus/common_design/light_screen_theme.dart';
 
 const kDefaultPricingCurrency = 'GHS';
 
@@ -74,17 +75,18 @@ class PricingCurrencyDropdown extends StatelessWidget {
     return DropdownButtonFormField<String>(
       value: selected,
       isExpanded: true,
-      dropdownColor: const Color(0xFF1E0A32),
-      iconEnabledColor: Colors.white70,
-      style: GoogleFonts.outfit(color: Colors.white, fontSize: 14),
+      dropdownColor: Colors.white,
+      borderRadius: BorderRadius.circular(14),
+      iconEnabledColor: Colors.black54,
+      style: GoogleFonts.poppins(color: Colors.black, fontSize: 14),
       decoration: InputDecoration(
         labelText: 'Currency',
-        labelStyle: GoogleFonts.outfit(
-          color: Colors.white.withValues(alpha: 0.7),
+        labelStyle: GoogleFonts.poppins(
+          color: Colors.black54,
           fontSize: 13,
         ),
         filled: true,
-        fillColor: Colors.white.withValues(alpha: 0.06),
+        fillColor: LightScreenTheme.surface,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide.none,
@@ -92,12 +94,12 @@ class PricingCurrencyDropdown extends StatelessWidget {
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide(
-            color: const Color(0xFF3F1163).withValues(alpha: 0.8),
+            color: LightScreenTheme.hint.withValues(alpha: 0.5),
           ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Color(0xFFA855F7)),
+          borderSide: const BorderSide(color: LightScreenTheme.accent),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       ),

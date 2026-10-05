@@ -1,4 +1,5 @@
 import 'package:autobus/barrel.dart';
+import 'package:autobus/common_design/widgets/light_screen_scaffold.dart';
 
 String _orderHistoryTitle(Map<String, dynamic> o) {
   final name = (o['item_name'] ?? '').toString().trim();
@@ -171,116 +172,72 @@ class _AllOrdersHistoryState extends State<AllOrdersHistory> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          const DecoratedBox(
-            decoration: ManageScreenStyle.homeDashboardBodyDecoration,
-          ),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
+    return LightScreenScaffold(
+      title: widget.title,
+      creditCategory: CreditCategory.server,
+      body: _loading
+          ? const Center(child: AutobusLoadingIndicator(size: 32))
+          : _loadError != null
+          ? Center(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Row(
-                    children: [
-                      const ManageScreenBackButton(),
-                      const SizedBox(width: 18),
-                      Expanded(
-                        child: Text(
-                          widget.title,
-                          style: ManageScreenStyle.headerTitleStyle(),
-                        ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Text(
+                      _loadError!,
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.outfit(
+                        color: Colors.black54,
+                        fontSize: 14,
                       ),
-                    ],
+                    ),
                   ),
-                  const SizedBox(height: 32),
-                  Expanded(
-                    child: _loading
-                        ? const Center(
-                            child:                             const AutobusLoadingIndicator(size: 32),
-                          )
-                        : _loadError != null
-                        ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                  ),
-                                  child: Text(
-                                    _loadError!,
-                                    textAlign: TextAlign.center,
-                                    style: GoogleFonts.outfit(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.75,
-                                      ),
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 16),
-                                TextButton(
-                                  onPressed: _loadOrders,
-                                  child: Text(
-                                    'Retry',
-                                    style: GoogleFonts.outfit(
-                                      color: const Color(0xFFA855F7),
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )
-                        : RefreshIndicator(
-                            color: const Color(0xFFA855F7),
-                            onRefresh: _loadOrders,
-                            child: _orders.isEmpty
-                                ? ListView(
-                                    physics:
-                                        const AlwaysScrollableScrollPhysics(),
-                                    children: [
-                                      SizedBox(
-                                        height:
-                                            MediaQuery.sizeOf(context).height *
-                                            0.25,
-                                      ),
-                                      Center(
-                                        child: Text(
-                                          widget.emptyMessage,
-                                          style: GoogleFonts.outfit(
-                                            color: Colors.white.withValues(
-                                              alpha: 0.6,
-                                            ),
-                                            fontSize: 16,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  )
-                                : ListView.separated(
-                                    physics:
-                                        const AlwaysScrollableScrollPhysics(),
-                                    itemCount: _orders.length,
-                                    separatorBuilder: (_, __) =>
-                                        const SizedBox(height: 16),
-                                    itemBuilder: (context, index) {
-                                      return _orderTile(context, _orders[index]);
-                                    },
-                                  ),
-                          ),
+                  const SizedBox(height: 16),
+                  TextButton(
+                    onPressed: _loadOrders,
+                    child: Text(
+                      'Retry',
+                      style: GoogleFonts.outfit(
+                        color: const Color(0xFFA855F7),
+                        fontSize: 16,
+                      ),
+                    ),
                   ),
                 ],
               ),
+            )
+          : RefreshIndicator(
+              color: const Color(0xFFA855F7),
+              onRefresh: _loadOrders,
+              child: _orders.isEmpty
+                  ? ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: [
+                        SizedBox(
+                          height: MediaQuery.sizeOf(context).height * 0.25,
+                        ),
+                        Center(
+                          child: Text(
+                            widget.emptyMessage,
+                            style: GoogleFonts.outfit(
+                              color: Colors.black54,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  : ListView.separated(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+                      itemCount: _orders.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 16),
+                      itemBuilder: (context, index) {
+                        return _orderTile(context, _orders[index]);
+                      },
+                    ),
             ),
-          ),
-        ],
-      ),
     );
   }
 }

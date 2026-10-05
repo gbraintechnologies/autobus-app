@@ -94,7 +94,7 @@ class _TikTokConsentPageState extends State<_TikTokConsentPage> {
           Text(
             'Post to TikTok',
             textAlign: TextAlign.center,
-            style: GoogleFonts.montserrat(
+            style: GoogleFonts.poppins(
               fontSize: 16,
               fontWeight: FontWeight.w600,
               color: Colors.black87,
@@ -104,7 +104,7 @@ class _TikTokConsentPageState extends State<_TikTokConsentPage> {
           Text(
             'Review the preview and settings, then tap Yes to continue.',
             textAlign: TextAlign.center,
-            style: GoogleFonts.montserrat(
+            style: GoogleFonts.poppins(
               fontSize: 12,
               color: Colors.black45,
               height: 1.35,
@@ -160,7 +160,7 @@ class _TikTokConsentPageState extends State<_TikTokConsentPage> {
         child: Text(
           'Select a photo or video to preview what will be posted.',
           textAlign: TextAlign.center,
-          style: GoogleFonts.montserrat(fontSize: 12, color: Colors.black45),
+          style: GoogleFonts.poppins(fontSize: 12, color: Colors.black45),
         ),
       );
     }

@@ -236,7 +236,7 @@ fetch('/api/auth/login', {
         elevation: 0.4,
         title: Text(
           widget.title,
-          style: GoogleFonts.montserrat(
+          style: GoogleFonts.poppins(
             fontSize: 16,
             fontWeight: FontWeight.w500,
             color: Colors.black87,
@@ -267,7 +267,7 @@ fetch('/api/auth/login', {
                   padding: const EdgeInsets.all(12),
                   child: Text(
                     _error!,
-                    style: GoogleFonts.montserrat(
+                    style: GoogleFonts.poppins(
                       color: Colors.red.shade900,
                       fontSize: 12,
                     ),

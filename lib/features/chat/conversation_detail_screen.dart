@@ -1,4 +1,5 @@
 import 'package:autobus/barrel.dart';
+import 'package:autobus/common_design/widgets/light_screen_scaffold.dart';
 
 /// How the conversation screen was opened (controls which actions appear).
 enum ConversationScreenMode {
@@ -301,43 +302,18 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
     return GestureDetector(
       onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
       behavior: HitTestBehavior.translucent,
-      child: Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          const DecoratedBox(
-            decoration: ManageScreenStyle.homeDashboardBodyDecoration,
-          ),
-          SafeArea(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 18, 24, 0),
-                  child: Row(
-                    children: [
-                      const ManageScreenBackButton(),
-                      const SizedBox(width: 18),
-                      Expanded(
-                        child: Text(
-                          _headerTitle,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: ManageScreenStyle.headerTitleStyle(),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                if (!_loading && _loadError == null) _buildControls(),
-                Expanded(child: _buildBody()),
-                if (_showComposer) _buildComposer(),
-              ],
-            ),
-          ),
-        ],
-      ),
+      child: LightScreenScaffold(
+        title: _headerTitle,
+        creditCategory: CreditCategory.llm,
+        resizeToAvoidBottomInset: true,
+        body: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (!_loading && _loadError == null) _buildControls(),
+            Expanded(child: _buildBody()),
+            if (_showComposer) _buildComposer(),
+          ],
+        ),
       ),
     );
   }

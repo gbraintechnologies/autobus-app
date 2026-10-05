@@ -1,4 +1,8 @@
 import 'package:autobus/barrel.dart';
+import 'package:autobus/common_design/light_screen_theme.dart';
+import 'package:autobus/common_design/widgets/app_bottom_nav.dart';
+import 'package:autobus/common_design/widgets/light_list_card.dart';
+import 'package:autobus/common_design/widgets/light_screen_scaffold.dart';
 
 String _liveChatTitle(Map<String, dynamic> c) {
   final last = (c['last_message'] ?? '').toString().trim();
@@ -113,191 +117,115 @@ class _LiveChatsPageState extends State<LiveChatsPage> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          const DecoratedBox(
-            decoration: ManageScreenStyle.homeDashboardBodyDecoration,
-          ),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 18, 24, 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const ManageScreenHeader(
-                    title: 'Live Chats',
-                    creditCategory: CreditCategory.llm,
-                    padding: EdgeInsets.zero,
-                  ),
-                  const SizedBox(height: 32),
-                  Expanded(
-                    child: _loading
-                        ? const Center(
-                            child:                             const AutobusLoadingIndicator(size: 32),
-                          )
-                        : _loadError != null
-                        ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                  ),
-                                  child: Text(
-                                    _loadError!,
-                                    textAlign: TextAlign.center,
-                                    style: GoogleFonts.outfit(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.75,
-                                      ),
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 16),
-                                TextButton(
-                                  onPressed: _loadChats,
-                                  child: Text(
-                                    'Retry',
-                                    style: GoogleFonts.outfit(
-                                      color: const Color(0xFFA855F7),
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )
-                        : RefreshIndicator(
-                            color: const Color(0xFFA855F7),
-                            onRefresh: _loadChats,
-                            child: _chats.isEmpty
-                                ? ListView(
-                                    physics:
-                                        const AlwaysScrollableScrollPhysics(),
-                                    children: [
-                                      SizedBox(
-                                        height:
-                                            MediaQuery.sizeOf(context).height *
-                                            0.25,
-                                      ),
-                                      Center(
-                                        child: Text(
-                                          'No live chats right now',
-                                          style: GoogleFonts.outfit(
-                                            color: Colors.white.withValues(
-                                              alpha: 0.6,
-                                            ),
-                                            fontSize: 16,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  )
-                                : ListView.separated(
-                                    physics:
-                                        const AlwaysScrollableScrollPhysics(),
-                                    itemCount: _chats.length,
-                                    separatorBuilder: (_, __) =>
-                                        const SizedBox(height: 16),
-                                    itemBuilder: (context, index) {
-                                      final c = _chats[index];
-                                      return _LiveChatTile(
-                                        title: _liveChatTitle(c),
-                                        id: _liveChatSubtitlePhoneOrId(c),
-                                        date: _formatLiveChatDate(c),
-                                        onTap: () => _openConversation(context, c),
-                                      );
-                                    },
-                                  ),
-                          ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _LiveChatTile extends StatelessWidget {
-  final String title;
-  final String id;
-  final String date;
-  final VoidCallback? onTap;
-
-  const _LiveChatTile({
-    required this.title,
-    required this.id,
-    required this.date,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Container(
-      width: double.infinity,
-      constraints: const BoxConstraints(minHeight: 83),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: const Color(0xFF3F1163), width: 1),
-      ),
-      padding: const EdgeInsets.fromLTRB(22, 16, 22, 16),
+  Widget _chatTile(double scale, Map<String, dynamic> c) {
+    return LightListCard(
+      scale: scale,
+      onTap: () => _openConversation(context, c),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
-            title,
-            style: GoogleFonts.outfit(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.w400,
-            ),
+            _liveChatTitle(c),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: LightScreenTheme.listTitle(scale),
           ),
-          const SizedBox(height: 6),
+          SizedBox(height: 8 * scale),
           Row(
             children: [
               Expanded(
                 child: Text(
-                  id,
+                  _liveChatSubtitlePhoneOrId(c),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.outfit(
-                    color: Colors.white.withValues(alpha: 0.45),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w300,
-                  ),
+                  style: LightScreenTheme.listSubtitle(scale),
                 ),
               ),
-              const SizedBox(width: 10),
+              SizedBox(width: 12 * scale),
               Text(
-                date,
+                _formatLiveChatDate(c),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.outfit(
-                  color: Colors.white.withValues(alpha: 0.45),
-                  fontSize: 11,
-                  fontWeight: FontWeight.w300,
-                ),
+                style: LightScreenTheme.listSubtitle(scale),
               ),
             ],
           ),
         ],
       ),
-      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scale = MediaQuery.sizeOf(context).width / appShellDesignWidth;
+
+    final emptyStyle = LightScreenTheme.hubBody(scale).copyWith(
+      color: const Color(0xFF4E4E4E),
+      fontSize: 13,
+    );
+
+    return LightScreenScaffold(
+      title: 'Live Chats',
+      titleFontSize: 16,
+      creditCategory: CreditCategory.llm,
+      body: _loading
+          ? Center(child: CircularProgressIndicator(color: LightScreenTheme.accent))
+          : _loadError != null
+          ? Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 28 * scale),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      _loadError!,
+                      textAlign: TextAlign.center,
+                      style: emptyStyle,
+                    ),
+                    SizedBox(height: 16 * scale),
+                    TextButton(
+                      onPressed: _loadChats,
+                      child: Text(
+                        'Retry',
+                        style: LightScreenTheme.listTitle(scale).copyWith(
+                          color: LightScreenTheme.accent,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : RefreshIndicator(
+              color: LightScreenTheme.accent,
+              onRefresh: _loadChats,
+              child: _chats.isEmpty
+                  ? CustomScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      slivers: [
+                        SliverFillRemaining(
+                          hasScrollBody: false,
+                          child: Center(
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 29 * scale),
+                              child: Text(
+                                'No live chats right now',
+                                textAlign: TextAlign.center,
+                                style: emptyStyle,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  : ListView.separated(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: EdgeInsets.fromLTRB(20 * scale, 20 * scale, 20 * scale, 32 * scale),
+                      itemCount: _chats.length,
+                      separatorBuilder: (_, __) => SizedBox(height: 12 * scale),
+                      itemBuilder: (context, index) => _chatTile(scale, _chats[index]),
+                    ),
+            ),
     );
   }
 }

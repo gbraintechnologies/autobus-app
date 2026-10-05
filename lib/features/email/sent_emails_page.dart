@@ -1,5 +1,9 @@
 import 'package:autobus/barrel.dart';
+import 'package:autobus/common_design/widgets/app_bottom_nav.dart';
+import 'package:autobus/common_design/widgets/app_screen_header.dart';
+import 'package:autobus/common_design/widgets/credits_pill.dart';
 
+/// Sent Email history — Figma ANALYTICS frame 3244:3803.
 class SentEmailsPage extends StatefulWidget {
   const SentEmailsPage({super.key});
 
@@ -8,6 +12,12 @@ class SentEmailsPage extends StatefulWidget {
 }
 
 class _SentEmailsPageState extends State<SentEmailsPage> {
+  static const _backgroundColor = Color(0xFFF3F3F7);
+  static const _surfaceColor = Color(0xFFF8FAFC);
+  static const _bodyColor = Color(0xFF4D4D4D);
+  static const _mutedColor = Color(0xFF64748B);
+  static const _accentColor = Color(0xFF7F03B9);
+
   List<Map<String, dynamic>> _emails = const [];
   bool _loading = true;
   String? _loadError;
@@ -62,28 +72,31 @@ class _SentEmailsPageState extends State<SentEmailsPage> {
   }
 
   Widget _sentTile({
+    required double scale,
     required String subject,
     required String to,
     required String date,
   }) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(20 * scale),
       decoration: BoxDecoration(
-        border: Border.all(color: const Color(0xFF3F1163), width: 1),
-        borderRadius: BorderRadius.circular(30),
+        color: _surfaceColor,
+        borderRadius: BorderRadius.circular(20 * scale),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             subject.isEmpty ? '(No subject)' : subject,
-            style: GoogleFonts.outfit(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.w400,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.poppins(
+              color: Colors.black,
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 8 * scale),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -92,20 +105,20 @@ class _SentEmailsPageState extends State<SentEmailsPage> {
                   to.startsWith('To: ') ? to : 'To: $to',
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.outfit(
-                    color: Colors.white.withValues(alpha: 0.45),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w300,
+                  style: GoogleFonts.poppins(
+                    color: _mutedColor,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: 12 * scale),
               Text(
                 date,
-                style: GoogleFonts.outfit(
-                  color: Colors.white.withValues(alpha: 0.45),
-                  fontSize: 11,
-                  fontWeight: FontWeight.w300,
+                style: GoogleFonts.poppins(
+                  color: _mutedColor,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w400,
                 ),
               ),
             ],
@@ -117,114 +130,104 @@ class _SentEmailsPageState extends State<SentEmailsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final scale = MediaQuery.sizeOf(context).width / appShellDesignWidth;
+
     return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
-        fit: StackFit.expand,
+      backgroundColor: _backgroundColor,
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const DecoratedBox(
-            decoration: ManageScreenStyle.homeDashboardBodyDecoration,
+          AppScreenHeader(
+            scale: scale,
+            title: 'Sent Email',
+            leading: AppScreenBackButton(scale: scale),
+            trailing: CreditsPill(
+              scale: scale,
+              creditCategory: CreditCategory.email,
+            ),
           ),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const ManageScreenHeader(
-                    title: 'Sent Emails',
-                    creditCategory: CreditCategory.email,
-                    padding: EdgeInsets.zero,
-                  ),
-                  const SizedBox(height: 32),
-                  Expanded(
-                    child: _loading
-                        ? const Center(
-                            child:                             const AutobusLoadingIndicator(size: 32),
-                          )
-                        : _loadError != null
-                        ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                  ),
-                                  child: Text(
-                                    _loadError!,
-                                    textAlign: TextAlign.center,
-                                    style: GoogleFonts.outfit(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.75,
-                                      ),
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 16),
-                                TextButton(
-                                  onPressed: _load,
-                                  child: Text(
-                                    'Retry',
-                                    style: GoogleFonts.outfit(
-                                      color: const Color(0xFFA855F7),
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                ),
-                              ],
+          Expanded(
+            child: _loading
+                ? Center(
+                    child: CircularProgressIndicator(color: _accentColor),
+                  )
+                : _loadError != null
+                ? Center(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 28 * scale),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            _loadError!,
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.poppins(
+                              color: _bodyColor,
+                              fontSize: 13,
                             ),
-                          )
-                        : RefreshIndicator(
-                            color: const Color(0xFFA855F7),
-                            onRefresh: _load,
-                            child: _emails.isEmpty
-                                ? ListView(
-                                    physics:
-                                        const AlwaysScrollableScrollPhysics(),
-                                    children: [
-                                      SizedBox(
-                                        height:
-                                            MediaQuery.sizeOf(context).height *
-                                            0.25,
-                                      ),
-                                      Center(
-                                        child: Text(
-                                          'No sent emails yet',
-                                          style: GoogleFonts.outfit(
-                                            color: Colors.white.withValues(
-                                              alpha: 0.6,
-                                            ),
-                                            fontSize: 16,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  )
-                                : ListView.separated(
-                                    physics:
-                                        const AlwaysScrollableScrollPhysics(),
-                                    itemCount: _emails.length,
-                                    separatorBuilder: (_, __) =>
-                                        const SizedBox(height: 16),
-                                    itemBuilder: (context, index) {
-                                      final m = _emails[index];
-                                      return _sentTile(
-                                        subject: (m['subject'] ?? '')
-                                            .toString(),
-                                        to: (m['to'] ?? '').toString(),
-                                        date: _formatSentAt(
-                                          (m['sent_at'] ?? '').toString(),
-                                        ),
-                                      );
-                                    },
+                          ),
+                          SizedBox(height: 16 * scale),
+                          TextButton(
+                            onPressed: _load,
+                            child: Text(
+                              'Retry',
+                              style: GoogleFonts.poppins(
+                                color: _accentColor,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                : RefreshIndicator(
+                    color: _accentColor,
+                    onRefresh: _load,
+                    child: _emails.isEmpty
+                        ? ListView(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            children: [
+                              SizedBox(
+                                height: MediaQuery.sizeOf(context).height * 0.32,
+                              ),
+                              Center(
+                                child: Text(
+                                  'No sent emails yet..',
+                                  style: GoogleFonts.poppins(
+                                    color: _bodyColor,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w400,
                                   ),
+                                ),
+                              ),
+                            ],
+                          )
+                        : ListView.separated(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            padding: EdgeInsets.fromLTRB(
+                              20 * scale,
+                              8 * scale,
+                              20 * scale,
+                              24 * scale,
+                            ),
+                            itemCount: _emails.length,
+                            separatorBuilder: (_, __) =>
+                                SizedBox(height: 12 * scale),
+                            itemBuilder: (context, index) {
+                              final m = _emails[index];
+                              return _sentTile(
+                                scale: scale,
+                                subject: (m['subject'] ?? '').toString(),
+                                to: (m['to'] ?? '').toString(),
+                                date: _formatSentAt(
+                                  (m['sent_at'] ?? '').toString(),
+                                ),
+                              );
+                            },
                           ),
                   ),
-                ],
-              ),
-            ),
           ),
         ],
       ),

@@ -1,7 +1,16 @@
 import 'dart:io';
 
 import 'package:autobus/barrel.dart';
-import 'package:file_picker/file_picker.dart';
+import 'package:autobus/common_design/light_screen_theme.dart';
+import 'package:autobus/common_design/widgets/app_bottom_nav.dart';
+import 'package:autobus/common_design/widgets/app_screen_header.dart';
+import 'package:autobus/common_design/widgets/app_shell_navigation.dart';
+import 'package:autobus/common_design/widgets/credits_pill.dart';
+import 'package:autobus/features/intelligence/intelligence_files_page.dart';
+import 'package:autobus/features/intelligence/intelligence_intro_modal.dart';
+import 'package:autobus/features/intelligence/intelligence_my_ai_page.dart';
+import 'package:autobus/features/intelligence/intelligence_websites_page.dart';
+import 'package:autobus/icons/figma_icons.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
@@ -26,21 +35,6 @@ bool _ragFileLooksLikePlainText(String fileName) {
   return lower.endsWith('.txt') || lower.endsWith('.csv');
 }
 
-/// Returns a full http(s) URL for the RAG indexer, or null if invalid.
-String? _normalizeWebsiteUrlForApi(String raw) {
-  var s = raw.trim();
-  if (s.isEmpty) return null;
-  final lower = s.toLowerCase();
-  if (!lower.startsWith('http://') && !lower.startsWith('https://')) {
-    s = 'https://$s';
-  }
-  final uri = Uri.tryParse(s);
-  if (uri == null || !uri.hasScheme) return null;
-  if (uri.scheme != 'http' && uri.scheme != 'https') return null;
-  if (!uri.hasAuthority || uri.host.isEmpty) return null;
-  return uri.toString();
-}
-
 class ManageIntelligence extends StatefulWidget {
   const ManageIntelligence({super.key});
 
@@ -51,8 +45,6 @@ class ManageIntelligence extends StatefulWidget {
 class _ManageIntelligenceState extends State<ManageIntelligence> {
   bool _presenceRequested = false;
   bool _presenceLoading = true;
-  bool _hasRagDocuments = false;
-  List<Map<String, dynamic>> _ragFiles = const [];
   String? _presenceError;
   Map<String, String> _onboardingAnswers = const {};
   bool _onboardingCompleted = false;
@@ -86,25 +78,14 @@ class _ManageIntelligenceState extends State<ManageIntelligence> {
       _presenceError = null;
     });
     try {
-      final api = context.read<ApiService>();
-      final filesFuture = api.listMyStorageFiles(
-        folder: ApiService.chatbotStorageFolder,
-      );
-      final onboardingFuture = api.getBusinessOnboarding();
-      final files = await filesFuture;
-      Map<String, dynamic>? onboarding;
-      try {
-        onboarding = await onboardingFuture;
-      } catch (_) {
-        onboarding = null;
-      }
+      final onboarding =
+          await context.read<ApiService>().getBusinessOnboarding();
       if (!mounted) return;
       final answers = _answersFromOnboarding(onboarding);
       setState(() {
-        _ragFiles = files;
-        _hasRagDocuments = files.isNotEmpty;
         _onboardingAnswers = answers;
-        _onboardingCompleted = onboarding?['completed'] == true || answers.isNotEmpty;
+        _onboardingCompleted =
+            onboarding['completed'] == true || answers.isNotEmpty;
         _presenceLoading = false;
       });
     } catch (e) {
@@ -112,8 +93,6 @@ class _ManageIntelligenceState extends State<ManageIntelligence> {
       setState(() {
         _presenceError = userFacingError(e);
         _presenceLoading = false;
-        _hasRagDocuments = false;
-        _ragFiles = const [];
       });
     }
   }
@@ -137,865 +116,102 @@ class _ManageIntelligenceState extends State<ManageIntelligence> {
     _loadRagPresence();
   }
 
-  Future<void> _handleUploadFiles() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: const ['txt', 'pdf', 'docx', 'csv', 'xlsx'],
-      allowMultiple: true,
+  Future<void> _push(Widget page) async {
+    await Navigator.push<void>(
+      context,
+      MaterialPageRoute<void>(builder: (_) => page),
     );
-
-    if (!mounted || result == null || result.files.isEmpty) return;
-
-    final api = context.read<ApiService>();
-    var successCount = 0;
-
-    try {
-      for (final picked in result.files) {
-        final name = picked.name.trim().isEmpty ? 'upload' : picked.name;
-        final path = picked.path?.trim();
-
-        Future<Map<String, dynamic>> startJob() async {
-          if (path != null && path.isNotEmpty) {
-            return api.uploadRagDocument(
-              filename: name,
-              filePath: path,
-              asyncMode: true,
-            );
-          }
-          if (picked.bytes != null && picked.bytes!.isNotEmpty) {
-            return api.uploadRagDocument(
-              filename: name,
-              fileBytes: picked.bytes!.toList(),
-              asyncMode: true,
-            );
-          }
-          throw Exception(
-            'Could not read "$name". On this device, try choosing the file again.',
-          );
-        }
-
-        await _runRagIndexWithProgress(
-          title: result.files.length > 1 ? 'Indexing ($name)' : 'Indexing document',
-          startJob: startJob,
-        );
-        successCount++;
-      }
-
-      if (!mounted) return;
-      await _loadRagPresence();
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            successCount == 1
-                ? 'Document uploaded and indexed.'
-                : '$successCount documents uploaded and indexed.',
-            style: GoogleFonts.montserrat(),
-          ),
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            _uploadErrorMessage(e),
-            style: GoogleFonts.montserrat(),
-          ),
-        ),
-      );
-    }
-  }
-
-  Future<void> _handleIndexWebsite() async {
-    final url = await showDialog<String>(
-      context: context,
-      builder: (dialogContext) => const _WebsiteUrlDialog(),
-    );
-
-    if (!mounted || url == null || url.trim().isEmpty) return;
-
-    final api = context.read<ApiService>();
-    try {
-      await _runRagIndexWithProgress(
-        title: 'Indexing website',
-        startJob: () => api.uploadRagUrl(url: url.trim()),
-      );
-      if (!mounted) return;
-      await _loadRagPresence();
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Website content scraped and indexed.',
-            style: GoogleFonts.montserrat(),
-          ),
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            _uploadErrorMessage(e),
-            style: GoogleFonts.montserrat(),
-          ),
-        ),
-      );
-    }
-  }
-
-  Future<void> _runRagIndexWithProgress({
-    required String title,
-    required Future<Map<String, dynamic>> Function() startJob,
-  }) async {
-    final api = context.read<ApiService>();
-    final error = await showDialog<Object?>(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) {
-        return _RagIndexProgressDialog(
-          api: api,
-          title: title,
-          startJob: startJob,
-        );
-      },
-    );
-    if (error != null) throw error;
-  }
-
-  String _shortPresenceError(String raw, {int max = 160}) {
-    final t = raw.trim();
-    if (t.length <= max) return t;
-    return '${t.substring(0, max)}…';
-  }
-
-  String _uploadErrorMessage(Object e) {
-    return userFacingError(e, action: 'uploading document');
-  }
-
-  Future<void> _openIndexedWebsite(String url) async {
-    final uri = Uri.tryParse(url);
-    if (uri == null) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Invalid URL', style: GoogleFonts.montserrat()),
-        ),
-      );
-      return;
-    }
-    if (!await canLaunchUrl(uri)) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Could not open website', style: GoogleFonts.montserrat()),
-        ),
-      );
-      return;
-    }
-    await launchUrl(uri, mode: LaunchMode.externalApplication);
-  }
-
-  List<Widget> _websitesSection(BuildContext context) {
-    final sites = _ragFiles.where(_ragDocIsWebsite).toList();
-    if (sites.isEmpty) {
-      return [
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: const Color(0xFF3F1163),
-              width: 1,
-            ),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(
-                Icons.language_outlined,
-                color: Colors.white.withValues(alpha: 0.65),
-                size: 22,
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  'No websites indexed yet. Use Index Website to add a URL — you can paste https://, http://, or www. addresses.',
-                  style: GoogleFonts.montserrat(
-                    color: Colors.white.withValues(alpha: 0.78),
-                    fontSize: 12,
-                    height: 1.45,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ];
-    }
-
-    const maxShown = 8;
-    final shown = sites.length > maxShown ? sites.sublist(0, maxShown) : sites;
-    final tiles = <Widget>[
-      for (final doc in shown)
-        Padding(
-          padding: const EdgeInsets.only(bottom: 10),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: () {
-                final u = _ragDocSourceUrl(doc);
-                if (u != null) _openIndexedWebsite(u);
-              },
-              borderRadius: BorderRadius.circular(16),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 12,
-                ),
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: const Color(0xFF3F1163),
-                    width: 1,
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.link_rounded,
-                      color: Colors.white.withValues(alpha: 0.85),
-                      size: 20,
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        _ragDocSourceUrl(doc) ?? '',
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.montserrat(
-                          color: Colors.white.withValues(alpha: 0.92),
-                          fontSize: 13,
-                          height: 1.35,
-                        ),
-                      ),
-                    ),
-                    Icon(
-                      Icons.open_in_new_rounded,
-                      color: Colors.white.withValues(alpha: 0.45),
-                      size: 18,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-    ];
-
-    if (sites.length > maxShown) {
-      tiles.add(
-        Align(
-          alignment: Alignment.centerLeft,
-          child: TextButton(
-            onPressed: () async {
-              await Navigator.push<void>(
-                context,
-                MaterialPageRoute<void>(
-                  builder: (context) => const IntelligenceHistoryPage(),
-                ),
-              );
-              if (mounted) await _loadRagPresence();
-            },
-            child: Text(
-              'View all ${sites.length} websites',
-              style: GoogleFonts.montserrat(
-                color: const Color(0xFFA855F7),
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ),
-      );
-    }
-
-    return tiles;
+    if (mounted) _loadRagPresence();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
-        fit: StackFit.expand,
+    final scale = MediaQuery.sizeOf(context).width / appShellDesignWidth;
+    final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
+
+    return AppShellScaffold(
+      destination: AppShellDestination.intelligence,
+      onTabSelected: (tab) => AppShellNavigation.onTabSelected(context, tab),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const DecoratedBox(
-            decoration: ManageScreenStyle.homeDashboardBodyDecoration,
+          AppScreenHeader(
+            scale: scale,
+            title: 'Manage Intelligence',
+            titleFontSize: 16,
+            leading: IntelligenceInfoButton(
+              scale: scale,
+              onTap: () => IntelligenceIntroModal.show(context),
+            ),
+            trailing: CreditsPill(
+              scale: scale,
+              creditCategory: CreditCategory.llm,
+            ),
           ),
-          SafeArea(
-            child: Column(
-              children: [
-                const ManageScreenHeader(
-                  title: 'Manage Intelligence',
-                  creditCategory: CreditCategory.llm,
+          Expanded(
+            child: RefreshIndicator(
+              color: LightScreenTheme.accent,
+              onRefresh: _loadRagPresence,
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: EdgeInsets.fromLTRB(
+                  21 * scale,
+                  20 * scale,
+                  21 * scale,
+                  130 * scale + bottomInset,
                 ),
-                // Welcome Section
-                Expanded(
-                  child: SingleChildScrollView(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const SizedBox(height: 60),
-                          Text(
-                            'Welcome to Business Chat Intelligence',
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.montserrat(
-                              color: Colors.white,
-                              fontSize: 19,
-                              fontWeight: FontWeight.w500,
-                              letterSpacing: -0.3,
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          Text(
-                            'Upload business information documents to train your AI assistant on your company\'s information. The AI can instantly answer customer questions, provide support, and deliver accurate responses based on your files — helping businesses automate communication and improve customer experience.',
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.montserrat(
-                              color: Colors.white.withValues(alpha: 0.9),
-                              fontSize: 14,
-                              fontWeight: FontWeight.w300,
-                              height: 1.6,
-                            ),
-                          ),
-                          const SizedBox(height: 32),
-                          _OnboardingProfileCard(
-                            answers: _onboardingAnswers,
-                            completed: _onboardingCompleted,
-                            loading: _presenceLoading,
-                            onEdit: _openOnboardingEditor,
-                          ),
-                          const SizedBox(height: 24),
-                          if (_presenceLoading) ...[
-                            const SizedBox(height: 8),
-                            const Center(
-                              child:                               const AutobusLoadingIndicator(size: 28),
-                            ),
-                            const SizedBox(height: 24),
-                          ] else if (_presenceError != null) ...[
-                            Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 12,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.amber.withValues(alpha: 0.12),
-                                border: Border.all(
-                                  color: Colors.amber.withValues(alpha: 0.45),
-                                  width: 1.2,
-                                ),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Icon(
-                                    Icons.cloud_off_outlined,
-                                    color: Colors.amber.shade300,
-                                    size: 22,
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Text(
-                                      'Could not verify your documents. Pull to refresh after opening the screen again, or check your connection.\n${_shortPresenceError(_presenceError!)}',
-                                      style: GoogleFonts.montserrat(
-                                        color: Colors.white.withValues(
-                                          alpha: 0.88,
-                                        ),
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w400,
-                                        height: 1.45,
-                                      ),
-                                    ),
-                                  ),
-                                  IconButton(
-                                    onPressed: _loadRagPresence,
-                                    icon: Icon(
-                                      Icons.refresh,
-                                      color: Colors.white.withValues(
-                                        alpha: 0.85,
-                                      ),
-                                      size: 22,
-                                    ),
-                                    padding: EdgeInsets.zero,
-                                    constraints: const BoxConstraints(
-                                      minWidth: 32,
-                                      minHeight: 32,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 32),
-                          ] else if (!_hasRagDocuments) ...[
-                            Container(
-                              decoration: BoxDecoration(
-                                color: const Color(
-                                  0xFF581C87,
-                                ).withValues(alpha: 0.1),
-                                border: Border.all(
-                                  color: const Color(
-                                    0xFF9333EA,
-                                  ).withValues(alpha: 0.5),
-                                  width: 1.5,
-                                ),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 12,
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.warning_rounded,
-                                    color: Colors.red.shade400,
-                                    size: 24,
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Text(
-                                      _onboardingCompleted
-                                          ? 'No files or websites yet — your chatbot still uses your onboarding answers'
-                                          : 'You have not uploaded any business data',
-                                      style: GoogleFonts.montserrat(
-                                        color: Colors.white.withValues(
-                                          alpha: 0.85,
-                                        ),
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w400,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ] else
-                            const SizedBox(height: 8),
-                          if (!_presenceLoading && _presenceError == null) ...[
-                            Align(
-                              alignment: Alignment.centerLeft,
-                              child: Text(
-                                'Websites',
-                                style: GoogleFonts.montserrat(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 10),
-                            ..._websitesSection(context),
-                          ],
-                          const SizedBox(height: 40),
-                          // Action Cards Grid
-                          GridView.count(
-                            crossAxisCount: 2,
-                            mainAxisSpacing: 16,
-                            crossAxisSpacing: 16,
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            childAspectRatio: 1.0,
-                            children: [
-                              _IntelligenceCard(
-                                icon: Icons.auto_awesome_outlined,
-                                title: 'My AI',
-                                onTap: () {
-                                  Navigator.push<void>(
-                                    context,
-                                    MaterialPageRoute<void>(
-                                      builder: (_) => const AutoBus(
-                                        title: 'My Ai',
-                                        webhookContext: 'my_ai_agent',
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                              _IntelligenceCard(
-                                icon: Icons.description_outlined,
-                                title: 'Upload Files',
-                                onTap: _handleUploadFiles,
-                              ),
-                              _IntelligenceCard(
-                                icon: Icons.language_outlined,
-                                title: 'Index Website',
-                                onTap: _handleIndexWebsite,
-                              ),
-                              _IntelligenceCard(
-                                icon: Icons.folder_open_outlined,
-                                title: 'View Sources',
-                                onTap: () async {
-                                  await Navigator.push<void>(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          const IntelligenceHistoryPage(),
-                                    ),
-                                  );
-                                  if (mounted) await _loadRagPresence();
-                                },
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 40),
-                        ],
-                      ),
-                    ),
+                children: [
+                  _OnboardingProfileCard(
+                    scale: scale,
+                    answers: _onboardingAnswers,
+                    completed: _onboardingCompleted,
+                    loading: _presenceLoading,
+                    error: _presenceError,
+                    onEdit: _openOnboardingEditor,
+                    onRetry: _loadRagPresence,
                   ),
-                ),
-              ],
+                  SizedBox(height: 20 * scale),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _IntelligenceTile(
+                          scale: scale,
+                          iconAsset: FigmaIcons.files,
+                          gradient: const [
+                            Color(0xFF22D3EE),
+                            Color(0xFF0891B2),
+                          ],
+                          title: 'Files',
+                          subtitle: 'Upload/view files',
+                          onTap: () => _push(const IntelligenceFilesPage()),
+                        ),
+                      ),
+                      SizedBox(width: 12 * scale),
+                      Expanded(
+                        child: _IntelligenceTile(
+                          scale: scale,
+                          iconAsset: FigmaIcons.website,
+                          gradient: const [
+                            Color(0xFFA3E635),
+                            Color(0xFF65A30D),
+                          ],
+                          title: 'Websites',
+                          subtitle: 'View/index websites',
+                          onTap: () => _push(const IntelligenceWebsitesPage()),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 20 * scale),
+                  _MyAiButton(
+                    scale: scale,
+                    onTap: () => _push(const IntelligenceMyAiPage()),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _WebsiteUrlDialog extends StatefulWidget {
-  const _WebsiteUrlDialog();
-
-  @override
-  State<_WebsiteUrlDialog> createState() => _WebsiteUrlDialogState();
-}
-
-class _WebsiteUrlDialogState extends State<_WebsiteUrlDialog> {
-  final _controller = TextEditingController();
-  String? _error;
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _submit() {
-    final value = _controller.text.trim();
-    final normalized = _normalizeWebsiteUrlForApi(value);
-    if (normalized == null) {
-      setState(() {
-        _error =
-            'Enter a valid website URL (e.g. https://example.com or www.example.com)';
-      });
-      return;
-    }
-    Navigator.of(context).pop(normalized);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      backgroundColor: const Color(0xFF1A1333),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide(
-          color: Colors.white.withValues(alpha: 0.25),
-          width: 1,
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 22, 24, 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              'Index website',
-              style: GoogleFonts.montserrat(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'We will scrape the public page and add its text to your business knowledge base.',
-              style: GoogleFonts.montserrat(
-                color: Colors.white.withValues(alpha: 0.75),
-                fontSize: 12,
-                height: 1.45,
-              ),
-            ),
-            const SizedBox(height: 18),
-            TextField(
-              controller: _controller,
-              autofocus: true,
-              keyboardType: TextInputType.url,
-              onTapOutside: dismissAppKeyboard,
-              style: GoogleFonts.montserrat(color: Colors.white, fontSize: 14),
-              decoration: InputDecoration(
-                hintText: 'https://example.com or www.example.com',
-                hintStyle: GoogleFonts.montserrat(
-                  color: Colors.white.withValues(alpha: 0.4),
-                  fontSize: 13,
-                ),
-                errorText: _error,
-                filled: true,
-                fillColor: Colors.white.withValues(alpha: 0.06),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide(
-                    color: const Color(0xFF9333EA).withValues(alpha: 0.45),
-                  ),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide(
-                    color: const Color(0xFF9333EA).withValues(alpha: 0.35),
-                  ),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: const BorderSide(color: Color(0xFF9333EA)),
-                ),
-              ),
-              onSubmitted: (_) => _submit(),
-            ),
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: Text(
-                    'Cancel',
-                    style: GoogleFonts.montserrat(
-                      color: Colors.white.withValues(alpha: 0.7),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                FilledButton(
-                  onPressed: _submit,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFF9333EA),
-                  ),
-                  child: Text(
-                    'Index',
-                    style: GoogleFonts.montserrat(fontWeight: FontWeight.w600),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _RagIndexProgressDialog extends StatefulWidget {
-  final ApiService api;
-  final String title;
-  final Future<Map<String, dynamic>> Function() startJob;
-
-  const _RagIndexProgressDialog({
-    required this.api,
-    required this.title,
-    required this.startJob,
-  });
-
-  @override
-  State<_RagIndexProgressDialog> createState() => _RagIndexProgressDialogState();
-}
-
-class _RagIndexProgressDialogState extends State<_RagIndexProgressDialog> {
-  int _progress = 0;
-  String _message = 'Starting…';
-  String? _sourceLabel;
-  bool _failed = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _run();
-  }
-
-  Future<void> _run() async {
-    try {
-      final started = await widget.startJob();
-      final jobId = ApiService.ragIndexJobId(started);
-      if (jobId == null) {
-        if (!mounted) return;
-        Navigator.of(context).pop();
-        return;
-      }
-
-      while (mounted) {
-        final status = await widget.api.getRagIndexJobStatus(jobId);
-        if (!mounted) return;
-
-        final progress = status['progress'];
-        final message = (status['message'] ?? '').toString();
-        final label = (status['source_label'] ?? '').toString();
-
-        setState(() {
-          if (progress is int) {
-            _progress = progress.clamp(0, 100);
-          } else if (progress is num) {
-            _progress = progress.round().clamp(0, 100);
-          }
-          if (message.isNotEmpty) _message = message;
-          if (label.isNotEmpty) _sourceLabel = label;
-        });
-
-        if (ApiService.ragIndexJobTerminal(status)) {
-          if (!ApiService.ragIndexJobSucceeded(status)) {
-            final err =
-                (status['error'] ?? status['message'] ?? 'Indexing failed')
-                    .toString();
-            throw Exception(err);
-          }
-          if (!mounted) return;
-          Navigator.of(context).pop();
-          return;
-        }
-
-        await Future<void>.delayed(const Duration(milliseconds: 750));
-      }
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _failed = true;
-        _message = userFacingError(e);
-        _progress = 100;
-      });
-      await Future<void>.delayed(const Duration(milliseconds: 900));
-      if (!mounted) return;
-      Navigator.of(context).pop(e);
-    }
-  }
-
-  String _statusHeadline() {
-    final lower = _message.toLowerCase();
-    if (lower.contains('scrap')) return 'Fetching website';
-    if (lower.contains('upload')) return 'Uploading';
-    if (lower.contains('extract')) return 'Extracting text';
-    if (lower.contains('chunk')) return 'Preparing content';
-    if (lower.contains('index')) return 'Indexing';
-    if (lower.contains('validat')) return 'Validating';
-    if (_failed) return 'Failed';
-    return widget.title;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      backgroundColor: const Color(0xFF1A1333),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide(
-          color: Colors.white.withValues(alpha: 0.25),
-          width: 1,
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 26),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              _statusHeadline(),
-              textAlign: TextAlign.center,
-              style: GoogleFonts.montserrat(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            if (_sourceLabel != null) ...[
-              const SizedBox(height: 8),
-              Text(
-                _sourceLabel!,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-                style: GoogleFonts.montserrat(
-                  color: Colors.white.withValues(alpha: 0.55),
-                  fontSize: 11,
-                ),
-              ),
-            ],
-            const SizedBox(height: 20),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(6),
-              child: LinearProgressIndicator(
-                value: _progress > 0 ? _progress / 100 : null,
-                minHeight: 6,
-                backgroundColor: Colors.white.withValues(alpha: 0.12),
-                color: _failed ? Colors.red.shade400 : const Color(0xFF9333EA),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              '$_progress% · $_message',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.montserrat(
-                color: Colors.white.withValues(alpha: 0.8),
-                fontSize: 12,
-                height: 1.4,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _IntelligenceCard extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final VoidCallback onTap;
-
-  const _IntelligenceCard({
-    required this.icon,
-    required this.title,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          border: Border.all(color: const Color(0xFF3F1163), width: 1),
-          borderRadius: BorderRadius.circular(32),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: Colors.white, size: 28),
-            const SizedBox(height: 14),
-            Text(
-              title,
-              style: GoogleFonts.montserrat(
-                color: Colors.white.withValues(alpha: 0.9),
-                fontSize: 13,
-                fontWeight: FontWeight.w400,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -1758,99 +974,274 @@ const _onboardingLabels = <String, String>{
   'chatbot_greeting': 'Chatbot greeting',
 };
 
+/// Figma `3399:1096` — onboarding answers indexed into Intelligence.
 class _OnboardingProfileCard extends StatelessWidget {
   const _OnboardingProfileCard({
+    required this.scale,
     required this.answers,
     required this.completed,
     required this.loading,
+    required this.error,
     required this.onEdit,
+    required this.onRetry,
   });
 
+  final double scale;
   final Map<String, String> answers;
   final bool completed;
   final bool loading;
+  final String? error;
   final VoidCallback onEdit;
+  final VoidCallback onRetry;
+
+  static const _valueColor = Color(0xFF4A6491);
+  static const _figmaRows = ['industry', 'service_area', 'business_name'];
+
+  List<MapEntry<String, String>> get _rows {
+    final picked = <MapEntry<String, String>>[
+      for (final key in _figmaRows)
+        if (answers[key] != null) MapEntry(key, answers[key]!),
+    ];
+    if (picked.length >= 3) return picked;
+    for (final e in answers.entries) {
+      if (picked.length >= 3) break;
+      if (!_figmaRows.contains(e.key)) picked.add(e);
+    }
+    return picked;
+  }
 
   @override
   Widget build(BuildContext context) {
+    final rowStyle = GoogleFonts.poppins(
+      color: Colors.black,
+      fontSize: LightScreenTheme.typeLabel,
+      fontWeight: FontWeight.w400,
+      height: 1.5,
+    );
+
+    final Widget body;
     if (loading && answers.isEmpty) {
-      return const SizedBox.shrink();
+      body = Padding(
+        padding: EdgeInsets.symmetric(vertical: 12 * scale),
+        child: const Center(child: AutobusLoadingIndicator(size: 24)),
+      );
+    } else if (error != null && answers.isEmpty) {
+      body = Row(
+        children: [
+          Expanded(
+            child: Text(
+              'Could not load your business profile.',
+              style: rowStyle.copyWith(color: LightScreenTheme.body),
+            ),
+          ),
+          TextButton(
+            onPressed: onRetry,
+            child: Text(
+              'Retry',
+              style: GoogleFonts.poppins(
+                color: LightScreenTheme.accent,
+                fontSize: LightScreenTheme.typeLabel,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      );
+    } else if (answers.isEmpty) {
+      body = Text(
+        'Answer a few questions so your AI can talk about your business before you upload files or websites.',
+        style: rowStyle.copyWith(color: LightScreenTheme.body),
+      );
+    } else {
+      body = Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (final e in _rows)
+            Padding(
+              padding: EdgeInsets.only(top: 8 * scale),
+              child: Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(text: '${_onboardingLabels[e.key] ?? e.key} : '),
+                    TextSpan(
+                      text: e.value,
+                      style: const TextStyle(color: _valueColor),
+                    ),
+                  ],
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: rowStyle,
+              ),
+            ),
+        ],
+      );
     }
+
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      padding: EdgeInsets.all(20 * scale),
       decoration: BoxDecoration(
-        color: const Color(0xFF581C87).withValues(alpha: 0.18),
-        border: Border.all(
-          color: const Color(0xFF9333EA).withValues(alpha: 0.5),
-          width: 1.2,
-        ),
-        borderRadius: BorderRadius.circular(20),
+        color: LightScreenTheme.surface,
+        border: Border.all(color: Colors.black),
+        borderRadius: BorderRadius.circular(20 * scale),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(
-                Icons.auto_awesome,
-                color: Colors.white.withValues(alpha: 0.9),
-                size: 20,
-              ),
-              const SizedBox(width: 10),
-              Expanded(
+              FigmaSvgIcon(FigmaIcons.ai, size: 35 * scale.clamp(0.9, 1.05)),
+              const Spacer(),
+              GestureDetector(
+                onTap: onEdit,
                 child: Text(
-                  completed
-                      ? 'Indexed from onboarding'
-                      : 'Train your chatbot with a business profile',
-                  style: GoogleFonts.montserrat(
-                    color: Colors.white,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              TextButton(
-                onPressed: onEdit,
-                child: Text(
-                  completed ? 'Update' : 'Add',
-                  style: GoogleFonts.montserrat(
-                    color: const Color(0xFFA855F7),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
+                  completed || answers.isNotEmpty ? 'Update' : 'Add',
+                  style: GoogleFonts.poppins(
+                    color: LightScreenTheme.accent,
+                    fontSize: LightScreenTheme.typeBody,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ),
             ],
           ),
-          if (answers.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            ...answers.entries.take(4).map((e) {
-              final label = _onboardingLabels[e.key] ?? e.key;
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: Text(
-                  '$label: ${e.value}',
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.montserrat(
-                    color: Colors.white.withValues(alpha: 0.82),
-                    fontSize: 12,
-                    height: 1.35,
-                  ),
-                ),
-              );
-            }),
-          ] else
-            Text(
-              'These answers are indexed into Intelligence so customers get accurate replies before you upload files. Updating them replaces only this profile — not your documents or websites.',
-              style: GoogleFonts.montserrat(
-                color: Colors.white.withValues(alpha: 0.75),
-                fontSize: 12,
-                height: 1.4,
-              ),
+          SizedBox(height: 12 * scale),
+          Text(
+            completed || answers.isNotEmpty
+                ? 'Indexed from onboarding'
+                : 'Train your AI with a business profile',
+            style: GoogleFonts.poppins(
+              color: Colors.black,
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
             ),
+          ),
+          SizedBox(height: 4 * scale),
+          body,
         ],
+      ),
+    );
+  }
+}
+
+/// Figma `3399:1111` / `3399:1119` — Files and Websites tiles.
+class _IntelligenceTile extends StatelessWidget {
+  const _IntelligenceTile({
+    required this.scale,
+    required this.iconAsset,
+    required this.gradient,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final double scale;
+  final String iconAsset;
+  final List<Color> gradient;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: LightScreenTheme.surface,
+      borderRadius: BorderRadius.circular(20 * scale),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: EdgeInsets.all(20 * scale),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 44 * scale,
+                height: 44 * scale,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: gradient,
+                  ),
+                  borderRadius: BorderRadius.circular(12 * scale),
+                ),
+                alignment: Alignment.center,
+                child: FigmaSvgIcon(
+                  iconAsset,
+                  size: 22 * scale.clamp(0.9, 1.05),
+                  color: Colors.white,
+                ),
+              ),
+              SizedBox(height: 20 * scale),
+              Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.poppins(
+                  color: Colors.black,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              SizedBox(height: 4 * scale),
+              Text(
+                subtitle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.poppins(
+                  color: LightScreenTheme.muted,
+                  fontSize: LightScreenTheme.typeLabel,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Figma `3399:1105` — My AI entry.
+class _MyAiButton extends StatelessWidget {
+  const _MyAiButton({required this.scale, required this.onTap});
+
+  final double scale;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final radius = BorderRadius.circular(20 * scale);
+    return Material(
+      color: LightScreenTheme.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: radius,
+        side: BorderSide(
+          color: LightScreenTheme.accent.withValues(alpha: 0.6),
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: SizedBox(
+          height: 93 * scale,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              FigmaSvgIcon(FigmaIcons.ai, size: 35 * scale.clamp(0.9, 1.05)),
+              SizedBox(width: 7 * scale),
+              Text(
+                'My AI',
+                style: GoogleFonts.poppins(
+                  color: Colors.black,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

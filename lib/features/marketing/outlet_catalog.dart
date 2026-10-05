@@ -1,4 +1,5 @@
 import 'package:autobus/features/marketing/models/postiz_integration.dart';
+import 'package:autobus/icons/figma_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
@@ -9,7 +10,10 @@ const kAutobusIgPrefix = 'autobus-ig-';
 class OutletOption {
   final String label;
   final FaIconData icon;
+  final String? iconAsset;
   final Color iconColor;
+  final Color tileColor;
+  final String linkSubtitle;
   final Set<String> postizIdentifiers;
 
   /// Postiz connect path slug (`facebook`, `instagram`, `tiktok`, …).
@@ -23,7 +27,10 @@ class OutletOption {
   const OutletOption({
     required this.label,
     required this.icon,
+    this.iconAsset,
     required this.iconColor,
+    required this.tileColor,
+    required this.linkSubtitle,
     this.postizIdentifiers = const {},
     this.connectSlug,
     this.shareOnDevice = false,
@@ -64,31 +71,62 @@ class OutletCatalog {
     OutletOption(
       label: 'Instagram',
       icon: FontAwesomeIcons.instagram,
-      iconColor: Color(0xFFDD2A7B),
+      iconAsset: FigmaIcons.instagram,
+      iconColor: Color(0xFFE60B51),
+      tileColor: Color(0xFFE60B51),
+      linkSubtitle: 'Link instagram',
       postizIdentifiers: {'instagram', 'instagram-standalone'},
       connectSlug: 'instagram', // Autobus Business Login (inbox + posting)
     ),
     OutletOption(
       label: 'YouTube',
       icon: FontAwesomeIcons.youtube,
-      iconColor: Color(0xFFFF0000),
+      iconAsset: FigmaIcons.youtube,
+      iconColor: Color(0xFFED1F1F),
+      tileColor: Color(0xFFED1F1F),
+      linkSubtitle: 'Link youtube',
       postizIdentifiers: {'youtube'},
       connectSlug: 'youtube',
     ),
     OutletOption(
-      label: 'TikTok',
+      label: 'Tiktok',
       icon: FontAwesomeIcons.tiktok,
-      iconColor: Color(0xFF69C9D0),
+      iconAsset: FigmaIcons.tiktok,
+      iconColor: Colors.black,
+      tileColor: Colors.black,
+      linkSubtitle: 'Link tiktok',
       postizIdentifiers: {'tiktok'},
       connectSlug: 'tiktok',
     ),
     OutletOption(
       label: 'Facebook Page',
-      icon: FontAwesomeIcons.facebook,
-      iconColor: Color(0xFF1877F2),
+      icon: FontAwesomeIcons.facebookF,
+      iconAsset: FigmaIcons.facebook,
+      iconColor: Color(0xFF3D5A98),
+      tileColor: Color(0xFF3D5A98),
+      linkSubtitle: 'Link a Facebook Page',
       postizIdentifiers: {'facebook'},
       connectSlug: 'facebook',
       helperText: 'Connect a Facebook Page for Digital Marketing posts.',
+    ),
+    OutletOption(
+      label: 'LinkedIn',
+      icon: FontAwesomeIcons.linkedinIn,
+      iconAsset: FigmaIcons.linkedin,
+      iconColor: Color(0xFF0076B2),
+      tileColor: Color(0xFF0076B2),
+      linkSubtitle: 'Link linkedin',
+      postizIdentifiers: {'linkedin'},
+      connectSlug: 'linkedin',
+    ),
+    OutletOption(
+      label: 'WhatsApp Status',
+      icon: FontAwesomeIcons.whatsapp,
+      iconColor: Color(0xFF25D366),
+      tileColor: Color(0xFF25D366),
+      linkSubtitle: 'Link whatsapp',
+      postizIdentifiers: {'whatsapp'},
+      connectSlug: 'whatsapp',
     ),
   ];
 
@@ -110,5 +148,12 @@ class OutletCatalog {
     }
 
     return (linked: linked, unlinked: unlinked);
+  }
+
+  static String? iconAssetFor(FaIconData icon) {
+    for (final outlet in all) {
+      if (outlet.icon == icon) return outlet.iconAsset;
+    }
+    return null;
   }
 }

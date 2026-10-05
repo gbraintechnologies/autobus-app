@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:autobus/common_design/app_error.dart';
 import 'package:autobus/common_design/plain_ai_text.dart';
+import 'package:autobus/common_design/user_facing_error.dart';
 import 'package:autobus/config/app_config.dart';
 import 'package:autobus/features/home/services/api_service.dart';
 import 'package:http/http.dart' as http;
@@ -74,37 +75,37 @@ class AutoChatRepository {
     required String context,
   }) async {
     final trimmedCompany = companyNumber.trim();
-    final body = trimmedCompany.isEmpty
-        ? {
-            'userid': phone,
-            'message': message,
-            'context': context,
-          }
-        : {
-            'customer_number': phone,
-            'company_number': trimmedCompany,
-            'message': message,
-            'context': context,
-          };
+    final body = <String, dynamic>{
+      'userid': phone,
+      'customer_number': phone,
+      'message': message,
+      'context': context,
+      if (trimmedCompany.isNotEmpty) 'company_number': trimmedCompany,
+    };
 
-    final res = await client.post(
-      _endpoint,
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(body),
-    );
+    final res = await client
+        .post(
+          _endpoint,
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode(body),
+        )
+        .timeout(AppConfig.agentTimeout);
 
     if (res.statusCode != 200) {
       throw AppException.fromResponse(res, action: 'sending your message');
     }
 
-    final data = jsonDecode(res.body);
-    final replyText =
-        (data['message'] ??
-                data['reply'] ??
-                data['response'] ??
-                data['text'] ??
-                '')
-            .toString();
+    dynamic data;
+    try {
+      data = jsonDecode(res.body);
+    } catch (_) {
+      throw Exception(AppUserMessages.load);
+    }
+
+    final replyText = _extractReply(data);
+    if (replyText.isEmpty) {
+      throw Exception("I couldn't get a reply. Please try again.");
+    }
 
     return ChatMessage(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -114,5 +115,32 @@ class AutoChatRepository {
       sender: Sender.bot,
       status: MessageStatus.sent,
     );
+  }
+
+  String _extractReply(dynamic data) {
+    if (data == null) return '';
+    if (data is String) return data.trim();
+    if (data is List && data.isNotEmpty) return _extractReply(data.first);
+    if (data is! Map) return '';
+
+    const keys = [
+      'message',
+      'reply',
+      'response',
+      'text',
+      'output',
+      'content',
+      'answer',
+      'assistant',
+    ];
+    for (final key in keys) {
+      final value = data[key];
+      if (value is String && value.trim().isNotEmpty) return value.trim();
+    }
+    for (final key in ['data', 'result', 'payload', 'body']) {
+      final nested = _extractReply(data[key]);
+      if (nested.isNotEmpty) return nested;
+    }
+    return '';
   }
 }

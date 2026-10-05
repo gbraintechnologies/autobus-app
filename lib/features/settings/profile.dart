@@ -1,6 +1,11 @@
 import 'package:autobus/barrel.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
+import 'package:autobus/common_design/light_screen_theme.dart';
+import 'package:autobus/common_design/widgets/app_bottom_nav.dart';
+import 'package:autobus/common_design/widgets/light_list_card.dart';
+import 'package:autobus/common_design/widgets/light_screen_scaffold.dart';
+import 'package:autobus/icons/home_figma_icons.dart';
 
 class Profile extends StatefulWidget {
   const Profile({super.key});
@@ -91,9 +96,10 @@ class _ProfileState extends State<Profile> {
           ? ''
           : _formatDate(_dateOfBirth!);
 
-      _gender = _normalizeGender(user['gender']);
+      final g = (user['gender'] ?? '').toString().trim();
+      _gender = g.isEmpty ? null : g;
     } catch (e) {
-      if (mounted) setState(() => _error = userFacingError(e));
+      if (mounted) setState(() => _error = userFacingError(e, fallback: AppUserMessages.load));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -153,7 +159,7 @@ class _ProfileState extends State<Profile> {
     );
   }
 
-  Widget _profileCompletionCard() {
+  Widget _profileCompletionCardContent() {
     final info = _profileCompletion();
     final pct = info.percent;
     final progress = info.total == 0 ? 0.0 : info.completed / info.total;
@@ -161,25 +167,21 @@ class _ProfileState extends State<Profile> {
     final missingTop = info.missingLabels.take(3).toList();
     final missingExtra = info.missingLabels.length - missingTop.length;
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.85),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
-      ),
-      child: Column(
+    return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.task_alt, size: 18, color: CustColors.mainCol),
+              const HomeSfIcon(
+                icon: HomeFigmaIcons.checkmark,
+                size: 18,
+                color: CustColors.mainCol,
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   'Profile completion',
-                  style: GoogleFonts.montserrat(
+                  style: GoogleFonts.poppins(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                     color: Colors.black,
@@ -188,7 +190,7 @@ class _ProfileState extends State<Profile> {
               ),
               Text(
                 '$pct%',
-                style: GoogleFonts.montserrat(
+                style: GoogleFonts.poppins(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
                   color: CustColors.mainCol,
@@ -209,7 +211,7 @@ class _ProfileState extends State<Profile> {
           const SizedBox(height: 10),
           Text(
             '${info.completed} of ${info.total} fields completed',
-            style: GoogleFonts.montserrat(
+            style: GoogleFonts.poppins(
               fontSize: 11,
               fontWeight: FontWeight.w400,
               color: Colors.black.withValues(alpha: 0.65),
@@ -233,7 +235,7 @@ class _ProfileState extends State<Profile> {
                     ),
                     child: Text(
                       m,
-                      style: GoogleFonts.montserrat(
+                      style: GoogleFonts.poppins(
                         fontSize: 11,
                         fontWeight: FontWeight.w500,
                         color: CustColors.mainCol,
@@ -252,7 +254,7 @@ class _ProfileState extends State<Profile> {
                     ),
                     child: Text(
                       '+$missingExtra more',
-                      style: GoogleFonts.montserrat(
+                      style: GoogleFonts.poppins(
                         fontSize: 11,
                         fontWeight: FontWeight.w500,
                         color: Colors.black.withValues(alpha: 0.65),
@@ -263,34 +265,7 @@ class _ProfileState extends State<Profile> {
             ),
           ],
         ],
-      ),
     );
-  }
-
-  String? _normalizeGender(dynamic raw) {
-    final g = (raw ?? '').toString().trim();
-    if (g.isEmpty) return null;
-    switch (g.toLowerCase()) {
-      case 'm':
-      case 'male':
-        return 'Male';
-      case 'f':
-      case 'female':
-        return 'Female';
-      case 'other':
-        return 'Other';
-      case 'prefer not to say':
-      case 'prefer_not_to_say':
-      case 'unspecified':
-        return 'Prefer not to say';
-      default:
-        return null;
-    }
-  }
-
-  String? _emptyToSentinel(String value) {
-    final t = value.trim();
-    return t;
   }
 
   Future<void> _saveProfile() async {
@@ -300,43 +275,65 @@ class _ProfileState extends State<Profile> {
       _error = null;
     });
     try {
-      final updated = await _apiService.updateUserProfile(
+      await _apiService.updateUserProfile(
         fullname: fullnameController.text.trim(),
-        phone: _emptyToSentinel(phoneController.text),
-        ghanaCard: _emptyToSentinel(ghanaCardController.text),
-        nationality: _emptyToSentinel(nationalityController.text),
+        phone: phoneController.text.trim(),
+        ghanaCard: ghanaCardController.text.trim().isEmpty
+            ? null
+            : ghanaCardController.text.trim(),
+        nationality: nationalityController.text.trim().isEmpty
+            ? null
+            : nationalityController.text.trim(),
         dateOfBirth: _dateOfBirth,
-        gender: _gender,
-        staffId: _emptyToSentinel(staffIdController.text),
-        company: _emptyToSentinel(companyController.text),
-        currentBranch: _emptyToSentinel(currentBranchController.text),
-        address: _emptyToSentinel(addressController.text),
-        location: _emptyToSentinel(locationController.text),
-        facebookUrl: _emptyToSentinel(facebookUrlController.text),
-        whatsappNumber: _emptyToSentinel(whatsappNumberController.text),
-        linkedinUrl: _emptyToSentinel(linkedinUrlController.text),
-        twitterUrl: _emptyToSentinel(twitterUrlController.text),
-        instagramUrl: _emptyToSentinel(instagramUrlController.text),
+        gender: _gender?.trim().isEmpty == true ? null : _gender,
+        staffId: staffIdController.text.trim().isEmpty
+            ? null
+            : staffIdController.text.trim(),
+        company: companyController.text.trim().isEmpty
+            ? null
+            : companyController.text.trim(),
+        currentBranch: currentBranchController.text.trim().isEmpty
+            ? null
+            : currentBranchController.text.trim(),
+        address: addressController.text.trim().isEmpty
+            ? null
+            : addressController.text.trim(),
+        location: locationController.text.trim().isEmpty
+            ? null
+            : locationController.text.trim(),
+        facebookUrl: facebookUrlController.text.trim().isEmpty
+            ? null
+            : facebookUrlController.text.trim(),
+        whatsappNumber: whatsappNumberController.text.trim().isEmpty
+            ? null
+            : whatsappNumberController.text.trim(),
+        linkedinUrl: linkedinUrlController.text.trim().isEmpty
+            ? null
+            : linkedinUrlController.text.trim(),
+        twitterUrl: twitterUrlController.text.trim().isEmpty
+            ? null
+            : twitterUrlController.text.trim(),
+        instagramUrl: instagramUrlController.text.trim().isEmpty
+            ? null
+            : instagramUrlController.text.trim(),
       );
       if (!mounted) return;
-      try {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('user', jsonEncode(updated));
-      } catch (_) {}
-      if (!mounted) return;
-      showAppSnackBar(
-        context,
-        'Profile updated',
-        backgroundColor: const Color(0xFF22C55E),
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Profile updated'),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+        ),
       );
-      setState(() => _loading = true);
       await _loadProfile();
     } catch (e) {
       if (!mounted) return;
-      setState(() => _error = userFacingError(e, action: 'saving profile'));
-      showAppSnackBar(
-        context,
-        userFacingError(e, action: 'saving profile'),
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(userFacingError(e, fallback: AppUserMessages.save)),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
       );
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -357,12 +354,18 @@ class _ProfileState extends State<Profile> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.photo_camera_outlined),
+              leading: const HomeSfIcon(
+                icon: HomeFigmaIcons.camera,
+                size: 22,
+              ),
               title: const Text('Take photo'),
               onTap: () => Navigator.pop(context, ImageSource.camera),
             ),
             ListTile(
-              leading: const Icon(Icons.photo_library_outlined),
+              leading: const HomeSfIcon(
+                icon: HomeFigmaIcons.photoLibrary,
+                size: 22,
+              ),
               title: const Text('Choose from gallery'),
               onTap: () => Navigator.pop(context, ImageSource.gallery),
             ),
@@ -377,7 +380,6 @@ class _ProfileState extends State<Profile> {
       source: source,
       imageQuality: 85,
       maxWidth: 1400,
-      requestFullMetadata: false,
     );
     if (picked == null) return;
 
@@ -409,7 +411,7 @@ class _ProfileState extends State<Profile> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Photo upload failed: $e'),
+          content: Text(userFacingError(e, fallback: AppUserMessages.upload)),
           backgroundColor: Colors.red,
           behavior: SnackBarBehavior.floating,
         ),
@@ -477,274 +479,223 @@ class _ProfileState extends State<Profile> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: _ProfileBackground(
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 18),
-            child: Column(
-              children: [
-                const SizedBox(height: 20),
+    final scale = MediaQuery.sizeOf(context).width / appShellDesignWidth;
 
-                /// 🔝 Top Bar
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    /// Back Button
-                    GestureDetector(
-                      onTap: () => Navigator.pop(context),
-                      child: Container(
-                        width: 48,
-                        height: 48,
-                        decoration: const BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: CustColors.mainCol,
-                        ),
-                        child: const Icon(
-                          Icons.arrow_back_ios_new,
-                          color: Colors.white,
-                          size: 18,
+    return LightScreenScaffold(
+      title: 'Profile',
+      creditCategory: CreditCategory.server,
+      resizeToAvoidBottomInset: true,
+      body: _loading
+          ? Center(
+              child: CircularProgressIndicator(color: LightScreenTheme.accent),
+            )
+          : Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (_error != null)
+                    Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        20 * scale,
+                        12 * scale,
+                        20 * scale,
+                        0,
+                      ),
+                      child: Text(
+                        _error!,
+                        style: GoogleFonts.poppins(
+                          color: Colors.red,
+                          fontSize: 13,
                         ),
                       ),
                     ),
-
-                    Text(
-                      'Profile',
-                      style: GoogleFonts.montserrat(
-                        color: Colors.black,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () {},
-                      child: _circleIcon(Icons.share_outlined),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 40),
-                if (_loading)
-                  const Expanded(
-                    child: Center(child: AutobusLoadingIndicator()),
-                  )
-                else
                   Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Form(
-                        key: _formKey,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            if (_error != null)
-                              Padding(
-                                padding: const EdgeInsets.only(bottom: 12),
-                                child: Text(
-                                  _error!,
-                                  style: GoogleFonts.montserrat(
-                                    color: Colors.red,
-                                    fontSize: 13,
-                                  ),
+                    child: SingleChildScrollView(
+                      padding: EdgeInsets.fromLTRB(
+                        20 * scale,
+                        16 * scale,
+                        20 * scale,
+                        16 * scale,
+                      ),
+                      child: Column(
+                        children: [
+                          _profileHeaderCard(context),
+                          SizedBox(height: 12 * scale),
+                          LightListCard(
+                            scale: scale,
+                            padding: EdgeInsets.all(14 * scale),
+                            child: _profileCompletionCardContent(),
+                          ),
+                          SizedBox(height: 14 * scale),
+                          _sectionCard(
+                            scale: scale,
+                            title: 'User Profile',
+                            subtitle:
+                                'Personal information and account details',
+                            child: Column(
+                              children: [
+                                _input(
+                                  label: 'Full name',
+                                  controller: fullnameController,
+                                  hintText: 'Enter your full name',
+                                  textInputAction: TextInputAction.next,
+                                  validator: (v) {
+                                    if ((v ?? '').trim().isEmpty) {
+                                      return 'Full name is required';
+                                    }
+                                    return null;
+                                  },
                                 ),
-                              ),
-                            Expanded(
-                              child: SingleChildScrollView(
-                                keyboardDismissBehavior:
-                                    ScrollViewKeyboardDismissBehavior.onDrag,
-                                child: Column(
-                                  children: [
-                                    _profileHeaderCard(context),
-                                    const SizedBox(height: 12),
-                                    _profileCompletionCard(),
-                                    const SizedBox(height: 14),
-                                    _sectionCard(
-                                      title: 'User Profile',
-                                      subtitle:
-                                          'Personal information and account details',
-                                      child: Column(
-                                        children: [
-                                          _input(
-                                            label: 'Full name',
-                                            controller: fullnameController,
-                                            hintText: 'Enter your full name',
-                                            textInputAction:
-                                                TextInputAction.next,
-                                            validator: (v) {
-                                              if ((v ?? '').trim().isEmpty) {
-                                                return 'Full name is required';
-                                              }
-                                              return null;
-                                            },
-                                          ),
-                                          const SizedBox(height: 20),
-                                          _input(
-                                            label: 'Email',
-                                            controller: emailController,
-                                            readOnly: true,
-                                            helperText:
-                                                'Email can’t be changed here',
-                                          ),
-                                          const SizedBox(height: 20),
-                                          _input(
-                                            label: 'Phone',
-                                            controller: phoneController,
-                                            hintText: '0241234567',
-                                            keyboardType: TextInputType.phone,
-                                            textInputAction:
-                                                TextInputAction.next,
-                                          ),
-                                          const SizedBox(height: 20),
-                                          _input(
-                                            label: 'Ghana card',
-                                            controller: ghanaCardController,
-                                            hintText: 'GHA-XXXXXXXXXX-X',
-                                            textInputAction:
-                                                TextInputAction.next,
-                                          ),
-                                          const SizedBox(height: 20),
-                                          _input(
-                                            label: 'Nationality',
-                                            controller: nationalityController,
-                                            hintText: 'e.g. Ghanaian',
-                                            textInputAction:
-                                                TextInputAction.next,
-                                          ),
-                                          const SizedBox(height: 20),
-                                          _input(
-                                            label: 'Date of birth',
-                                            controller: dobController,
-                                            hintText: 'Tap to select (DD/MM/YYYY)',
-                                            readOnly: true,
-                                            onTap: _pickDateOfBirth,
-                                            suffixIcon: Icons.calendar_today,
-                                          ),
-                                          const SizedBox(height: 20),
-                                          _genderDropdown(),
-                                          const SizedBox(height: 20),
-                                          _input(
-                                            label: 'Staff ID',
-                                            controller: staffIdController,
-                                            hintText: 'Enter your staff ID',
-                                            textInputAction:
-                                                TextInputAction.next,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(height: 14),
-                                    _sectionCard(
-                                      title: 'Business Profile',
-                                      subtitle:
-                                          'Company details and social profiles',
-                                      child: Column(
-                                        children: [
-                                          _input(
-                                            label: 'Company',
-                                            controller: companyController,
-                                            hintText: 'Enter company name',
-                                            textInputAction:
-                                                TextInputAction.next,
-                                          ),
-                                          const SizedBox(height: 20),
-                                          _input(
-                                            label: 'Current branch',
-                                            controller: currentBranchController,
-                                            hintText: 'Enter branch name',
-                                            textInputAction:
-                                                TextInputAction.next,
-                                          ),
-                                          const SizedBox(height: 20),
-                                          _input(
-                                            label: 'Address',
-                                            controller: addressController,
-                                            hintText: 'Enter street address',
-                                            textInputAction:
-                                                TextInputAction.next,
-                                          ),
-                                          const SizedBox(height: 20),
-                                          _input(
-                                            label: 'Location',
-                                            controller: locationController,
-                                            hintText: 'Enter city or region',
-                                            textInputAction:
-                                                TextInputAction.next,
-                                          ),
-                                          const SizedBox(height: 20),
-                                          _input(
-                                            label: 'WhatsApp number',
-                                            controller:
-                                                whatsappNumberController,
-                                            hintText: '0241234567',
-                                            keyboardType: TextInputType.phone,
-                                            textInputAction:
-                                                TextInputAction.next,
-                                          ),
-                                          const SizedBox(height: 20),
-                                          _input(
-                                            label: 'Facebook URL',
-                                            controller: facebookUrlController,
-                                            hintText: 'https://facebook.com/username',
-                                            keyboardType: TextInputType.url,
-                                            textInputAction:
-                                                TextInputAction.next,
-                                          ),
-                                          const SizedBox(height: 20),
-                                          _input(
-                                            label: 'LinkedIn URL',
-                                            controller: linkedinUrlController,
-                                            hintText: 'https://linkedin.com/in/username',
-                                            keyboardType: TextInputType.url,
-                                            textInputAction:
-                                                TextInputAction.next,
-                                          ),
-                                          const SizedBox(height: 20),
-                                          _input(
-                                            label: 'Twitter/X URL',
-                                            controller: twitterUrlController,
-                                            hintText: 'https://x.com/username',
-                                            keyboardType: TextInputType.url,
-                                            textInputAction:
-                                                TextInputAction.next,
-                                          ),
-                                          const SizedBox(height: 20),
-                                          _input(
-                                            label: 'Instagram URL',
-                                            controller: instagramUrlController,
-                                            hintText: 'https://instagram.com/username',
-                                            keyboardType: TextInputType.url,
-                                            textInputAction:
-                                                TextInputAction.done,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(height: 18),
-                                  ],
+                                const SizedBox(height: 20),
+                                _input(
+                                  label: 'Email',
+                                  controller: emailController,
+                                  readOnly: true,
+                                  helperText: 'Email can’t be changed here',
                                 ),
-                              ),
+                                const SizedBox(height: 20),
+                                _input(
+                                  label: 'Phone',
+                                  controller: phoneController,
+                                  hintText: '0241234567',
+                                  keyboardType: TextInputType.phone,
+                                  textInputAction: TextInputAction.next,
+                                ),
+                                const SizedBox(height: 20),
+                                _input(
+                                  label: 'Ghana card',
+                                  controller: ghanaCardController,
+                                  hintText: 'GHA-XXXXXXXXXX-X',
+                                  textInputAction: TextInputAction.next,
+                                ),
+                                const SizedBox(height: 20),
+                                _input(
+                                  label: 'Nationality',
+                                  controller: nationalityController,
+                                  hintText: 'e.g. Ghanaian',
+                                  textInputAction: TextInputAction.next,
+                                ),
+                                const SizedBox(height: 20),
+                                _input(
+                                  label: 'Date of birth',
+                                  controller: dobController,
+                                  hintText: 'Tap to select (DD/MM/YYYY)',
+                                  readOnly: true,
+                                  onTap: _pickDateOfBirth,
+                                  suffixIcon: Icons.calendar_today,
+                                ),
+                                const SizedBox(height: 20),
+                                _genderDropdown(),
+                                const SizedBox(height: 20),
+                                _input(
+                                  label: 'Staff ID',
+                                  controller: staffIdController,
+                                  hintText: 'Enter your staff ID',
+                                  textInputAction: TextInputAction.next,
+                                ),
+                              ],
                             ),
-                            Center(
-                              child: AppButton(
-                                onPressed: _saving
-                                    ? () {}
-                                    : () => _saveProfile(),
-                                buttonText: _saving
-                                    ? 'Saving...'
-                                    : 'Save Changes',
-                              ),
+                          ),
+                          SizedBox(height: 14 * scale),
+                          _sectionCard(
+                            scale: scale,
+                            title: 'Business Profile',
+                            subtitle: 'Company details and social profiles',
+                            child: Column(
+                              children: [
+                                _input(
+                                  label: 'Company',
+                                  controller: companyController,
+                                  hintText: 'Enter company name',
+                                  textInputAction: TextInputAction.next,
+                                ),
+                                const SizedBox(height: 20),
+                                _input(
+                                  label: 'Current branch',
+                                  controller: currentBranchController,
+                                  hintText: 'Enter branch name',
+                                  textInputAction: TextInputAction.next,
+                                ),
+                                const SizedBox(height: 20),
+                                _input(
+                                  label: 'Address',
+                                  controller: addressController,
+                                  hintText: 'Enter street address',
+                                  textInputAction: TextInputAction.next,
+                                ),
+                                const SizedBox(height: 20),
+                                _input(
+                                  label: 'Location',
+                                  controller: locationController,
+                                  hintText: 'Enter city or region',
+                                  textInputAction: TextInputAction.next,
+                                ),
+                                const SizedBox(height: 20),
+                                _input(
+                                  label: 'WhatsApp number',
+                                  controller: whatsappNumberController,
+                                  hintText: '0241234567',
+                                  keyboardType: TextInputType.phone,
+                                  textInputAction: TextInputAction.next,
+                                ),
+                                const SizedBox(height: 20),
+                                _input(
+                                  label: 'Facebook URL',
+                                  controller: facebookUrlController,
+                                  hintText: 'https://facebook.com/username',
+                                  keyboardType: TextInputType.url,
+                                  textInputAction: TextInputAction.next,
+                                ),
+                                const SizedBox(height: 20),
+                                _input(
+                                  label: 'LinkedIn URL',
+                                  controller: linkedinUrlController,
+                                  hintText: 'https://linkedin.com/in/username',
+                                  keyboardType: TextInputType.url,
+                                  textInputAction: TextInputAction.next,
+                                ),
+                                const SizedBox(height: 20),
+                                _input(
+                                  label: 'Twitter/X URL',
+                                  controller: twitterUrlController,
+                                  hintText: 'https://x.com/username',
+                                  keyboardType: TextInputType.url,
+                                  textInputAction: TextInputAction.next,
+                                ),
+                                const SizedBox(height: 20),
+                                _input(
+                                  label: 'Instagram URL',
+                                  controller: instagramUrlController,
+                                  hintText: 'https://instagram.com/username',
+                                  keyboardType: TextInputType.url,
+                                  textInputAction: TextInputAction.done,
+                                ),
+                              ],
                             ),
-                            const SizedBox(height: 10),
-                          ],
-                        ),
+                          ),
+                          SizedBox(height: 18 * scale),
+                        ],
                       ),
                     ),
                   ),
-                const SizedBox(height: 26),
-              ],
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      20 * scale,
+                      8 * scale,
+                      20 * scale,
+                      16 * scale,
+                    ),
+                    child: Center(
+                      child: AppButton(
+                        onPressed: _saving ? () {} : () => _saveProfile(),
+                        buttonText: _saving ? 'Saving...' : 'Save Changes',
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ),
-      ),
     );
   }
 
@@ -808,7 +759,7 @@ class _ProfileState extends State<Profile> {
           Text(
             title,
             textAlign: TextAlign.center,
-            style: GoogleFonts.montserrat(
+            style: GoogleFonts.poppins(
               color: Colors.black,
               fontSize: 18,
               fontWeight: FontWeight.w500,
@@ -818,7 +769,7 @@ class _ProfileState extends State<Profile> {
           Text(
             subtitle,
             textAlign: TextAlign.center,
-            style: GoogleFonts.montserrat(
+            style: GoogleFonts.poppins(
               color: Colors.black.withOpacity(0.6),
               fontSize: 12,
               fontWeight: FontWeight.w300,
@@ -829,7 +780,7 @@ class _ProfileState extends State<Profile> {
             onPressed: _uploadingPhoto ? null : _pickAndUploadPhoto,
             child: Text(
               _uploadingPhoto ? 'Uploading...' : 'Change profile photo',
-              style: GoogleFonts.montserrat(
+              style: GoogleFonts.poppins(
                 color: CustColors.mainCol,
                 fontSize: 13,
                 fontWeight: FontWeight.w400,
@@ -842,57 +793,46 @@ class _ProfileState extends State<Profile> {
   }
 
   Widget _sectionCard({
+    required double scale,
     required String title,
     required String subtitle,
     required Widget child,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(16)),
+    return LightListCard(
+      scale: scale,
+      padding: EdgeInsets.all(14 * scale),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Container(
-                width: 38,
-                height: 38,
+                width: 38 * scale,
+                height: 38 * scale,
                 decoration: BoxDecoration(
                   color: CustColors.mainCol.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(12 * scale),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.badge_outlined,
                   color: CustColors.mainCol,
-                  size: 18,
+                  size: 18 * scale,
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: 12 * scale),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      title,
-                      style: GoogleFonts.montserrat(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: GoogleFonts.montserrat(
-                        fontSize: 11,
-                        color: Colors.black.withOpacity(0.6),
-                      ),
-                    ),
+                    Text(title, style: LightScreenTheme.listTitle(scale)),
+                    SizedBox(height: 2 * scale),
+                    Text(subtitle, style: LightScreenTheme.listSubtitle(scale)),
                   ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12 * scale),
           child,
         ],
       ),
@@ -910,10 +850,8 @@ class _ProfileState extends State<Profile> {
       ),
     ];
 
-    final selected = items.any((item) => item.value == _gender) ? _gender : null;
-
     return DropdownButtonFormField<String>(
-      value: selected,
+      value: _gender,
       items: items,
       onChanged: (v) => setState(() => _gender = v),
       decoration: _underlineDecoration(label: 'Gender'),
@@ -938,7 +876,6 @@ class _ProfileState extends State<Profile> {
       textInputAction: textInputAction,
       readOnly: readOnly,
       onTap: onTap,
-      onTapOutside: dismissAppKeyboard,
       validator: validator,
       decoration: _underlineDecoration(
         label: label,
@@ -961,7 +898,7 @@ class _ProfileState extends State<Profile> {
       labelText: label,
       helperText: helperText,
       hintText: hintText,
-      hintStyle: GoogleFonts.montserrat(
+      hintStyle: GoogleFonts.poppins(
         color: Colors.black.withOpacity(0.35),
         fontSize: 14,
         fontWeight: FontWeight.w400,
@@ -981,41 +918,5 @@ class _ProfileState extends State<Profile> {
     );
   }
 
-  Widget _circleIcon(dynamic icon) {
-    return Container(
-      width: 54,
-      height: 54,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: Colors.white.withOpacity(0.85),
-        border: Border.all(color: Colors.black.withOpacity(0.08)),
-      ),
-      child: icon is IconData
-          ? Icon(icon, color: Colors.black87, size: 18)
-          : Iconify(icon, color: Colors.black87, size: 8),
-    );
-  }
 }
 
-class _ProfileBackground extends StatelessWidget {
-  final Widget child;
-  const _ProfileBackground({required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Color.fromARGB(255, 244, 244, 244),
-            Color.fromARGB(255, 240, 240, 240),
-            Color.fromARGB(255, 236, 236, 236),
-          ],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
-      ),
-      child: child,
-    );
-  }
-}

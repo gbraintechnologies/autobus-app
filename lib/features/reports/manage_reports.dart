@@ -1,8 +1,12 @@
 import 'package:autobus/barrel.dart';
+import 'package:autobus/common_design/widgets/app_bottom_nav.dart';
+import 'package:autobus/common_design/widgets/app_screen_header.dart';
+import 'package:autobus/common_design/widgets/app_shell_navigation.dart';
 import 'package:autobus/features/reports/report_details.dart';
 import 'package:autobus/features/reports/report_period.dart';
 import 'package:autobus/features/reports/reports_snapshot.dart';
-
+import 'package:autobus/icons/home_figma_icons.dart';
+/// Analytics dashboard — Figma frame 3237:2235.
 class ManageReports extends StatefulWidget {
   const ManageReports({super.key});
 
@@ -11,6 +15,11 @@ class ManageReports extends StatefulWidget {
 }
 
 class _ManageReportsState extends State<ManageReports> {
+  static const _surfaceColor = Color(0xFFF8FAFC);
+  static const _accentColor = Color(0xFF7F03B9);
+  static const _positiveSubColor = Color(0xFF51830B);
+  static const _negativeSubColor = Color(0xFFE11D48);
+
   ReportPeriod _period = ReportPeriod.thisMonth;
   ReportsSnapshot? _snapshot;
   bool _loading = true;
@@ -38,8 +47,12 @@ class _ManageReportsState extends State<ManageReports> {
         api.getLowStockInventory(),
         api.listMyConversations(skip: 0, limit: 100),
         api.listInterventions(limit: 100),
-        api.listDigitalMarketingAssets(limit: 50, offset: 0),
-        api.getMySentEmails(limit: 50),
+        api.listDigitalMarketingAssets(limit: 50, offset: 0).catchError(
+          (_) => <String, dynamic>{'items': <dynamic>[], 'total': 0},
+        ),
+        api.getMySentEmails(limit: 50).catchError(
+          (_) => <String, dynamic>{'emails': <dynamic>[], 'total_returned': 0},
+        ),
       ]);
 
       final conversations =
@@ -98,192 +111,233 @@ class _ManageReportsState extends State<ManageReports> {
     _load();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final snap = _snapshot;
-
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          const DecoratedBox(
-            decoration: ManageScreenStyle.homeDashboardBodyDecoration,
-          ),
-          SafeArea(
+  Future<void> _showPeriodFilter() async {
+    final selected = await showModalBottomSheet<ReportPeriod>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(21, 16, 21, 24),
             child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
-                  child: SizedBox(
-                    height: 52,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Align(
-                          alignment: Alignment.center,
-                          child: Text(
-                            'Analytics',
-                            textAlign: TextAlign.center,
-                            style: ManageScreenStyle.headerTitleStyle(),
-                          ),
-                        ),
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: const [
-                              ManageScreenBackButton(),
-                              SizedBox(width: 18),
-                            ],
-                          ),
-                        ),
-                        if (!_loading)
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: IconButton(
-                              onPressed: _load,
-                              icon: const Icon(
-                                Icons.refresh,
-                                color: Colors.white70,
-                              ),
-                              tooltip: 'Refresh',
-                            ),
-                          ),
-                      ],
-                    ),
+                Text(
+                  'Filter by period',
+                  style: GoogleFonts.poppins(
+                    color: Colors.black,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(height: 16),
-                _PeriodSelector(
-                  selected: _period,
-                  onSelected: _onPeriodChanged,
-                ),
-                const SizedBox(height: 8),
-                Expanded(
-                  child: _loading
-                      ? const Center(
-                          child: AutobusLoadingIndicator(),
-                        )
-                      : RefreshIndicator(
-                          color: const Color(0xFF7B4BB7),
-                          onRefresh: _load,
-                          child: SingleChildScrollView(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                if (_loadError != null) ...[
-                                  _ErrorBanner(message: _loadError!),
-                                  const SizedBox(height: 16),
-                                ],
-                                if (snap != null) ...[
-                                  _OverviewSection(snapshot: snap),
-                                  const SizedBox(height: 28),
-                                  Text(
-                                    'Detailed reports',
-                                    style: GoogleFonts.montserrat(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.85,
-                                      ),
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 16),
-                                  GridView.count(
-                                    crossAxisCount: 2,
-                                    shrinkWrap: true,
-                                    physics:
-                                        const NeverScrollableScrollPhysics(),
-                                    mainAxisSpacing: 16,
-                                    crossAxisSpacing: 16,
-                                    childAspectRatio: 1.05,
-                                    children: [
-                                      _ReportHubCard(
-                                        icon: Icons.payments_outlined,
-                                        title: 'Financial',
-                                        subtitle: formatReportCurrency(
-                                          snap.financialVolume,
-                                        ),
-                                        onTap: () => Navigator.push<void>(
-                                          context,
-                                          MaterialPageRoute<void>(
-                                            builder: (_) =>
-                                                FinancialReportDetail(
-                                                  snapshot: snap,
-                                                ),
-                                          ),
-                                        ),
-                                      ),
-                                      _ReportHubCard(
-                                        icon: Icons.receipt_long_outlined,
-                                        title: 'Orders',
-                                        subtitle:
-                                            '${snap.filteredOrders.length} orders',
-                                        onTap: () => Navigator.push<void>(
-                                          context,
-                                          MaterialPageRoute<void>(
-                                            builder: (_) => OrdersReportDetail(
-                                              snapshot: snap,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      _ReportHubCard(
-                                        icon: Icons.request_quote_outlined,
-                                        title: 'Invoices',
-                                        subtitle: snap.orderInvoicesSent > 0
-                                            ? '${snap.orderInvoicesSent} sent · ${snap.paidOrderInvoices} paid'
-                                            : 'No invoices yet',
-                                        onTap: () => Navigator.push<void>(
-                                          context,
-                                          MaterialPageRoute<void>(
-                                            builder: (_) =>
-                                                OrderInvoicesReportDetail(
-                                                  snapshot: snap,
-                                                ),
-                                          ),
-                                        ),
-                                      ),
-                                      _ReportHubCard(
-                                        icon: Icons.inventory_2_outlined,
-                                        title: 'Inventory',
-                                        subtitle:
-                                            '${snap.lowStock.length} low stock',
-                                        onTap: () => Navigator.push<void>(
-                                          context,
-                                          MaterialPageRoute<void>(
-                                            builder: (_) =>
-                                                OperationsReportDetail(
-                                                  snapshot: snap,
-                                                ),
-                                          ),
-                                        ),
-                                      ),
-                                      _ReportHubCard(
-                                        icon: Icons.forum_outlined,
-                                        title: 'Engagement',
-                                        subtitle:
-                                            '${snap.conversationsNonIntervention + snap.conversationsActive} chats',
-                                        onTap: () => Navigator.push<void>(
-                                          context,
-                                          MaterialPageRoute<void>(
-                                            builder: (_) =>
-                                                EngagementReportDetail(
-                                                  snapshot: snap,
-                                                ),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ],
+                const SizedBox(height: 12),
+                ...ReportPeriod.values.map((period) {
+                  final isSelected = period == _period;
+                  return ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(
+                      period.label,
+                      style: GoogleFonts.poppins(
+                        color: isSelected ? _accentColor : Colors.black87,
+                        fontWeight:
+                            isSelected ? FontWeight.w600 : FontWeight.w400,
+                      ),
+                    ),
+                    trailing: isSelected
+                        ? HomeSfIcon(icon: HomeFigmaIcons.checkmark, size: 18, color: _accentColor)
+                        : null,
+                    onTap: () => Navigator.pop(context, period),
+                  );
+                }),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (selected != null) _onPeriodChanged(selected);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scale = MediaQuery.sizeOf(context).width / appShellDesignWidth;
+    final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
+    final snap = _snapshot;
+
+    return AppShellScaffold(
+      destination: AppShellDestination.analytics,
+      showAiFab: false,
+      onTabSelected: (tab) => AppShellNavigation.onTabSelected(context, tab),
+      onCenterNavTap: () => AppShellNavigation.openIntelligence(context),
+      onAiTap: () => AppShellNavigation.openChatbot(context),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          AppScreenHeader(
+            scale: scale,
+            title: 'Analytics',
+            leading: IconButton(
+              onPressed: _showPeriodFilter,
+              padding: EdgeInsets.zero,
+              constraints: BoxConstraints(
+                minWidth: 32 * scale,
+                minHeight: 32 * scale,
+              ),
+              icon: HomeSfIcon(
+                icon: HomeFigmaIcons.analyticsFilter,
+                size: 24 * scale.clamp(0.9, 1.1),
+                color: Colors.black,
+              ),
+            ),
+            trailing: IconButton(
+              onPressed: _loading ? null : _load,
+              padding: EdgeInsets.zero,
+              constraints: BoxConstraints(
+                minWidth: 32 * scale,
+                minHeight: 32 * scale,
+              ),
+              icon: _loading
+                  ? SizedBox(
+                      width: 22 * scale,
+                      height: 22 * scale,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: _accentColor,
+                      ),
+                    )
+                  : HomeSfIcon(
+                      icon: HomeFigmaIcons.analyticsRefresh,
+                      size: 24 * scale.clamp(0.9, 1.1),
+                      color: Colors.black,
+                    ),
+            ),
+          ),
+          Expanded(
+            child: _loading && snap == null
+                ? Center(
+                    child: CircularProgressIndicator(color: _accentColor),
+                  )
+                : RefreshIndicator(
+                    color: _accentColor,
+                    onRefresh: _load,
+                    child: SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: EdgeInsets.fromLTRB(
+                        17 * scale,
+                        12 * scale,
+                        17 * scale,
+                        120 * scale + bottomInset,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          if (_loadError != null) ...[
+                            _AnalyticsErrorBanner(message: _loadError!),
+                            SizedBox(height: 12 * scale),
+                          ],
+                          if (snap != null) ...[
+                            _RevenueHeroCard(
+                              scale: scale,
+                              revenue: formatReportCurrency(snap.revenue),
                             ),
-                          ),
-                        ),
+                            SizedBox(height: 8 * scale),
+                            _MetricsGrid(scale: scale, snapshot: snap),
+                            SizedBox(height: 24 * scale),
+                            Text(
+                              'Detailed reports',
+                              style: GoogleFonts.poppins(
+                                color: Colors.black,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            SizedBox(height: 12 * scale),
+                            _DetailedReportsSection(
+                              scale: scale,
+                              snapshot: snap,
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RevenueHeroCard extends StatelessWidget {
+  final double scale;
+  final String revenue;
+
+  const _RevenueHeroCard({required this.scale, required this.revenue});
+
+  static const _greenGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [Color(0xFFA3E635), Color(0xFF3D7A08)],
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 95 * scale,
+      padding: EdgeInsets.symmetric(horizontal: 20 * scale),
+      decoration: BoxDecoration(
+        color: _ManageReportsState._surfaceColor,
+        borderRadius: BorderRadius.circular(16 * scale),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44 * scale,
+            height: 44 * scale,
+            decoration: BoxDecoration(
+              gradient: _greenGradient,
+              borderRadius: BorderRadius.circular(12 * scale),
+            ),
+            child: Center(
+              child: HomeSfIcon(
+                icon: HomeFigmaIcons.analyticsRevenue,
+                size: 22 * scale.clamp(0.9, 1.1),
+                color: Colors.white,
+              ),
+            ),
+          ),
+          SizedBox(width: 18 * scale),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Revenue',
+                  style: GoogleFonts.poppins(
+                    color: Colors.black,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                SizedBox(height: 4 * scale),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    revenue,
+                    maxLines: 1,
+                    style: GoogleFonts.poppins(
+                      color: Colors.black,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -294,148 +348,76 @@ class _ManageReportsState extends State<ManageReports> {
   }
 }
 
-class _PeriodSelector extends StatelessWidget {
-  final ReportPeriod selected;
-  final ValueChanged<ReportPeriod> onSelected;
-
-  const _PeriodSelector({required this.selected, required this.onSelected});
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 40,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        itemCount: ReportPeriod.values.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
-        itemBuilder: (context, index) {
-          final period = ReportPeriod.values[index];
-          final isSelected = period == selected;
-          return FilterChip(
-            label: Text(period.label),
-            selected: isSelected,
-            onSelected: (_) => onSelected(period),
-            labelStyle: GoogleFonts.montserrat(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: isSelected ? Colors.white : Colors.white70,
-            ),
-            selectedColor: const Color(0xFF5A2D82),
-            backgroundColor: const Color(0xFF1A0F2E),
-            side: BorderSide(
-              color: isSelected
-                  ? const Color(0xFF7B4BB7)
-                  : const Color(0xFF3F1163),
-            ),
-            checkmarkColor: Colors.white,
-            showCheckmark: false,
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _OverviewSection extends StatelessWidget {
+class _MetricsGrid extends StatelessWidget {
+  final double scale;
   final ReportsSnapshot snapshot;
 
-  const _OverviewSection({required this.snapshot});
+  const _MetricsGrid({required this.scale, required this.snapshot});
 
   @override
   Widget build(BuildContext context) {
     final snap = snapshot;
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
-          'Overview · ${snap.period.label}',
-          style: GoogleFonts.montserrat(
-            color: Colors.white.withValues(alpha: 0.85),
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        const SizedBox(height: 16),
-        _HeroMetricCard(
-          label: 'Revenue',
-          value: formatReportCurrency(snap.revenue),
-          icon: Icons.trending_up,
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _MetricTile(
-                label: 'Order value',
-                value: formatReportCurrency(snap.ordersValue),
-              ),
+        _MetricRow(
+          scale: scale,
+          tiles: [
+            _MetricTileData(
+              label: 'Order value',
+              value: formatReportCurrency(snap.ordersValue),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _MetricTile(
-                label: 'Transactions',
-                value: '${snap.filteredFinancials.length}',
-              ),
+            _MetricTileData(
+              label: 'Invoiced value',
+              value: formatReportCurrency(snap.orderInvoicesValue),
+              subtitle:
+                  '${formatReportCurrency(snap.paidOrderInvoicesValue)} collected',
+              subtitleColor: _ManageReportsState._positiveSubColor,
+            ),
+            _MetricTileData(
+              label: 'Transactions',
+              value: '${snap.filteredFinancials.length}',
             ),
           ],
         ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _MetricTile(
-                label: 'Orders',
-                value: '${snap.filteredOrders.length}',
-                sub: '${snap.countOrdersByStatus('completed')} done',
-              ),
+        SizedBox(height: 8 * scale),
+        _MetricRow(
+          scale: scale,
+          tiles: [
+            _MetricTileData(
+              label: 'Completed txns',
+              value: '${snap.completedTransactions}',
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _MetricTile(
-                label: 'Products',
-                value: '${snap.products.length}',
-                sub: '${snap.lowStock.length} low stock',
-              ),
+            _MetricTileData(
+              label: 'Pending txns',
+              value: '${snap.pendingTransactions}',
+            ),
+            _MetricTileData(
+              label: 'Failed txns',
+              value: '${snap.failedTransactions}',
             ),
           ],
         ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _MetricTile(
-                label: 'Completed txns',
-                value: '${snap.completedTransactions}',
-              ),
+        SizedBox(height: 8 * scale),
+        _MetricRow(
+          scale: scale,
+          tiles: [
+            _MetricTileData(
+              label: 'Orders',
+              value: '${snap.filteredOrders.length}',
+              subtitle: '${snap.countOrdersByStatus('completed')} done',
+              subtitleColor: _ManageReportsState._negativeSubColor,
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _MetricTile(
-                label: 'Pending / failed',
-                value:
-                    '${snap.pendingTransactions} / ${snap.failedTransactions}',
-              ),
+            _MetricTileData(
+              label: 'Order invoices',
+              value: '${snap.orderInvoicesSent}',
+              subtitle: '${snap.paidOrderInvoices} paid',
+              subtitleColor: _ManageReportsState._negativeSubColor,
             ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _MetricTile(
-                label: 'Order invoices',
-                value: '${snap.orderInvoicesSent}',
-                sub: '${snap.paidOrderInvoices} paid',
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _MetricTile(
-                label: 'Invoiced value',
-                value: formatReportCurrency(snap.orderInvoicesValue),
-                sub: '${formatReportCurrency(snap.paidOrderInvoicesValue)} collected',
-              ),
+            _MetricTileData(
+              label: 'Products',
+              value: '${snap.products.length}',
+              subtitle: '${snap.lowStock.length} low stock',
+              subtitleColor: _ManageReportsState._negativeSubColor,
             ),
           ],
         ),
@@ -444,58 +426,36 @@ class _OverviewSection extends StatelessWidget {
   }
 }
 
-class _HeroMetricCard extends StatelessWidget {
+class _MetricTileData {
   final String label;
   final String value;
-  final IconData icon;
+  final String? subtitle;
+  final Color? subtitleColor;
 
-  const _HeroMetricCard({
+  const _MetricTileData({
     required this.label,
     required this.value,
-    required this.icon,
+    this.subtitle,
+    this.subtitleColor,
   });
+}
+
+class _MetricRow extends StatelessWidget {
+  final double scale;
+  final List<_MetricTileData> tiles;
+
+  const _MetricRow({required this.scale, required this.tiles});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF3F1163), Color(0xFF1E0C37)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFF5A2D82)),
-      ),
+    return IntrinsicHeight(
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Icon(icon, color: const Color(0xFFB794F6), size: 32),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: GoogleFonts.montserrat(
-                    color: Colors.white70,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  value,
-                  style: GoogleFonts.montserrat(
-                    color: Colors.white,
-                    fontSize: 26,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
+          for (var i = 0; i < tiles.length; i++) ...[
+            if (i > 0) SizedBox(width: 7 * scale),
+            Expanded(child: _MetricTile(scale: scale, data: tiles[i])),
+          ],
         ],
       ),
     );
@@ -503,47 +463,59 @@ class _HeroMetricCard extends StatelessWidget {
 }
 
 class _MetricTile extends StatelessWidget {
-  final String label;
-  final String value;
-  final String? sub;
+  final double scale;
+  final _MetricTileData data;
 
-  const _MetricTile({required this.label, required this.value, this.sub});
+  const _MetricTile({required this.scale, required this.data});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      constraints: BoxConstraints(minHeight: 95 * scale),
+      padding: EdgeInsets.fromLTRB(14 * scale, 12 * scale, 8 * scale, 12 * scale),
       decoration: BoxDecoration(
-        border: Border.all(color: const Color(0xFF3F1163)),
-        borderRadius: BorderRadius.circular(16),
+        color: _ManageReportsState._surfaceColor,
+        borderRadius: BorderRadius.circular(16 * scale),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            label,
-            style: GoogleFonts.montserrat(
-              color: Colors.white54,
-              fontSize: 11,
-              fontWeight: FontWeight.w400,
+            data.label,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.poppins(
+              color: Colors.black,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              height: 1.2,
             ),
           ),
-          const SizedBox(height: 6),
-          Text(
-            value,
-            style: GoogleFonts.montserrat(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
+          SizedBox(height: 8 * scale),
+          const Spacer(),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              data.value,
+              maxLines: 1,
+              style: GoogleFonts.poppins(
+                color: Colors.black,
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
-          if (sub != null) ...[
-            const SizedBox(height: 4),
+          if (data.subtitle != null) ...[
+            SizedBox(height: 2 * scale),
             Text(
-              sub!,
-              style: GoogleFonts.montserrat(
-                color: Colors.white38,
-                fontSize: 10,
+              data.subtitle!,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.poppins(
+                color: data.subtitleColor ?? Colors.black54,
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ],
@@ -553,13 +525,150 @@ class _MetricTile extends StatelessWidget {
   }
 }
 
-class _ReportHubCard extends StatelessWidget {
+class _DetailedReportsSection extends StatelessWidget {
+  final double scale;
+  final ReportsSnapshot snapshot;
+
+  const _DetailedReportsSection({
+    required this.scale,
+    required this.snapshot,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final snap = snapshot;
+    final chatCount = snap.conversationsNonIntervention + snap.conversationsActive;
+    final invoiceSubtitle = snap.orderInvoicesSent > 0
+        ? '${snap.orderInvoicesSent} sent · ${snap.paidOrderInvoices} paid'
+        : 'No invoice';
+
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: _ReportGradientCard(
+                scale: scale,
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFFA3E635), Color(0xFF3D7A08)],
+                ),
+                icon: HomeFigmaIcons.analyticsFinancial,
+                title: 'Financial',
+                subtitle: formatReportCurrency(snap.financialVolume),
+                onTap: () => Navigator.push<void>(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (_) => FinancialReportDetail(snapshot: snap),
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(width: 7 * scale),
+            Expanded(
+              child: _ReportGradientCard(
+                scale: scale,
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFF22C6DE), Color(0xFF0B748E)],
+                ),
+                icon: HomeFigmaIcons.analyticsOrdersReport,
+                title: 'Orders',
+                subtitle: '${snap.filteredOrders.length} orders',
+                onTap: () => Navigator.push<void>(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (_) => OrdersReportDetail(snapshot: snap),
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(width: 7 * scale),
+            Expanded(
+              child: _ReportGradientCard(
+                scale: scale,
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFFA364C1), Color(0xFF610A8A)],
+                ),
+                icon: HomeFigmaIcons.analyticsInvoices,
+                title: 'Invoices',
+                subtitle: invoiceSubtitle,
+                onTap: () => Navigator.push<void>(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (_) => OrderInvoicesReportDetail(snapshot: snap),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: 8 * scale),
+        Row(
+          children: [
+            Expanded(
+              child: _ReportGradientCard(
+                scale: scale,
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFF60A1F2), Color(0xFF174AB9)],
+                ),
+                icon: HomeFigmaIcons.analyticsInventory,
+                title: 'Inventory',
+                subtitle: '${snap.lowStock.length} low stock',
+                onTap: () => Navigator.push<void>(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (_) => OperationsReportDetail(snapshot: snap),
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(width: 7 * scale),
+            Expanded(
+              child: _ReportGradientCard(
+                scale: scale,
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFFF0AC78), Color(0xFFB25710)],
+                ),
+                icon: HomeFigmaIcons.analyticsEngagement,
+                title: 'Engagement',
+                subtitle: '$chatCount chats',
+                onTap: () => Navigator.push<void>(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (_) => EngagementReportDetail(snapshot: snap),
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(width: 7 * scale),
+            const Expanded(child: SizedBox()),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _ReportGradientCard extends StatelessWidget {
+  final double scale;
+  final LinearGradient gradient;
   final IconData icon;
   final String title;
   final String subtitle;
   final VoidCallback onTap;
 
-  const _ReportHubCard({
+  const _ReportGradientCard({
+    required this.scale,
+    required this.gradient,
     required this.icon,
     required this.title,
     required this.subtitle,
@@ -568,73 +677,77 @@ class _ReportHubCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          border: Border.all(color: const Color(0xFF3F1163)),
-          borderRadius: BorderRadius.circular(24),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, color: Colors.white, size: 26),
-            const Spacer(),
-            Text(
-              title,
-              style: GoogleFonts.montserrat(
-                color: Colors.white,
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12 * scale),
+        child: Ink(
+          padding: EdgeInsets.fromLTRB(14 * scale, 7 * scale, 8 * scale, 8 * scale),
+          decoration: BoxDecoration(
+            gradient: gradient,
+            borderRadius: BorderRadius.circular(12 * scale),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              HomeSfIcon(
+                icon: icon,
+                size: 16 * scale.clamp(0.9, 1.05),
+                color: const Color(0xFFFCD34D),
               ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              subtitle,
-              style: GoogleFonts.montserrat(
-                color: Colors.white54,
-                fontSize: 11,
+              SizedBox(height: 6 * scale),
+              Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.poppins(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
+              Text(
+                subtitle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.poppins(
+                  color: Colors.white.withValues(alpha: 0.92),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _ErrorBanner extends StatelessWidget {
+class _AnalyticsErrorBanner extends StatelessWidget {
   final String message;
 
-  const _ErrorBanner({required this.message});
+  const _AnalyticsErrorBanner({required this.message});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFF3D1A1A),
+        color: const Color(0xFFFFF1F2),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: const Color(0xFFE63946).withValues(alpha: 0.5),
-        ),
+        border: Border.all(color: const Color(0xFFE11D48).withValues(alpha: 0.35)),
       ),
       child: Row(
         children: [
-          const Icon(
-            Icons.warning_amber_rounded,
-            color: Color(0xFFE63946),
-            size: 20,
-          ),
+          const HomeSfIcon(icon: HomeFigmaIcons.warning, color: Color(0xFFE11D48), size: 20),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               message,
-              style: GoogleFonts.montserrat(
-                color: Colors.white70,
+              style: GoogleFonts.poppins(
+                color: const Color(0xFF881337),
                 fontSize: 12,
               ),
             ),

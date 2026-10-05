@@ -1,4 +1,9 @@
 import 'package:autobus/barrel.dart';
+import 'package:autobus/common_design/light_screen_theme.dart';
+import 'package:autobus/common_design/widgets/app_bottom_nav.dart';
+import 'package:autobus/common_design/widgets/light_list_card.dart';
+import 'package:autobus/common_design/widgets/light_screen_scaffold.dart';
+import 'package:autobus/icons/home_figma_icons.dart';
 
 class ViewCustomersPage extends StatefulWidget {
   const ViewCustomersPage({super.key});
@@ -56,15 +61,15 @@ class _ViewCustomersPageState extends State<ViewCustomersPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1E0C37),
+        backgroundColor: LightScreenTheme.surface,
         title: Text(
           'Delete customer?',
-          style: GoogleFonts.montserrat(color: Colors.white),
+          style: GoogleFonts.poppins(color: Colors.black),
         ),
         content: Text(
           'Remove $name from your contacts? This cannot be undone.',
-          style: GoogleFonts.montserrat(
-            color: Colors.white.withValues(alpha: 0.85),
+          style: GoogleFonts.poppins(
+            color: LightScreenTheme.body,
             fontSize: 14,
           ),
         ),
@@ -73,14 +78,14 @@ class _ViewCustomersPageState extends State<ViewCustomersPage> {
             onPressed: () => Navigator.pop(ctx, false),
             child: Text(
               'Cancel',
-              style: GoogleFonts.montserrat(color: Colors.white70),
+              style: GoogleFonts.poppins(color: LightScreenTheme.muted),
             ),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             child: Text(
               'Delete',
-              style: GoogleFonts.montserrat(color: Colors.red.shade300),
+              style: GoogleFonts.poppins(color: Colors.red.shade400),
             ),
           ),
         ],
@@ -92,7 +97,7 @@ class _ViewCustomersPageState extends State<ViewCustomersPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Deleted $name', style: GoogleFonts.montserrat()),
+          content: Text('Deleted $name', style: GoogleFonts.poppins()),
         ),
       );
       _load();
@@ -102,7 +107,7 @@ class _ViewCustomersPageState extends State<ViewCustomersPage> {
         SnackBar(
           content: Text(
             userFacingError(e),
-            style: GoogleFonts.montserrat(),
+            style: GoogleFonts.poppins(),
           ),
           backgroundColor: Colors.red.shade700,
         ),
@@ -121,19 +126,14 @@ class _ViewCustomersPageState extends State<ViewCustomersPage> {
     });
   }
 
-  Widget _customerTile(Map<String, dynamic> c) {
+  Widget _customerTile(double scale, Map<String, dynamic> c) {
     final phone = (c['customer_number'] ?? '').toString();
     final email = (c['email'] ?? '').toString().trim();
     final network = (c['network'] ?? '').toString().trim();
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        border: Border.all(color: const Color(0xFF3F1163), width: 1),
-        borderRadius: BorderRadius.circular(26),
-      ),
+    return LightListCard(
+      scale: scale,
+      padding: EdgeInsets.all(20 * scale),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -142,59 +142,42 @@ class _ViewCustomersPageState extends State<ViewCustomersPage> {
               Expanded(
                 child: Text(
                   _customerName(c),
-                  style: GoogleFonts.outfit(
-                    color: Colors.white,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w400,
-                  ),
+                  style: LightScreenTheme.listTitle(scale),
                 ),
               ),
               IconButton(
                 tooltip: 'Edit',
                 onPressed: () => _openEdit(c),
-                icon: const Icon(Icons.edit_outlined, color: Color(0xFFA855F7)),
+                icon: HomeSfIcon(icon: HomeFigmaIcons.edit, color: LightScreenTheme.accent, size: 22 * scale),
                 padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                constraints: BoxConstraints(minWidth: 36 * scale, minHeight: 36 * scale),
               ),
               IconButton(
                 tooltip: 'Delete',
                 onPressed: () => _confirmDelete(c),
-                icon: Icon(Icons.delete_outline, color: Colors.red.shade300),
+                icon: HomeSfIcon(icon: HomeFigmaIcons.delete, color: Colors.red.shade400, size: 22 * scale),
                 padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                constraints: BoxConstraints(minWidth: 36 * scale, minHeight: 36 * scale),
               ),
             ],
           ),
           if (phone.isNotEmpty) ...[
-            const SizedBox(height: 6),
+            SizedBox(height: 6 * scale),
             Text(
               phone,
-              style: GoogleFonts.outfit(
-                color: const Color(0xFFA855F7),
-                fontSize: 14,
+              style: LightScreenTheme.listTitle(scale).copyWith(
+                color: LightScreenTheme.accent,
                 fontWeight: FontWeight.w400,
               ),
             ),
           ],
           if (email.isNotEmpty) ...[
-            const SizedBox(height: 4),
-            Text(
-              email,
-              style: GoogleFonts.outfit(
-                color: Colors.white.withValues(alpha: 0.55),
-                fontSize: 12,
-              ),
-            ),
+            SizedBox(height: 4 * scale),
+            Text(email, style: LightScreenTheme.listSubtitle(scale)),
           ],
           if (network.isNotEmpty) ...[
-            const SizedBox(height: 4),
-            Text(
-              network,
-              style: GoogleFonts.outfit(
-                color: Colors.white.withValues(alpha: 0.4),
-                fontSize: 11,
-              ),
-            ),
+            SizedBox(height: 4 * scale),
+            Text(network, style: LightScreenTheme.listSubtitle(scale)),
           ],
         ],
       ),
@@ -203,96 +186,63 @@ class _ViewCustomersPageState extends State<ViewCustomersPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          const DecoratedBox(
-            decoration: ManageScreenStyle.homeDashboardBodyDecoration,
-          ),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
+    final scale = MediaQuery.sizeOf(context).width / appShellDesignWidth;
+
+    return LightScreenScaffold(
+      title: 'Your customers',
+      creditCategory: CreditCategory.server,
+      body: _loading
+          ? Center(child: CircularProgressIndicator(color: LightScreenTheme.accent))
+          : _loadError != null
+          ? Center(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Row(
-                    children: [
-                      const ManageScreenBackButton(),
-                      const SizedBox(width: 18),
-                      Expanded(
-                        child: Text(
-                          'Your customers',
-                          style: ManageScreenStyle.headerTitleStyle(),
-                        ),
-                      ),
-                    ],
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 28 * scale),
+                    child: Text(
+                      _loadError!,
+                      textAlign: TextAlign.center,
+                      style: LightScreenTheme.emptyState(scale),
+                    ),
                   ),
-                  const SizedBox(height: 32),
-                  Expanded(
-                    child: _loading
-                        ? const Center(child: AutobusLoadingIndicator(size: 32))
-                        : _loadError != null
-                        ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  _loadError!,
-                                  textAlign: TextAlign.center,
-                                  style: GoogleFonts.outfit(
-                                    color: Colors.white.withValues(alpha: 0.75),
-                                    fontSize: 14,
-                                  ),
-                                ),
-                                const SizedBox(height: 16),
-                                TextButton(
-                                  onPressed: _load,
-                                  child: Text(
-                                    'Retry',
-                                    style: GoogleFonts.outfit(
-                                      color: const Color(0xFFA855F7),
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )
-                        : RefreshIndicator(
-                            color: const Color(0xFFA855F7),
-                            onRefresh: _load,
-                            child: _customers.isEmpty
-                                ? ListView(
-                                    physics: const AlwaysScrollableScrollPhysics(),
-                                    children: [
-                                      SizedBox(
-                                        height: MediaQuery.sizeOf(context).height * 0.2,
-                                      ),
-                                      Center(
-                                        child: Text(
-                                          'No customers yet',
-                                          style: GoogleFonts.outfit(
-                                            color: Colors.white.withValues(alpha: 0.6),
-                                            fontSize: 16,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  )
-                                : ListView(
-                                    physics: const AlwaysScrollableScrollPhysics(),
-                                    children: _customers.map(_customerTile).toList(),
-                                  ),
-                          ),
+                  SizedBox(height: 16 * scale),
+                  TextButton(
+                    onPressed: _load,
+                    child: Text(
+                      'Retry',
+                      style: LightScreenTheme.listTitle(scale).copyWith(
+                        color: LightScreenTheme.accent,
+                      ),
+                    ),
                   ),
                 ],
               ),
+            )
+          : RefreshIndicator(
+              color: LightScreenTheme.accent,
+              onRefresh: _load,
+              child: _customers.isEmpty
+                  ? ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: [
+                        SizedBox(height: MediaQuery.sizeOf(context).height * 0.32),
+                        Center(
+                          child: Text(
+                            'No customers yet',
+                            style: LightScreenTheme.emptyState(scale),
+                          ),
+                        ),
+                      ],
+                    )
+                  : ListView.separated(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: EdgeInsets.fromLTRB(20 * scale, 20 * scale, 20 * scale, 32 * scale),
+                      itemCount: _customers.length,
+                      separatorBuilder: (_, __) => SizedBox(height: 12 * scale),
+                      itemBuilder: (context, index) => _customerTile(scale, _customers[index]),
+                    ),
             ),
-          ),
-        ],
-      ),
     );
   }
 }

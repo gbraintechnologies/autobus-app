@@ -34,6 +34,11 @@ export 'package:autobus/features/auth/auth_legal.dart';
 export 'package:autobus/features/auth/auth_page_header.dart';
 export 'package:autobus/features/auth/logorsign.dart';
 export 'package:autobus/features/initial_ui/splash.dart';
+export 'package:autobus/features/onboarding/onboarding_page.dart';
+export 'package:autobus/features/onboarding/details_page.dart';
+export 'package:autobus/features/onboarding/details2_page.dart';
+export 'package:autobus/common_design/widgets/auth_field.dart';
+export 'package:autobus/common_design/widgets/auth_screen_layout.dart';
 export 'package:autobus/features/auth/signin.dart';
 export 'package:autobus/features/auth/signup.dart';
 export 'package:autobus/features/auth/signup_otp.dart';
@@ -49,6 +54,7 @@ export 'package:autobus/features/onboarding/business_onboarding.dart';
 export 'package:autobus/features/email/manage_emails.dart';
 export 'package:autobus/features/email/sent_emails_page.dart';
 export 'package:autobus/features/email/sent_sms_page.dart';
+export 'package:autobus/features/email/from_email_page.dart';
 export 'package:autobus/features/email/send_customer_email_page.dart';
 export 'package:autobus/features/email/manage_sender_email.dart';
 export 'package:autobus/features/email/send_customer_sms_page.dart';
@@ -104,6 +110,9 @@ export 'package:autobus/features/notifications/notifications_inbox.dart';
 // Subscription
 export 'package:autobus/features/subscription/userplan.dart';
 export 'package:autobus/features/subscription/buy_credits.dart';
+export 'package:autobus/features/subscription/payment_method_page.dart';
+export 'package:autobus/features/subscription/add_payment_method_page.dart';
+export 'package:autobus/features/subscription/add_mobile_money_page.dart';
 export 'package:autobus/features/subscription/subscription_bill.dart';
 // barrel.dart
 export 'package:autobus/features/subscription/models/subscription_plan.dart';
@@ -145,6 +154,7 @@ export 'package:iconify_flutter/icons/uim.dart';
 export 'package:autobus/icons/fluent.dart';
 
 // Design Imports
+export 'package:autobus/common_design/user_facing_error.dart';
 export 'package:autobus/common_design/app_scale.dart';
 export 'package:autobus/common_design/colors.dart';
 export 'package:autobus/common_design/widgets/appbutton.dart';

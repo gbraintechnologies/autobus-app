@@ -1,13 +1,18 @@
 import 'package:autobus/barrel.dart';
+import 'package:autobus/common_design/widgets/ai_sparkle_icon.dart';
+import 'package:autobus/common_design/widgets/app_bottom_nav.dart';
+import 'package:autobus/common_design/widgets/app_shell_navigation.dart';
 import 'package:autobus/features/agent/agent_mode_store.dart';
+import 'package:autobus/features/home/widgets/home_youtube_embed.dart';
+import 'package:autobus/icons/figma_icons.dart';
+import 'package:autobus/icons/home_figma_icons.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
 
-  /// Full-screen entrance when leaving the welcome screen (fade, lift, scale with ease-out back).
   static Route<void> routeFromWelcome() {
     return PageRouteBuilder<void>(
-      settings: const RouteSettings(name: 'Home'),
+      settings: const RouteSettings(name: AppShellNavigation.homeRouteName),
       pageBuilder: (context, animation, secondaryAnimation) => const Home(),
       transitionDuration: const Duration(milliseconds: 1600),
       reverseTransitionDuration: const Duration(milliseconds: 700),
@@ -45,6 +50,8 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
+  static const _surfaceColor = Color(0xFFF8FAFC);
+
   Future<int>? _unreadCountFuture;
   bool _agentMode = false;
 
@@ -64,14 +71,12 @@ class _HomeState extends State<Home> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final api = context.read<ApiService>();
-    _unreadCountFuture ??= api.getUnreadNotificationCount();
+    _unreadCountFuture ??= context.read<ApiService>().getUnreadNotificationCount();
   }
 
   Future<void> _refreshNotifications() async {
-    final api = context.read<ApiService>();
     setState(() {
-      _unreadCountFuture = api.getUnreadNotificationCount();
+      _unreadCountFuture = context.read<ApiService>().getUnreadNotificationCount();
     });
   }
 
@@ -94,357 +99,332 @@ class _HomeState extends State<Home> {
   }
 
   Widget _buildDashboard(BuildContext context) {
-    final List<HomeMenuItem> menuItems = [
-      HomeMenuItem("Intelligence", Fluent.brain_circuit_20_regular, () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const ManageIntelligence()),
-        );
-      }),
-      HomeMenuItem("Inbox", MaterialSymbols.phone_callback_outline_sharp, () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const ManageChats()),
-        );
-      }),
-      HomeMenuItem("Messaging", Ph.chats_circle, () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const ManageEmails()),
-        );
-      }),
-      HomeMenuItem("Customers", Fluent.people_call_16_regular, () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const ManageCustomers()),
-        );
-      }),
-      HomeMenuItem("Marketing", Fluent.people_community_add_20_regular, () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const ManageMarketing()),
-        );
-      }),
-      HomeMenuItem("Orders", Carbon.ibm_watson_orders, () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const ManageOrders()),
-        );
-      }),
-      HomeMenuItem("Products", Ep.sell, () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const ManageProducts()),
-        );
-      }),
-      HomeMenuItem("Analytics", Uim.analytics, () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const ManageReports()),
-        );
-      }),
-    ];
+    final scale = MediaQuery.sizeOf(context).width / appShellDesignWidth;
+    final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
 
-    // Two-stop gradient: Figma dashboard top #1E0C37 → black.
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          const DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Color(0xFF130522), Color(0xFF000000)],
-              ),
-            ),
-          ),
-          // Content
-          SafeArea(
+    return AppShellScaffold(
+      destination: AppShellDestination.home,
+      onTabSelected: (tab) => AppShellNavigation.onTabSelected(context, tab),
+      onCenterNavTap: () => AppShellNavigation.openIntelligence(context),
+      showAiFab: true,
+      onAiTap: () => _setAgentMode(true),
+      body: SafeArea(
+            bottom: false,
             child: SingleChildScrollView(
               padding: EdgeInsets.fromLTRB(
-                20,
-                16,
-                20,
-                32 + MediaQuery.viewPaddingOf(context).bottom + 72,
+                21 * scale,
+                16 * scale,
+                21 * scale,
+                120 * scale + bottomInset,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      FutureBuilder<int>(
-                        future: _unreadCountFuture,
-                        builder: (context, snap) {
-                          final unread = snap.data ?? 0;
-                          return GestureDetector(
-                            onTap: () async {
-                              await Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) =>
-                                      const NotificationsInboxPage(),
-                                ),
-                              );
-                              await _refreshNotifications();
-                            },
-                            child: _notificationBell(unreadCount: unread),
-                          );
-                        },
-                      ),
-                      const UserAvatar(),
-                    ],
+                  SizedBox(
+                    height: 50 * scale.clamp(0.9, 1.05),
+                    child: Row(
+                      children: [
+                        UserAvatar(
+                          size: 50 * scale.clamp(0.9, 1.05),
+                          onLightBackground: true,
+                        ),
+                        const Expanded(
+                          child: Center(child: AiSparkleIcon(size: 35)),
+                        ),
+                        FutureBuilder<int>(
+                          future: _unreadCountFuture,
+                          builder: (context, snap) {
+                            final unread = snap.data ?? 0;
+                            return _NotificationBell(
+                              scale: scale,
+                              unreadCount: unread,
+                              onTap: () async {
+                                await Navigator.push<void>(
+                                  context,
+                                  MaterialPageRoute<void>(
+                                    builder: (_) =>
+                                        const NotificationsInboxPage(),
+                                  ),
+                                );
+                                await _refreshNotifications();
+                              },
+                            );
+                          },
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 32),
+                  SizedBox(height: 13 * scale),
                   BlocBuilder<AuthBloc, AuthState>(
                     builder: (context, state) {
-                      String displayName = 'User';
+                      var displayName = 'there';
                       if (state is Authenticated) {
                         displayName =
                             (state.user['fullname'] ??
                                     state.user['email'] ??
-                                    'User')
-                                .toString();
+                                    'there')
+                                .toString()
+                                .trim();
                       }
-
-                      final firstName = displayName.trim().split(' ').first;
-
                       return Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           Text(
-                            'Hello $firstName',
-                            style: GoogleFonts.montserrat(
-                              color: Colors.white.withValues(alpha: 0.8),
-                              fontSize: 20,
-                              fontWeight: FontWeight.w300,
+                            'Hello $displayName',
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.poppins(
+                              color: Colors.black,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
-                          const SizedBox(height: 8),
-                          Center(
-                            child: Iconify(
-                              Ion.sparkles_sharp,
-                              color: const Color(0xFFA855F7),
-                              size: 20,
+                          SizedBox(height: 10 * scale),
+                          Text(
+                            'Here\u2019s what\u2019s happening in your\nbusiness today..',
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.poppins(
+                              color: Colors.black,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w500,
+                              height: 1.4,
                             ),
                           ),
                         ],
                       );
                     },
                   ),
-                  const SizedBox(height: 32),
-                  GridView.builder(
+                  SizedBox(height: 16 * scale),
+                  HomeYoutubeEmbed(scale: scale),
+                  SizedBox(height: 11 * scale),
+                  Text(
+                    'Tools',
+                    style: GoogleFonts.poppins(
+                      color: Colors.black,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  SizedBox(height: 12 * scale),
+                  GridView.count(
+                    crossAxisCount: 2,
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    itemCount: menuItems.length,
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          crossAxisSpacing: 10,
-                          mainAxisSpacing: 10,
-                          // Figma tiles: 149 × 115 → width / height
-                          childAspectRatio: 149 / 115,
+                    mainAxisSpacing: 12 * scale,
+                    crossAxisSpacing: 12 * scale,
+                    childAspectRatio: 175 / 168,
+                    children: const [
+                      _HomeToolCard(
+                        title: 'Messaging',
+                        iconAsset: FigmaIcons.wechat,
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [Color(0xFFFB7185), Color(0xFFE11D48)],
                         ),
-                    itemBuilder: (context, index) {
-                      return _DashboardCard(item: menuItems[index]);
-                    },
+                        route: _HomeToolRoute.messaging,
+                      ),
+                      _HomeToolCard(
+                        title: 'Inbox',
+                        icon: HomeFigmaIcons.inbox,
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [Color(0xFF60A5FA), Color(0xFF2563EB)],
+                        ),
+                        route: _HomeToolRoute.inbox,
+                      ),
+                      _HomeToolCard(
+                        title: 'Marketing',
+                        iconAsset: FigmaIcons.marketing,
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [Color(0xFFA3E635), Color(0xFF65A30D)],
+                        ),
+                        route: _HomeToolRoute.marketing,
+                      ),
+                      _HomeToolCard(
+                        title: 'Customers',
+                        iconAsset: FigmaIcons.customers,
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [Color(0xFFFBBE24), Color(0xFFD97706)],
+                        ),
+                        route: _HomeToolRoute.customers,
+                      ),
+                      _HomeToolCard(
+                        title: 'Products',
+                        iconAsset: FigmaIcons.bag,
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [Color(0xFF22D3EE), Color(0xFF0891B2)],
+                        ),
+                        route: _HomeToolRoute.products,
+                      ),
+                      _HomeToolCard(
+                        title: 'Orders',
+                        icon: HomeFigmaIcons.orders,
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [Color(0xFFF48BB6), Color(0xFFDB2777)],
+                        ),
+                        route: _HomeToolRoute.orders,
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
           ),
-          Positioned(
-            right: 16,
-            bottom: 16 + MediaQuery.viewPaddingOf(context).bottom,
-            child: _AgentEntryButton(onTap: () => _setAgentMode(true)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _avatarCircle() {
-    return BlocBuilder<AuthBloc, AuthState>(
-      builder: (context, state) {
-        String? avatarUrl;
-        String initials = 'U';
-
-        if (state is Authenticated) {
-          final u = state.user;
-          final name = (u['fullname'] ?? u['email'] ?? 'User').toString();
-          initials = name.trim().isNotEmpty
-              ? name.trim()[0].toUpperCase()
-              : 'U';
-
-          avatarUrl =
-              (u['avatar'] ?? u['avatar_url'] ?? u['photo'] ?? u['photo_url'])
-                  ?.toString();
-          if (avatarUrl != null && avatarUrl.trim().isEmpty) avatarUrl = null;
-        }
-
-        return Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0xFF7C3AED), Color(0xFFF43F5E)],
-            ),
-          ),
-          padding: const EdgeInsets.all(2),
-          child: Container(
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: const Color(0xFF0A051D),
-              border: Border.all(color: const Color(0xFF0A051D), width: 2),
-            ),
-            child: CircleAvatar(
-              backgroundColor: const Color(0xFF0A051D),
-              backgroundImage: avatarUrl != null
-                  ? NetworkImage(avatarUrl)
-                  : null,
-              child: avatarUrl == null
-                  ? Text(
-                      initials,
-                      style: GoogleFonts.montserrat(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 16,
-                      ),
-                    )
-                  : null,
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _notificationBell({required int unreadCount}) {
-    return Container(
-      width: 48,
-      height: 48,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(color: CustColors.mainCol, width: 1),
-      ),
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          const Center(
-            child: Icon(
-              Icons.notifications_none,
-              color: Colors.white,
-              size: 20,
-            ),
-          ),
-          if (unreadCount > 0)
-            Positioned(
-              right: 12,
-              top: 12,
-              child: Container(
-                width: 8,
-                height: 8,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFEF4444),
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ),
-        ],
-      ),
     );
   }
 }
 
-class _DashboardCard extends StatelessWidget {
-  final HomeMenuItem item;
+enum _HomeToolRoute { inbox, messaging, marketing, customers, products, orders }
 
-  const _DashboardCard({required this.item});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: item.onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFF3F1163), width: 1),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _buildIcon(item.icon),
-            const SizedBox(height: 12),
-            Text(
-              item.title,
-              style: GoogleFonts.montserrat(
-                color: Colors.white,
-                fontSize: 13,
-                fontWeight: FontWeight.w300,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildIcon(dynamic icon) {
-    if (icon is IconData) {
-      return Icon(icon, color: Colors.white70, size: 30);
-    } else {
-      // Handle iconify icons (SVG strings)
-      return Iconify(icon, color: Colors.white70, size: 30);
-    }
-  }
-}
-
-class HomeMenuItem {
+class _HomeToolCard extends StatelessWidget {
   final String title;
-  final dynamic icon; // Changed from IconData to dynamic for Iconify icons
-  final VoidCallback onTap;
+  final IconData? icon;
+  final String? iconAsset;
+  final Gradient gradient;
+  final _HomeToolRoute route;
 
-  HomeMenuItem(this.title, this.icon, this.onTap);
-}
+  const _HomeToolCard({
+    required this.title,
+    this.icon,
+    this.iconAsset,
+    required this.gradient,
+    required this.route,
+  });
 
-class _AgentEntryButton extends StatelessWidget {
-  final VoidCallback onTap;
-
-  const _AgentEntryButton({required this.onTap});
+  void _open(BuildContext context) {
+    final Widget page = switch (route) {
+      _HomeToolRoute.inbox => const ManageChats(),
+      _HomeToolRoute.messaging => const ManageEmails(),
+      _HomeToolRoute.marketing => const ManageMarketing(),
+      _HomeToolRoute.customers => const ManageCustomers(),
+      _HomeToolRoute.products => const ManageProducts(),
+      _HomeToolRoute.orders => const ManageOrders(),
+    };
+    Navigator.push<void>(
+      context,
+      MaterialPageRoute<void>(builder: (_) => page),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: 'Agent mode',
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          width: 58,
-          height: 58,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0xFF7C3AED), Color(0xFFA855F7)],
-            ),
-            border: Border.all(color: Colors.white24, width: 1),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFFA855F7).withValues(alpha: 0.35),
-                blurRadius: 18,
-                offset: const Offset(0, 6),
+    final scale = MediaQuery.sizeOf(context).width / appShellDesignWidth;
+
+    return Material(
+      color: _HomeState._surfaceColor,
+      borderRadius: BorderRadius.circular(20 * scale),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => _open(context),
+        borderRadius: BorderRadius.circular(20 * scale),
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+            16 * scale,
+            16 * scale,
+            16 * scale,
+            14 * scale,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 40 * scale,
+                height: 40 * scale,
+                decoration: BoxDecoration(
+                  gradient: gradient,
+                  borderRadius: BorderRadius.circular(12 * scale),
+                ),
+                alignment: Alignment.center,
+                child: iconAsset != null
+                    ? FigmaSvgIcon(
+                        iconAsset!,
+                        size: 22 * scale.clamp(0.9, 1.05),
+                        color: Colors.white,
+                      )
+                    : HomeSfIcon(
+                        icon: icon!,
+                        size: 20 * scale.clamp(0.9, 1.05),
+                        color: Colors.white,
+                      ),
+              ),
+              SizedBox(height: 12 * scale),
+              Expanded(
+                child: Align(
+                  alignment: Alignment.bottomLeft,
+                  child: Text(
+                    title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.poppins(
+                      color: Colors.black,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      height: 1.25,
+                    ),
+                  ),
+                ),
               ),
             ],
           ),
-          child: const Icon(Icons.auto_awesome, color: Colors.white, size: 24),
+        ),
+      ),
+    );
+  }
+}
+
+class _NotificationBell extends StatelessWidget {
+  final double scale;
+  final int unreadCount;
+  final VoidCallback onTap;
+
+  const _NotificationBell({
+    required this.scale,
+    required this.unreadCount,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: _HomeState._surfaceColor,
+      shape: const CircleBorder(),
+      child: InkWell(
+        onTap: onTap,
+        customBorder: const CircleBorder(),
+        child: SizedBox(
+          width: 50 * scale.clamp(0.9, 1.05),
+          height: 50 * scale.clamp(0.9, 1.05),
+          child: Stack(
+            clipBehavior: Clip.none,
+            alignment: Alignment.center,
+            children: [
+              FigmaSvgIcon(
+                FigmaIcons.notificationBing,
+                size: 24 * scale.clamp(0.9, 1.05),
+              ),
+              if (unreadCount > 0)
+                Positioned(
+                  right: 10 * scale,
+                  top: 10 * scale,
+                  child: Container(
+                    width: 8 * scale,
+                    height: 8 * scale,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFEF4444),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );

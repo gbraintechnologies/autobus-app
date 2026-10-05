@@ -1,4 +1,6 @@
 import 'package:autobus/barrel.dart';
+import 'package:autobus/common_design/light_screen_theme.dart';
+import 'package:flutter/services.dart';
 
 // Initialize services at app level
 late TokenService _tokenService;
@@ -18,7 +20,7 @@ void main() async {
   // Don't block first frame on font CDN or StoreKit/Keychain.
   try {
     await GoogleFonts.pendingFonts([
-      GoogleFonts.montserrat(),
+      GoogleFonts.poppins(),
     ]).timeout(const Duration(seconds: 2));
     print('✓ Google Fonts loaded');
   } catch (_) {
@@ -99,11 +101,14 @@ class MyApp extends StatelessWidget {
           title: 'Autobus',
           theme: state.themeData,
           builder: (context, child) {
-            return MediaQuery(
-              data: MediaQuery.of(context).copyWith(
-                textScaler: AppScale.textScalerOf(context),
+            return AnnotatedRegion<SystemUiOverlayStyle>(
+              value: AppSystemUi.light,
+              child: MediaQuery(
+                data: MediaQuery.of(context).copyWith(
+                  textScaler: AppScale.textScalerOf(context),
+                ),
+                child: child ?? const SizedBox.shrink(),
               ),
-              child: child ?? const SizedBox.shrink(),
             );
           },
           home: const SplashWrapper(),

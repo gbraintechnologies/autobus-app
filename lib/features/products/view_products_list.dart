@@ -1,5 +1,11 @@
 import 'package:autobus/barrel.dart';
-import 'package:autobus/features/products/pricing_currency.dart';
+import 'package:autobus/common_design/light_screen_theme.dart';
+import 'package:autobus/common_design/widgets/app_bottom_nav.dart';
+import 'package:autobus/common_design/widgets/light_list_card.dart';
+import 'package:autobus/common_design/widgets/light_screen_scaffold.dart';
+import 'package:autobus/features/products/product_existing_gallery.dart';
+import 'package:autobus/features/products/product_media.dart';
+import 'package:autobus/icons/figma_icons.dart';
 
 class ViewProductsPage extends StatefulWidget {
   const ViewProductsPage({super.key});
@@ -15,7 +21,6 @@ class _ViewProductsPageState extends State<ViewProductsPage> {
   String? _loadError;
   String? _productsError;
   int? _expandedIndex;
-  String _currency = kDefaultPricingCurrency;
 
   String _fileName(Map<String, dynamic> doc) =>
       (doc['file_name'] ?? '').toString();
@@ -36,7 +41,16 @@ class _ViewProductsPageState extends State<ViewProductsPage> {
   }
 
   String _productPriceLabel(Map<String, dynamic> p) {
-    return formatProductPrice(p['price'], currency: _currency);
+    final raw = p['price'];
+    double? v;
+    if (raw is num) {
+      v = raw.toDouble();
+    } else {
+      v = double.tryParse(raw?.toString() ?? '');
+    }
+    if (v == null) return '—';
+    if (v == v.roundToDouble()) return v.toStringAsFixed(0);
+    return v.toStringAsFixed(2);
   }
 
   String? _stockLabel(Map<String, dynamic> p) {
@@ -79,14 +93,16 @@ class _ViewProductsPageState extends State<ViewProductsPage> {
       docsErr = e;
     }
 
-    final currency = await loadBusinessCurrency(api);
     if (!mounted) return;
     setState(() {
       _products = products;
       _documents = docs;
-      _currency = currency;
-      _productsError = productsErr == null ? null : userFacingError(productsErr);
-      _loadError = docsErr == null ? null : userFacingError(docsErr);
+      _productsError = productsErr == null
+          ? null
+          : userFacingError(productsErr, fallback: AppUserMessages.load);
+      _loadError = docsErr == null
+          ? null
+          : userFacingError(docsErr, fallback: AppUserMessages.load);
       _loading = false;
       _expandedIndex = null;
     });
@@ -109,33 +125,24 @@ class _ViewProductsPageState extends State<ViewProductsPage> {
         _expandedIndex = null;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Deleted "$name"', style: GoogleFonts.outfit())),
+        SnackBar(
+          content: Text('Deleted "$name"', style: GoogleFonts.poppins()),
+        ),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            userFacingError(e),
-            style: GoogleFonts.outfit(),
-          ),
+          content: Text(userFacingError(e), style: GoogleFonts.poppins()),
         ),
       );
     }
   }
 
-  Widget _sectionTitle(String text) {
+  Widget _sectionTitle(double scale, String text) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Text(
-        text,
-        style: GoogleFonts.montserrat(
-          color: Colors.white.withValues(alpha: 0.9),
-          fontSize: 13,
-          fontWeight: FontWeight.w500,
-          letterSpacing: 0.2,
-        ),
-      ),
+      padding: EdgeInsets.only(bottom: 12 * scale),
+      child: Text(text, style: LightScreenTheme.hubTitle(scale)),
     );
   }
 
@@ -145,82 +152,117 @@ class _ViewProductsPageState extends State<ViewProductsPage> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => ProductDetailScreen(
-          productId: id,
-          initialName: _productName(p),
-        ),
+        builder: (_) =>
+            ProductDetailScreen(productId: id, initialName: _productName(p)),
       ),
     ).then((refreshed) {
       if (refreshed == true && mounted) _loadAll();
     });
   }
 
-  Widget _productCard(Map<String, dynamic> p) {
-    final category = _productCategory(p);
-    final stock = _stockLabel(p);
-    return GestureDetector(
-      onTap: () => _openProduct(context, p),
-      behavior: HitTestBehavior.opaque,
-      child: Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        border: Border.all(color: const Color(0xFF3F1163), width: 1),
-        borderRadius: BorderRadius.circular(26),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            _productName(p),
-            style: GoogleFonts.outfit(
-              color: Colors.white,
-              fontSize: 17,
-              fontWeight: FontWeight.w400,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Text(
-                _productPriceLabel(p),
-                style: GoogleFonts.outfit(
-                  color: const Color(0xFFA855F7),
-                  fontSize: 15,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              if (stock != null) ...[
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Text(
-                    stock,
-                    textAlign: TextAlign.end,
-                    style: GoogleFonts.outfit(
-                      color: Colors.white.withValues(alpha: 0.5),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w300,
-                    ),
+  String? _productImageUrl(Map<String, dynamic> p) {
+    final candidates = <Object?>[
+      p['primary_photo'],
+      p['cover_url'],
+      p['photo'],
+      if (p['photos'] is List) ...(p['photos'] as List),
+    ];
+    for (final c in candidates) {
+      final url =
+          (c is Map ? (c['url'] ?? c['image_url']) : c)?.toString().trim() ??
+          '';
+      if (url.startsWith('http') && !productMediaLooksLikeVideo(url)) {
+        return url;
+      }
+    }
+    return null;
+  }
+
+  Widget _productThumb(double scale, String? url) {
+    final size = 64 * scale;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12 * scale),
+      child: SizedBox(
+        width: size,
+        height: size,
+        child: url == null
+            ? ColoredBox(
+                color: LightScreenTheme.border,
+                child: Center(
+                  child: FigmaSvgIcon(
+                    FigmaIcons.bag,
+                    size: 24 * scale.clamp(0.9, 1.05),
+                    color: LightScreenTheme.muted,
                   ),
                 ),
-              ],
-            ],
-          ),
-          if (category != null) ...[
-            const SizedBox(height: 8),
+              )
+            : productRemoteImage(url, fit: BoxFit.cover),
+      ),
+    );
+  }
+
+  Widget _productCard(double scale, Map<String, dynamic> p) {
+    final category = _productCategory(p);
+    final stock = _stockLabel(p);
+    return Padding(
+      padding: EdgeInsets.only(bottom: 12 * scale),
+      child: LightListCard(
+        scale: scale,
+        onTap: () => _openProduct(context, p),
+        child: Row(
+          children: [
+            _productThumb(scale, _productImageUrl(p)),
+            SizedBox(width: 14 * scale),
+            Expanded(child: _productCardDetails(scale, p, category, stock)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _productCardDetails(
+    double scale,
+    Map<String, dynamic> p,
+    String? category,
+    String? stock,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          _productName(p),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: LightScreenTheme.listTitle(scale),
+        ),
+        SizedBox(height: 8 * scale),
+        Row(
+          children: [
             Text(
-              category,
-              style: GoogleFonts.outfit(
-                color: Colors.white.withValues(alpha: 0.45),
-                fontSize: 11,
-                fontWeight: FontWeight.w300,
+              _productPriceLabel(p),
+              style: GoogleFonts.poppins(
+                color: LightScreenTheme.accent,
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
               ),
             ),
+            if (stock != null) ...[
+              SizedBox(width: 14 * scale),
+              Expanded(
+                child: Text(
+                  stock,
+                  textAlign: TextAlign.end,
+                  style: LightScreenTheme.listSubtitle(scale),
+                ),
+              ),
+            ],
           ],
+        ),
+        if (category != null) ...[
+          SizedBox(height: 8 * scale),
+          Text(category, style: LightScreenTheme.listSubtitle(scale)),
         ],
-      ),
-      ),
+      ],
     );
   }
 
@@ -231,58 +273,53 @@ class _ViewProductsPageState extends State<ViewProductsPage> {
 
   String? get _blockingError => _productsError ?? _loadError;
 
-  Widget _emptyStateList() {
+  Widget _emptyStateList(double scale) {
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
+      padding: EdgeInsets.symmetric(horizontal: 20 * scale),
       children: [
         SizedBox(height: MediaQuery.sizeOf(context).height * 0.25),
         Center(
           child: Text(
             'No products yet',
-            style: GoogleFonts.outfit(
-              color: Colors.white.withValues(alpha: 0.6),
-              fontSize: 16,
-            ),
+            style: LightScreenTheme.emptyState(scale),
           ),
         ),
       ],
     );
   }
 
-  List<Widget> _productSectionChildren() {
+  List<Widget> _productSectionChildren(double scale) {
     if (_products.isEmpty) return [];
     return [
-      _sectionTitle('Products'),
-      ..._products.map(_productCard),
-      const SizedBox(height: 8),
+      _sectionTitle(scale, 'Products'),
+      ..._products.map((p) => _productCard(scale, p)),
+      SizedBox(height: 8 * scale),
     ];
   }
 
-  List<Widget> _catalogueSectionChildren() {
+  List<Widget> _catalogueSectionChildren(double scale) {
     if (_documents.isEmpty && _loadError == null) return [];
     return [
-      _sectionTitle('Catalogue files'),
+      _sectionTitle(scale, 'Catalogue files'),
       if (_loadError != null)
         Padding(
-          padding: const EdgeInsets.only(bottom: 12),
+          padding: EdgeInsets.only(bottom: 12 * scale),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
                 child: Text(
                   _loadError!,
-                  style: GoogleFonts.outfit(
-                    color: Colors.white.withValues(alpha: 0.65),
-                    fontSize: 13,
-                  ),
+                  style: LightScreenTheme.emptyState(scale),
                 ),
               ),
               TextButton(
                 onPressed: _loadAll,
                 child: Text(
                   'Retry',
-                  style: GoogleFonts.outfit(
-                    color: const Color(0xFFA855F7),
+                  style: GoogleFonts.poppins(
+                    color: LightScreenTheme.accent,
                     fontSize: 14,
                   ),
                 ),
@@ -298,86 +335,58 @@ class _ViewProductsPageState extends State<ViewProductsPage> {
           final isExpanded = _expandedIndex == index;
 
           return Padding(
-            padding: const EdgeInsets.only(bottom: 16),
-            child: GestureDetector(
+            padding: EdgeInsets.only(bottom: 12 * scale),
+            child: LightListCard(
+              scale: scale,
+              padding: EdgeInsets.all(isExpanded ? 24 * scale : 20 * scale),
               onTap: () {
                 setState(() {
                   _expandedIndex = isExpanded ? null : index;
                 });
               },
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                padding: EdgeInsets.all(isExpanded ? 32 : 24),
-                decoration: BoxDecoration(
-                  border: Border.all(color: const Color(0xFF3F1163), width: 1),
-                  borderRadius: BorderRadius.circular(isExpanded ? 38 : 30),
-                ),
-                child: isExpanded
-                    ? Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
+              child: isExpanded
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(name, style: LightScreenTheme.listTitle(scale)),
+                        if (key != null) ...[
+                          SizedBox(height: 12 * scale),
                           Text(
-                            name,
-                            style: GoogleFonts.outfit(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w400,
-                            ),
-                          ),
-                          if (key != null) ...[
-                            const SizedBox(height: 12),
-                            Text(
-                              key,
-                              style: GoogleFonts.outfit(
-                                color: Colors.white.withValues(alpha: 0.65),
-                                fontSize: 11,
-                                fontWeight: FontWeight.w300,
-                              ),
-                            ),
-                          ],
-                          const SizedBox(height: 16),
-                          Center(
-                            child: TextButton(
-                              onPressed: () => _deleteAt(index),
-                              child: Text(
-                                'Delete file',
-                                style: GoogleFonts.outfit(
-                                  color: Colors.white.withValues(alpha: 0.75),
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w300,
-                                ),
-                              ),
-                            ),
+                            key,
+                            style: LightScreenTheme.listSubtitle(scale),
                           ),
                         ],
-                      )
-                    : Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            name,
-                            style: GoogleFonts.outfit(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.w400,
-                            ),
-                          ),
-                          if (key != null) ...[
-                            const SizedBox(height: 6),
-                            Text(
-                              key,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.outfit(
-                                color: Colors.white.withValues(alpha: 0.45),
-                                fontSize: 11,
-                                fontWeight: FontWeight.w300,
+                        SizedBox(height: 16 * scale),
+                        Center(
+                          child: TextButton(
+                            onPressed: () => _deleteAt(index),
+                            child: Text(
+                              'Delete file',
+                              style: GoogleFonts.poppins(
+                                color: LightScreenTheme.muted,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
-                          ],
+                          ),
+                        ),
+                      ],
+                    )
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(name, style: LightScreenTheme.listTitle(scale)),
+                        if (key != null) ...[
+                          SizedBox(height: 6 * scale),
+                          Text(
+                            key,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: LightScreenTheme.listSubtitle(scale),
+                          ),
                         ],
-                      ),
-              ),
+                      ],
+                    ),
             ),
           );
         }),
@@ -386,92 +395,60 @@ class _ViewProductsPageState extends State<ViewProductsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          const DecoratedBox(
-            decoration: ManageScreenStyle.homeDashboardBodyDecoration,
-          ),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const ManageScreenBackButton(),
-                      const SizedBox(width: 18),
-                      Expanded(
-                        child: Text(
-                          'Product catalogue',
-                          style: ManageScreenStyle.headerTitleStyle(),
+    final scale = MediaQuery.sizeOf(context).width / appShellDesignWidth;
+
+    return LightScreenScaffold(
+      title: 'Product catalogue',
+      creditCategory: CreditCategory.storageMb,
+      body: Padding(
+        padding: EdgeInsets.fromLTRB(
+          20 * scale,
+          20 * scale,
+          20 * scale,
+          24 * scale,
+        ),
+        child: _loading
+            ? const Center(child: AutobusLoadingIndicator(size: 32))
+            : _blockingError != null && _hasNothingToShow
+            ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16 * scale),
+                      child: Text(
+                        _blockingError!,
+                        textAlign: TextAlign.center,
+                        style: LightScreenTheme.emptyState(scale),
+                      ),
+                    ),
+                    SizedBox(height: 16 * scale),
+                    TextButton(
+                      onPressed: _loadAll,
+                      child: Text(
+                        'Retry',
+                        style: GoogleFonts.poppins(
+                          color: LightScreenTheme.accent,
+                          fontSize: 16,
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 32),
-                  Expanded(
-                    child: _loading
-                        ? const Center(
-                            child:                             const AutobusLoadingIndicator(size: 32),
-                          )
-                        : _blockingError != null && _hasNothingToShow
-                        ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                  ),
-                                  child: Text(
-                                    _blockingError!,
-                                    textAlign: TextAlign.center,
-                                    style: GoogleFonts.outfit(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.75,
-                                      ),
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 16),
-                                TextButton(
-                                  onPressed: _loadAll,
-                                  child: Text(
-                                    'Retry',
-                                    style: GoogleFonts.outfit(
-                                      color: const Color(0xFFA855F7),
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )
-                        : RefreshIndicator(
-                            color: const Color(0xFFA855F7),
-                            onRefresh: _loadAll,
-                            child: _showEmptyState
-                                ? _emptyStateList()
-                                : ListView(
-                                    physics:
-                                        const AlwaysScrollableScrollPhysics(),
-                                    children: [
-                                      ..._productSectionChildren(),
-                                      ..._catalogueSectionChildren(),
-                                    ],
-                                  ),
-                          ),
-                  ),
-                ],
+                    ),
+                  ],
+                ),
+              )
+            : RefreshIndicator(
+                color: LightScreenTheme.accent,
+                onRefresh: _loadAll,
+                child: _showEmptyState
+                    ? _emptyStateList(scale)
+                    : ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        children: [
+                          ..._productSectionChildren(scale),
+                          ..._catalogueSectionChildren(scale),
+                        ],
+                      ),
               ),
-            ),
-          ),
-        ],
       ),
     );
   }

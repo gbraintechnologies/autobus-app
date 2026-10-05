@@ -4,6 +4,7 @@ import 'package:equatable/equatable.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'package:autobus/common_design/app_error.dart';
+import 'package:autobus/common_design/user_facing_error.dart';
 import 'package:autobus/config/app_config.dart';
 import 'package:autobus/common_bloc/success_bloc.dart';
 import '../models/token_model.dart';
@@ -81,6 +82,18 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     };
   }
 
+  Map<String, String> _authHeadersForToken(String accessToken) => {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer $accessToken',
+  };
+
+  Map<String, dynamic> _unwrapTokenPayload(Map<String, dynamic> data) {
+    if (data['access_token'] != null) return data;
+    final nested = data['data'] ?? data['tokens'] ?? data['token'];
+    if (nested is Map) return Map<String, dynamic>.from(nested);
+    return data;
+  }
+
   String _authHttpError(http.Response response, {required String action}) {
     return AppException.fromAuthResponse(response, action: action).userMessage;
   }
@@ -112,17 +125,36 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       );
 
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
+        final decoded = json.decode(response.body);
+        if (decoded is! Map) {
+          emit(
+            AuthError(
+              message: _authHttpError(response, action: 'signing in'),
+              source: 'login',
+            ),
+          );
+          return;
+        }
 
-        // Parse and save token
-        final tokenModel = TokenModel.fromJson(data);
+        final tokenModel = TokenModel.fromJson(
+          _unwrapTokenPayload(Map<String, dynamic>.from(decoded)),
+        );
+        if (tokenModel.accessToken.isEmpty) {
+          emit(
+            AuthError(
+              message: _authHttpError(response, action: 'signing in'),
+              source: 'login',
+            ),
+          );
+          return;
+        }
+
         await tokenService.saveToken(tokenModel);
 
-        // Fetch user data using access token
         final userResponse = await _timed(
           http.get(
             Uri.parse('${AppConfig.backendUrl}/api/v1/user/me'),
-            headers: await _getAuthHeaders(),
+            headers: _authHeadersForToken(tokenModel.accessToken),
           ),
         );
 
@@ -191,19 +223,25 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
         if (loginResponse.statusCode == 200) {
           final tokenData = json.decode(loginResponse.body);
-          final tokenModel = TokenModel.fromJson(tokenData);
-          await tokenService.saveToken(tokenModel);
-
-          try {
-            final userResponse = await http.get(
-              Uri.parse('${AppConfig.backendUrl}/api/v1/user/me'),
-              headers: await _getAuthHeaders(),
+          if (tokenData is Map) {
+            final tokenModel = TokenModel.fromJson(
+              _unwrapTokenPayload(Map<String, dynamic>.from(tokenData)),
             );
-            if (userResponse.statusCode == 200) {
-              final userData = json.decode(userResponse.body);
-              await _persistUser(userData);
-            }
-          } catch (_) {}
+            await tokenService.saveToken(tokenModel);
+
+            try {
+              final userResponse = await _timed(
+                http.get(
+                  Uri.parse('${AppConfig.backendUrl}/api/v1/user/me'),
+                  headers: _authHeadersForToken(tokenModel.accessToken),
+                ),
+              );
+              if (userResponse.statusCode == 200) {
+                final userData = json.decode(userResponse.body);
+                await _persistUser(userData);
+              }
+            } catch (_) {}
+          }
         }
         // Emit Registered regardless — subscription flow proceeds even if
         // auto-login fails (user can still log in manually afterwards).
@@ -583,14 +621,19 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         return;
       }
 
-      final response = await http.post(
-        Uri.parse('${AppConfig.backendUrl}/api/v1/auth/refresh'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({'refresh_token': refreshToken}),
+      final response = await _timed(
+        http.post(
+          Uri.parse('${AppConfig.backendUrl}/api/v1/auth/refresh'),
+          headers: {'Content-Type': 'application/json'},
+          body: json.encode({'refresh_token': refreshToken}),
+        ),
       );
 
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
+        final decoded = json.decode(response.body);
+        final data = decoded is Map
+            ? _unwrapTokenPayload(Map<String, dynamic>.from(decoded))
+            : <String, dynamic>{};
         final existing = await tokenService.getToken();
         final newTokenModel = TokenModel.fromJson(
           data,
@@ -601,9 +644,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         await tokenService.updateToken(newTokenModel);
 
         // Fetch updated user data
-        final userResponse = await http.get(
-          Uri.parse('${AppConfig.backendUrl}/api/v1/user/me'),
-          headers: await _getAuthHeaders(),
+        final userResponse = await _timed(
+          http.get(
+            Uri.parse('${AppConfig.backendUrl}/api/v1/user/me'),
+            headers: await _getAuthHeaders(),
+          ),
         );
 
         if (userResponse.statusCode == 200) {
