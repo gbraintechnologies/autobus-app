@@ -105,7 +105,8 @@ class _HomeState extends State<Home> {
     return AppShellScaffold(
       destination: AppShellDestination.home,
       onTabSelected: (tab) => AppShellNavigation.onTabSelected(context, tab),
-      onCenterNavTap: () => AppShellNavigation.openIntelligence(context),
+      loadUnreadCount: () =>
+          context.read<ApiService>().getUnreadNotificationCount(),
       showAiFab: true,
       onAiTap: () => _setAgentMode(true),
       body: SafeArea(
@@ -128,8 +129,29 @@ class _HomeState extends State<Home> {
                           size: 50 * scale.clamp(0.9, 1.05),
                           onLightBackground: true,
                         ),
-                        const Expanded(
-                          child: Center(child: AiSparkleIcon(size: 35)),
+                        Expanded(
+                          child: Center(
+                            child: Semantics(
+                              button: true,
+                              label: 'Intelligence',
+                              child: GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTap: () =>
+                                    AppShellNavigation.openIntelligence(
+                                      context,
+                                    ),
+                                child: SizedBox(
+                                  width: 44 * scale.clamp(0.9, 1.05),
+                                  height: 44 * scale.clamp(0.9, 1.05),
+                                  child: Center(
+                                    child: AiSparkleIcon(
+                                      size: 35 * scale.clamp(0.9, 1.05),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
                         ),
                         FutureBuilder<int>(
                           future: _unreadCountFuture,
@@ -193,10 +215,10 @@ class _HomeState extends State<Home> {
                     },
                   ),
                   SizedBox(height: 16 * scale),
-                  HomeYoutubeEmbed(scale: scale),
+                  HomeNeedsFeed(scale: scale),
                   SizedBox(height: 11 * scale),
                   Text(
-                    'Tools',
+                    'Agents',
                     style: GoogleFonts.poppins(
                       color: Colors.black,
                       fontSize: 15,
@@ -210,10 +232,11 @@ class _HomeState extends State<Home> {
                     physics: const NeverScrollableScrollPhysics(),
                     mainAxisSpacing: 12 * scale,
                     crossAxisSpacing: 12 * scale,
-                    childAspectRatio: 175 / 168,
+                    childAspectRatio: 175 / 146,
                     children: const [
                       _HomeToolCard(
                         title: 'Messaging',
+                        subtitle: 'Customer chats',
                         iconAsset: FigmaIcons.wechat,
                         gradient: LinearGradient(
                           begin: Alignment.topCenter,
@@ -224,6 +247,7 @@ class _HomeState extends State<Home> {
                       ),
                       _HomeToolCard(
                         title: 'Inbox',
+                        subtitle: 'New conversations',
                         icon: HomeFigmaIcons.inbox,
                         gradient: LinearGradient(
                           begin: Alignment.topCenter,
@@ -234,6 +258,7 @@ class _HomeState extends State<Home> {
                       ),
                       _HomeToolCard(
                         title: 'Marketing',
+                        subtitle: 'Posts and campaigns',
                         iconAsset: FigmaIcons.marketing,
                         gradient: LinearGradient(
                           begin: Alignment.topCenter,
@@ -244,6 +269,7 @@ class _HomeState extends State<Home> {
                       ),
                       _HomeToolCard(
                         title: 'Customers',
+                        subtitle: 'People you sell to',
                         iconAsset: FigmaIcons.customers,
                         gradient: LinearGradient(
                           begin: Alignment.topCenter,
@@ -254,6 +280,7 @@ class _HomeState extends State<Home> {
                       ),
                       _HomeToolCard(
                         title: 'Products',
+                        subtitle: 'Catalogue and prices',
                         iconAsset: FigmaIcons.bag,
                         gradient: LinearGradient(
                           begin: Alignment.topCenter,
@@ -264,6 +291,7 @@ class _HomeState extends State<Home> {
                       ),
                       _HomeToolCard(
                         title: 'Orders',
+                        subtitle: 'Open and completed',
                         icon: HomeFigmaIcons.orders,
                         gradient: LinearGradient(
                           begin: Alignment.topCenter,
@@ -286,6 +314,7 @@ enum _HomeToolRoute { inbox, messaging, marketing, customers, products, orders }
 
 class _HomeToolCard extends StatelessWidget {
   final String title;
+  final String subtitle;
   final IconData? icon;
   final String? iconAsset;
   final Gradient gradient;
@@ -293,6 +322,7 @@ class _HomeToolCard extends StatelessWidget {
 
   const _HomeToolCard({
     required this.title,
+    required this.subtitle,
     this.icon,
     this.iconAsset,
     required this.gradient,
@@ -326,18 +356,13 @@ class _HomeToolCard extends StatelessWidget {
         onTap: () => _open(context),
         borderRadius: BorderRadius.circular(20 * scale),
         child: Padding(
-          padding: EdgeInsets.fromLTRB(
-            16 * scale,
-            16 * scale,
-            16 * scale,
-            14 * scale,
-          ),
+          padding: EdgeInsets.all(20 * scale),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: 40 * scale,
-                height: 40 * scale,
+                width: 44 * scale,
+                height: 44 * scale,
                 decoration: BoxDecoration(
                   gradient: gradient,
                   borderRadius: BorderRadius.circular(12 * scale),
@@ -355,21 +380,28 @@ class _HomeToolCard extends StatelessWidget {
                         color: Colors.white,
                       ),
               ),
-              SizedBox(height: 12 * scale),
-              Expanded(
-                child: Align(
-                  alignment: Alignment.bottomLeft,
-                  child: Text(
-                    title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.poppins(
-                      color: Colors.black,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      height: 1.25,
-                    ),
-                  ),
+              SizedBox(height: 20 * scale),
+              Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.poppins(
+                  color: Colors.black,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  height: 1.25,
+                ),
+              ),
+              SizedBox(height: 4 * scale),
+              Text(
+                subtitle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.poppins(
+                  color: const Color(0xFF64748B),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w400,
+                  height: 1.3,
                 ),
               ),
             ],

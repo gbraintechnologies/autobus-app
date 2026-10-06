@@ -36,9 +36,12 @@ class UserAvatar extends StatelessWidget {
                 .first
                 .substring(0, 1)
                 .toUpperCase();
-            url =
-                (u['avatar'] ?? u['avatar_url'] ?? u['photo'] ?? u['photo_url'])
-                    ?.toString();
+            url = (u['profile_picture_url'] ??
+                    u['avatar'] ??
+                    u['avatar_url'] ??
+                    u['photo'] ??
+                    u['photo_url'])
+                ?.toString();
             if (url != null && url.trim().isEmpty) url = null;
           }
         }
@@ -60,12 +63,23 @@ class UserAvatar extends StatelessWidget {
             border: Border.all(color: CustColors.mainCol, width: 1),
           ),
           alignment: Alignment.center,
-          child: CircleAvatar(
-            radius: (size / 2) - 1,
-            backgroundColor: Colors.transparent,
-            backgroundImage: url != null ? NetworkImage(url) : null,
-            child: url == null ? Text(chars, style: textStyle) : null,
-          ),
+          child: url != null
+              ? CircleAvatar(
+                  radius: (size / 2) - 1,
+                  backgroundColor: Colors.transparent,
+                  backgroundImage: NetworkImage(url),
+                )
+              : ClipOval(
+                  child: Image.asset(
+                    'assets/img/avatar_3d.jpg',
+                    width: size - 2,
+                    height: size - 2,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Center(
+                      child: Text(chars, style: textStyle),
+                    ),
+                  ),
+                ),
         );
 
         return GestureDetector(

@@ -5,6 +5,7 @@ import 'dart:developer';
 import 'package:autobus/features/chat/models/chatwoot_inbox.dart';
 import 'package:autobus/features/marketing/models/postiz_integration.dart';
 import 'package:autobus/features/marketing/tiktok_creator_info.dart';
+import 'package:autobus/features/home/models/owner_resource.dart';
 import 'package:autobus/features/notifications/models/app_notification.dart';
 import 'dart:io';
 import 'package:http/http.dart' as http;
@@ -3204,6 +3205,18 @@ class ApiService {
     }
     if (response.statusCode == 401) throw Exception('Session expired');
     _fail(response, 'sending email');
+  }
+
+  /// GET /api/v1/resources/feed — niche videos, trending news, and app guides.
+  Future<OwnerFeed> getOwnerResourceFeed() async {
+    final response = await httpClient.get(Uri.parse('$baseUrl/resources/feed'));
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      if (data is Map<String, dynamic>) return OwnerFeed.fromJson(data);
+      if (data is Map) return OwnerFeed.fromJson(Map<String, dynamic>.from(data));
+    }
+    if (response.statusCode == 401) throw Exception('Session expired');
+    _fail(response, 'loading resources');
   }
 }
 
