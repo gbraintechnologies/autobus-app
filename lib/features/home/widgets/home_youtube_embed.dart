@@ -158,6 +158,10 @@ class _HomeNeedsFeedState extends State<HomeNeedsFeed> {
       borderRadius: BorderRadius.circular(20 * scale),
       child: InkWell(
         onTap: _openResources,
+        splashFactory: NoSplash.splashFactory,
+        splashColor: Colors.transparent,
+        highlightColor: Colors.transparent,
+        hoverColor: Colors.transparent,
         borderRadius: BorderRadius.circular(20 * scale),
         child: SizedBox(
           height: 120 * scale,
@@ -195,6 +199,10 @@ class _VideoCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
+        splashFactory: NoSplash.splashFactory,
+        splashColor: Colors.transparent,
+        highlightColor: Colors.transparent,
+        hoverColor: Colors.transparent,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [

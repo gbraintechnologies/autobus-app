@@ -1,7 +1,10 @@
 import 'package:autobus/barrel.dart';
 import 'package:flutter/services.dart';
 
-/// Four-box numeric PIN field used for login, signup, and app lock.
+/// Four pill-shaped digit boxes used for login, signup, and app lock.
+///
+/// Filled boxes use the purple stroke; empty boxes use the gray stroke.
+/// Digits stay visible, matching the auth frame.
 class PinDigitInput extends StatefulWidget {
   const PinDigitInput({
     super.key,
@@ -41,7 +44,6 @@ class PinDigitInputState extends State<PinDigitInput> {
   void initState() {
     super.initState();
     _controller.addListener(_keepCursorAtEnd);
-    _focusNode.addListener(_onFocusChange);
     if (widget.autofocus) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _focusNode.requestFocus();
@@ -52,14 +54,9 @@ class PinDigitInputState extends State<PinDigitInput> {
   @override
   void dispose() {
     _controller.removeListener(_keepCursorAtEnd);
-    _focusNode.removeListener(_onFocusChange);
     _controller.dispose();
     _focusNode.dispose();
     super.dispose();
-  }
-
-  void _onFocusChange() {
-    if (mounted) setState(() {});
   }
 
   /// Keep the caret after the last digit so backspace always deletes
@@ -98,30 +95,38 @@ class PinDigitInputState extends State<PinDigitInput> {
   @override
   Widget build(BuildContext context) {
     final value = pin;
-    final activeIndex = value.length == _length ? _length - 1 : value.length;
+    final scale = AuthScreenTokens.scaleOf(context);
+    final boxWidth = AuthScreenTokens.digitBoxWidth * scale;
+    final boxHeight = AuthScreenTokens.digitBoxHeight * scale;
+    final gap = AuthScreenTokens.digitBoxGap * scale;
+    final radius = AuthScreenTokens.digitBoxRadius * scale;
 
     final boxes = <Widget>[];
     for (var i = 0; i < _length; i++) {
       final filled = i < value.length;
-      final isActive = widget.enabled && _focusNode.hasFocus && i == activeIndex;
       boxes.add(
-        SizedBox(
-          width: 52,
-          child: InputDecorator(
-            isEmpty: !filled,
-            isFocused: isActive,
-            decoration: InputDecoration(
-              border: const UnderlineInputBorder(),
-              enabled: widget.enabled,
-              counterText: '',
+        Container(
+          width: boxWidth,
+          height: boxHeight,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: AuthScreenTokens.otpFillColor,
+            borderRadius: BorderRadius.circular(radius),
+            border: Border.all(
+              color: filled
+                  ? AuthScreenTokens.accentColor
+                  : AuthScreenTokens.emptyBorderColor,
+              width: 1,
             ),
-            child: Text(
-              filled ? '•' : ' ',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(
-                fontSize: 18,
-                fontWeight: FontWeight.w500,
-              ),
+          ),
+          child: Text(
+            filled ? value[i] : '',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.poppins(
+              color: Colors.black,
+              fontSize: 18,
+              fontWeight: FontWeight.w500,
+              height: 1,
             ),
           ),
         ),
@@ -130,13 +135,14 @@ class PinDigitInputState extends State<PinDigitInput> {
 
     return Center(
       child: SizedBox(
-        width: 52 * _length + 16 * (_length - 1),
+        width: boxWidth * _length + gap * (_length - 1),
+        height: boxHeight,
         child: Stack(
           clipBehavior: Clip.hardEdge,
           children: [
             IgnorePointer(
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                spacing: gap,
                 children: boxes,
               ),
             ),
@@ -150,7 +156,7 @@ class PinDigitInputState extends State<PinDigitInput> {
                   autofocus: widget.autofocus,
                   keyboardType: TextInputType.number,
                   // Do not use obscureText: iOS secureTextEntry makes repeated
-                  // backspaces fail. Digits are already hidden by the overlay.
+                  // backspaces fail. The pill boxes above show the digits.
                   obscureText: false,
                   autocorrect: false,
                   enableSuggestions: false,

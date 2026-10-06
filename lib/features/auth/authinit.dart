@@ -1,4 +1,5 @@
 import 'package:autobus/barrel.dart';
+import 'package:autobus/common_design/widgets/app_shell_navigation.dart';
 import 'package:autobus/features/subscription/subscription_guard.dart';
 
 class AuthWrapper extends StatefulWidget {
@@ -95,10 +96,12 @@ class _AuthWrapperState extends State<AuthWrapper> {
 
         if (state is BusinessSwitching) {
           _popToRoot();
+          AppShellNavigation.resetToHome();
         }
 
         if (state is Authenticated && state.resetNavigation) {
           _popToRoot();
+          AppShellNavigation.resetToHome();
         }
 
         if (state is SessionExpired) {

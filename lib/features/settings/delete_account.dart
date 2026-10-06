@@ -158,7 +158,7 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
     return BlocListener<AuthBloc, AuthState>(
       listener: (context, state) {
         if (state is Unauthenticated) {
-          Navigator.of(context).pushAndRemoveUntil(
+          Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
             MaterialPageRoute(builder: (_) => const LoggedOutGate()),
             (route) => false,
           );

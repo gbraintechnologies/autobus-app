@@ -112,4 +112,15 @@ class AppNotification {
       flutterPage: flutterPage.isEmpty ? null : flutterPage,
     );
   }
+
+  AppNotification copyWith({bool? read}) {
+    return AppNotification(
+      id: id,
+      title: title,
+      body: body,
+      createdAt: createdAt,
+      read: read ?? this.read,
+      flutterPage: flutterPage,
+    );
+  }
 }

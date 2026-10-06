@@ -44,7 +44,7 @@ class _PinUnlockPageState extends State<PinUnlockPage> {
       return;
     }
     Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const LogorSign()),
+      MaterialPageRoute(builder: (_) => const AuthWrapper()),
       (route) => false,
     );
   }

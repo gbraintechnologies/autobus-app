@@ -4,7 +4,6 @@ import 'package:autobus/barrel.dart';
 import 'package:autobus/common_design/light_screen_theme.dart';
 import 'package:autobus/common_design/widgets/app_bottom_nav.dart';
 import 'package:autobus/common_design/widgets/app_screen_header.dart';
-import 'package:autobus/common_design/widgets/app_shell_navigation.dart';
 import 'package:autobus/common_design/widgets/credits_pill.dart';
 import 'package:autobus/features/intelligence/intelligence_files_page.dart';
 import 'package:autobus/features/intelligence/intelligence_intro_modal.dart';
@@ -127,11 +126,9 @@ class _ManageIntelligenceState extends State<ManageIntelligence> {
   @override
   Widget build(BuildContext context) {
     final scale = MediaQuery.sizeOf(context).width / appShellDesignWidth;
-    final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
 
-    return AppShellScaffold(
-      destination: AppShellDestination.intelligence,
-      onTabSelected: (tab) => AppShellNavigation.onTabSelected(context, tab),
+    return Scaffold(
+      backgroundColor: const Color(0xFFF3F3F7),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -158,7 +155,7 @@ class _ManageIntelligenceState extends State<ManageIntelligence> {
                   21 * scale,
                   20 * scale,
                   21 * scale,
-                  130 * scale + bottomInset,
+                  32 * scale,
                 ),
                 children: [
                   _OnboardingProfileCard(

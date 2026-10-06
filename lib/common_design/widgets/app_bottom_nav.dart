@@ -1,188 +1,127 @@
+import 'package:autobus/common_design/colors.dart';
 import 'package:autobus/common_design/widgets/ai_sparkle_icon.dart';
 import 'package:autobus/icons/figma_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:iconify_flutter/iconify_flutter.dart';
+import 'package:iconify_flutter/icons/ph.dart';
 
-enum AppNavTab { home, analytics }
-
-/// Which main shell screen is active — drives nav icon colors only.
-enum AppShellDestination { home, analytics, intelligence }
+enum AppNavTab { home, people, shop, notifications }
 
 const appShellDesignWidth = 402.0;
 
-/// Shared bottom navigation used across main app screens.
+const _pillBarHeight = 50.0;
+const _pillBottomGap = 10.0;
+const _fabClearance = 14.0;
+
+const _activeColor = CustColors.logodeep;
+const _activeBubble = Color(0xFFE8D2F2);
+const _iconInk = CustColors.mainCol;
+const _badgeRed = CustColors.accentRed;
+
+/// Floating pill navigation used on the main dashboard shell.
 class AppBottomNav extends StatelessWidget {
-  final AppShellDestination destination;
+  final AppNavTab activeTab;
   final ValueChanged<AppNavTab>? onTabSelected;
-  final VoidCallback? onCenterTap;
+  final Future<int> Function()? loadUnreadCount;
+  final Listenable? badgeRefresh;
 
   const AppBottomNav({
     super.key,
-    this.destination = AppShellDestination.home,
+    this.activeTab = AppNavTab.home,
     this.onTabSelected,
-    this.onCenterTap,
+    this.loadUnreadCount,
+    this.badgeRefresh,
   });
 
   @override
   Widget build(BuildContext context) {
     final scale = MediaQuery.sizeOf(context).width / appShellDesignWidth;
     final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
-    final barHeight = 80 * scale;
-    final fabSize = 48 * scale.clamp(0.9, 1.1);
-    final fabOverlap = fabSize / 2;
-    final iconSize = 20 * scale.clamp(0.9, 1.1);
-    final notchGap = 6 * scale;
+    final barHeight = _pillBarHeight * scale.clamp(0.92, 1.08);
+    final iconSize = 20 * scale.clamp(0.9, 1.08);
+    final radius = barHeight / 2;
 
     return Padding(
       padding: EdgeInsets.fromLTRB(
-        21 * scale,
+        12 * scale,
         0,
-        21 * scale,
-        8 * scale + bottomInset,
+        12 * scale,
+        _pillBottomGap * scale + bottomInset,
       ),
-      child: SizedBox(
-        height: barHeight + fabOverlap,
-        child: Stack(
-          clipBehavior: Clip.none,
-          alignment: Alignment.bottomCenter,
-          children: [
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: CustomPaint(
-                painter: _DockNavBarPainter(
-                  cornerRadius: 24 * scale,
-                  notchRadius: fabSize / 2 + notchGap,
-                ),
-                child: SizedBox(
-                  height: barHeight,
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: _NavTabButton(
-                          scale: scale,
-                          label: 'Home',
-                          active: destination == AppShellDestination.home,
-                          onTap: () => onTabSelected?.call(AppNavTab.home),
-                          icon: _HomeNavIcon(
-                            active: destination == AppShellDestination.home,
-                            size: iconSize,
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: fabSize + 16 * scale),
-                      Expanded(
-                        child: _NavTabButton(
-                          scale: scale,
-                          label: 'Analytics',
-                          active: destination == AppShellDestination.analytics,
-                          onTap: () => onTabSelected?.call(AppNavTab.analytics),
-                          icon: _AnalyticsNavIcon(
-                            active: destination == AppShellDestination.analytics,
-                            size: iconSize,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              top: 0,
-              child: _CenterNavFab(
-                size: fabSize,
-                active: destination == AppShellDestination.intelligence,
-                onTap: onCenterTap,
-              ),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(radius),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x24000000),
+              blurRadius: 18,
+              offset: Offset(0, 6),
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-/// White Figma dock: rounded rectangle with a circular bite for the center FAB.
-class _DockNavBarPainter extends CustomPainter {
-  final double cornerRadius;
-  final double notchRadius;
-
-  const _DockNavBarPainter({
-    required this.cornerRadius,
-    required this.notchRadius,
-  });
-
-  Path _dock(Size size) {
-    final bar = Path()
-      ..addRRect(
-        RRect.fromLTRBR(
-          0,
-          0,
-          size.width,
-          size.height,
-          Radius.circular(cornerRadius),
-        ),
-      );
-    final notch = Path()
-      ..addOval(
-        Rect.fromCircle(
-          center: Offset(size.width / 2, 0),
-          radius: notchRadius,
-        ),
-      );
-    return Path.combine(PathOperation.difference, bar, notch);
-  }
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final path = _dock(size);
-    canvas.drawShadow(path, Colors.black.withValues(alpha: 0.12), 12, false);
-    canvas.drawPath(
-      path,
-      Paint()
-        ..color = Colors.white
-        ..style = PaintingStyle.fill,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant _DockNavBarPainter oldDelegate) {
-    return oldDelegate.cornerRadius != cornerRadius ||
-        oldDelegate.notchRadius != notchRadius;
-  }
-}
-
-class _CenterNavFab extends StatelessWidget {
-  final double size;
-  final bool active;
-  final VoidCallback? onTap;
-
-  const _CenterNavFab({
-    required this.size,
-    this.active = false,
-    this.onTap,
-  });
-
-  static const _accentColor = Color(0xFF7F03B9);
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: active ? _accentColor : Colors.white,
-      elevation: 10,
-      shadowColor: const Color(0x40005D5D),
-      shape: const CircleBorder(),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        customBorder: const CircleBorder(),
-        child: SizedBox(
-          width: size,
-          height: size,
-          child: Center(
-            child: FigmaSvgIcon(
-              active ? FigmaIcons.aiFab : FigmaIcons.ai,
-              size: size * 0.58,
+        child: Material(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(radius),
+          clipBehavior: Clip.antiAlias,
+          child: SizedBox(
+            height: barHeight,
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 6 * scale),
+              child: Row(
+                children: [
+                  _NavSlot(
+                    label: 'Home',
+                    active: activeTab == AppNavTab.home,
+                    scale: scale,
+                    onTap: () => onTabSelected?.call(AppNavTab.home),
+                    icon: Iconify(
+                      activeTab == AppNavTab.home ? Ph.house_fill : Ph.house,
+                      size: iconSize,
+                      color: activeTab == AppNavTab.home
+                          ? _activeColor
+                          : _iconInk,
+                    ),
+                  ),
+                  _NavSlot(
+                    label: 'Customers',
+                    active: activeTab == AppNavTab.people,
+                    scale: scale,
+                    onTap: () => onTabSelected?.call(AppNavTab.people),
+                    icon: Iconify(
+                      activeTab == AppNavTab.people ? Ph.users_fill : Ph.users,
+                      size: iconSize,
+                      color: activeTab == AppNavTab.people
+                          ? _activeColor
+                          : _iconInk,
+                    ),
+                  ),
+                  _NavSlot(
+                    label: 'Products',
+                    active: activeTab == AppNavTab.shop,
+                    scale: scale,
+                    onTap: () => onTabSelected?.call(AppNavTab.shop),
+                    icon: Iconify(
+                      activeTab == AppNavTab.shop
+                          ? Ph.storefront_fill
+                          : Ph.storefront,
+                      size: iconSize,
+                      color: activeTab == AppNavTab.shop
+                          ? _activeColor
+                          : _iconInk,
+                    ),
+                  ),
+                  _NotificationNavSlot(
+                    iconSize: iconSize,
+                    scale: scale,
+                    active: activeTab == AppNavTab.notifications,
+                    loadUnreadCount: loadUnreadCount,
+                    badgeRefresh: badgeRefresh,
+                    onTap: () =>
+                        onTabSelected?.call(AppNavTab.notifications),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -191,84 +130,213 @@ class _CenterNavFab extends StatelessWidget {
   }
 }
 
-class _HomeNavIcon extends StatelessWidget {
-  final bool active;
-  final double size;
-
-  const _HomeNavIcon({required this.active, required this.size});
-
-  static const _activeColor = Color(0xFF6929C4);
-  static const _inactiveColor = Color(0xFF6F6F6F);
-
-  @override
-  Widget build(BuildContext context) {
-    return FigmaSvgIcon(
-      FigmaIcons.navHome,
-      size: size,
-      color: active ? _activeColor : _inactiveColor,
-    );
-  }
-}
-
-class _AnalyticsNavIcon extends StatelessWidget {
-  final bool active;
-  final double size;
-
-  const _AnalyticsNavIcon({required this.active, required this.size});
-
-  static const _activeColor = Color(0xFF6929C4);
-  static const _inactiveColor = Color(0xFF6F6F6F);
-
-  @override
-  Widget build(BuildContext context) {
-    return FigmaSvgIcon(
-      FigmaIcons.navAnalytics,
-      size: size,
-      color: active ? _activeColor : _inactiveColor,
-    );
-  }
-}
-
-class _NavTabButton extends StatelessWidget {
-  final double scale;
+class _NavSlot extends StatelessWidget {
   final String label;
-  final bool active;
   final Widget icon;
+  final double scale;
+  final bool active;
+  final int badgeCount;
   final VoidCallback? onTap;
 
-  const _NavTabButton({
-    required this.scale,
+  const _NavSlot({
     required this.label,
-    required this.active,
     required this.icon,
+    required this.scale,
+    this.active = false,
+    this.badgeCount = 0,
     this.onTap,
   });
 
-  static const _activeColor = Color(0xFF6929C4);
-  static const _inactiveColor = Color(0xFF6F6F6F);
+  @override
+  Widget build(BuildContext context) {
+    final bubble = 36 * scale.clamp(0.9, 1.08);
+    final mark = active
+        ? Container(
+            width: bubble,
+            height: bubble,
+            decoration: const BoxDecoration(
+              color: _activeBubble,
+              shape: BoxShape.circle,
+            ),
+            alignment: Alignment.center,
+            child: icon,
+          )
+        : icon;
+
+    return Expanded(
+      child: Semantics(
+        button: true,
+        label: label,
+        selected: active,
+        child: InkWell(
+          onTap: onTap,
+          splashFactory: NoSplash.splashFactory,
+          splashColor: Colors.transparent,
+          highlightColor: Colors.transparent,
+          hoverColor: Colors.transparent,
+          overlayColor: const WidgetStatePropertyAll(Colors.transparent),
+          child: Center(
+            child: _BadgeAnchor(
+              count: badgeCount,
+              scale: scale,
+              child: mark,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _NotificationNavSlot extends StatefulWidget {
+  final double iconSize;
+  final double scale;
+  final bool active;
+  final Future<int> Function()? loadUnreadCount;
+  final Listenable? badgeRefresh;
+  final VoidCallback? onTap;
+
+  const _NotificationNavSlot({
+    required this.iconSize,
+    required this.scale,
+    this.active = false,
+    this.loadUnreadCount,
+    this.badgeRefresh,
+    this.onTap,
+  });
+
+  @override
+  State<_NotificationNavSlot> createState() => _NotificationNavSlotState();
+}
+
+class _NotificationNavSlotState extends State<_NotificationNavSlot> {
+  int _count = 0;
+  bool _wasCurrent = false;
+  int _request = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.badgeRefresh?.addListener(_reload);
+  }
+
+  @override
+  void didUpdateWidget(covariant _NotificationNavSlot oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.badgeRefresh != widget.badgeRefresh) {
+      oldWidget.badgeRefresh?.removeListener(_reload);
+      widget.badgeRefresh?.addListener(_reload);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.badgeRefresh?.removeListener(_reload);
+    super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final current = ModalRoute.of(context)?.isCurrent ?? true;
+    if (current && !_wasCurrent) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _reload();
+      });
+    }
+    _wasCurrent = current;
+  }
+
+  Future<void> _reload() async {
+    final load = widget.loadUnreadCount;
+    if (!mounted || load == null) return;
+    final request = ++_request;
+    try {
+      final count = await load();
+      if (!mounted || request != _request || count == _count) return;
+      setState(() => _count = count);
+    } catch (_) {
+      if (!mounted || request != _request || _count == 0) return;
+      setState(() => _count = 0);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final color = active ? _activeColor : _inactiveColor;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12 * scale),
-      child: Padding(
-        padding: EdgeInsets.only(top: 20 * scale, bottom: 10 * scale),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            icon,
-            SizedBox(height: 4 * scale),
-            Text(
-              label,
-              style: GoogleFonts.poppins(
-                color: color,
-                fontSize: 11,
-                fontWeight: active ? FontWeight.w500 : FontWeight.w400,
-              ),
-            ),
-          ],
+    final unread = _count > 0 ? ', $_count unread' : '';
+    return _NavSlot(
+      label: 'Notifications$unread',
+      scale: widget.scale,
+      active: widget.active,
+      badgeCount: _count,
+      onTap: widget.onTap,
+      icon: FigmaSvgIcon(
+        FigmaIcons.notificationBing,
+        size: widget.iconSize,
+        color: widget.active ? _activeColor : _iconInk,
+      ),
+    );
+  }
+}
+
+class _BadgeAnchor extends StatelessWidget {
+  final int count;
+  final double scale;
+  final Widget child;
+
+  const _BadgeAnchor({
+    required this.count,
+    required this.scale,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      clipBehavior: Clip.none,
+      alignment: Alignment.center,
+      children: [
+        child,
+        if (count > 0)
+          Positioned(
+            top: -3 * scale,
+            right: -5 * scale,
+            child: _CountBadge(count: count, scale: scale),
+          ),
+      ],
+    );
+  }
+}
+
+class _CountBadge extends StatelessWidget {
+  final int count;
+  final double scale;
+
+  const _CountBadge({required this.count, required this.scale});
+
+  @override
+  Widget build(BuildContext context) {
+    final label = count > 99 ? '99+' : '$count';
+    final wide = label.length > 1;
+    final size = 13 * scale.clamp(0.9, 1.05);
+    return Container(
+      height: size,
+      constraints: BoxConstraints(minWidth: size),
+      padding: EdgeInsets.symmetric(horizontal: wide ? 3 * scale : 0),
+      decoration: BoxDecoration(
+        color: _badgeRed,
+        borderRadius: BorderRadius.circular(size / 2),
+        border: Border.all(color: Colors.white, width: 1),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        label,
+        textAlign: TextAlign.center,
+        style: GoogleFonts.poppins(
+          color: Colors.white,
+          fontSize: 8 * scale.clamp(0.9, 1.05),
+          fontWeight: FontWeight.w700,
+          height: 1,
         ),
       ),
     );
@@ -314,52 +382,58 @@ class AppAiAssistantFab extends StatelessWidget {
 
 /// Standard shell for screens that share the bottom nav and AI FAB.
 class AppShellScaffold extends StatelessWidget {
-  final AppShellDestination destination;
+  final AppNavTab activeTab;
   final Widget body;
   final Color backgroundColor;
   final bool showAiFab;
   final VoidCallback? onAiTap;
-  final VoidCallback? onCenterNavTap;
   final ValueChanged<AppNavTab>? onTabSelected;
+  final Future<int> Function()? loadUnreadCount;
+  final Listenable? badgeRefresh;
+  final bool showBottomNav;
 
   const AppShellScaffold({
     super.key,
-    this.destination = AppShellDestination.home,
+    this.activeTab = AppNavTab.home,
     required this.body,
     this.backgroundColor = const Color(0xFFF3F3F7),
     this.showAiFab = false,
     this.onAiTap,
-    this.onCenterNavTap,
     this.onTabSelected,
+    this.loadUnreadCount,
+    this.badgeRefresh,
+    this.showBottomNav = true,
   });
 
   @override
   Widget build(BuildContext context) {
-    final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
     final scale = MediaQuery.sizeOf(context).width / appShellDesignWidth;
+    final keyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
 
     return Scaffold(
       backgroundColor: backgroundColor,
-      body: Stack(
+      resizeToAvoidBottomInset: false,
+      body: Column(
         children: [
-          body,
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: AppBottomNav(
-              destination: destination,
-              onTabSelected: onTabSelected,
-              onCenterTap: onCenterNavTap,
+          Expanded(
+            child: Stack(
+              children: [
+                body,
+                if (showAiFab)
+                  Positioned(
+                    right: 16 * scale,
+                    bottom: _fabClearance * scale,
+                    child: AppAiAssistantFab(onTap: onAiTap),
+                  ),
+              ],
             ),
           ),
-          // Painted after the nav so the dock never covers it; sits 16px
-          // above the dock's top edge (8 bottom padding + 80 bar height).
-          if (showAiFab)
-            Positioned(
-              right: 21 * scale,
-              bottom: (8 + 80 + 16) * scale + bottomInset,
-              child: AppAiAssistantFab(onTap: onAiTap),
+          if (showBottomNav && !keyboardOpen)
+            AppBottomNav(
+              activeTab: activeTab,
+              onTabSelected: onTabSelected,
+              loadUnreadCount: loadUnreadCount,
+              badgeRefresh: badgeRefresh,
             ),
         ],
       ),

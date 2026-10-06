@@ -50,9 +50,6 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
-  static const _surfaceColor = Color(0xFFF8FAFC);
-
-  Future<int>? _unreadCountFuture;
   bool _agentMode = false;
 
   @override
@@ -69,54 +66,87 @@ class _HomeState extends State<Home> {
   }
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _unreadCountFuture ??= context.read<ApiService>().getUnreadNotificationCount();
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<bool>(
+      valueListenable: AppShellNavigation.shellCanPop,
+      builder: (context, shellCanPop, navigator) {
+        return PopScope(
+          canPop: !_agentMode && !shellCanPop,
+          onPopInvokedWithResult: (didPop, result) {
+            if (didPop || _agentMode) return;
+            AppShellNavigation.shellKey.currentState?.pop();
+          },
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              ValueListenableBuilder<AppNavTab>(
+                valueListenable: AppShellNavigation.activeTab,
+                builder: (context, tab, navigator) {
+                  return ValueListenableBuilder<bool>(
+                    valueListenable: AppShellNavigation.homeVisible,
+                    builder: (context, homeVisible, navigator) {
+                      return AppShellScaffold(
+                        activeTab: tab,
+                        showBottomNav: homeVisible && !_agentMode,
+                        showAiFab: homeVisible && !_agentMode,
+                        onAiTap: () => _setAgentMode(true),
+                        onTabSelected: (selected) =>
+                            AppShellNavigation.onTabSelected(context, selected),
+                        loadUnreadCount: () => context
+                            .read<ApiService>()
+                            .getUnreadNotificationCount(),
+                        badgeRefresh: AppShellNavigation.revision,
+                        body: navigator!,
+                      );
+                    },
+                    child: navigator,
+                  );
+                },
+                child: navigator,
+              ),
+              if (_agentMode)
+                Positioned.fill(
+                  child: AgentModePage(
+                    onExit: () => _setAgentMode(false),
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+      child: Navigator(
+        key: AppShellNavigation.shellKey,
+        observers: [AppShellNavigation.observer],
+        onGenerateRoute: (settings) {
+          return MaterialPageRoute<void>(
+            settings: const RouteSettings(
+              name: AppShellNavigation.homeRouteName,
+            ),
+            builder: (_) => const _HomeDashboard(),
+          );
+        },
+      ),
+    );
   }
+}
 
-  Future<void> _refreshNotifications() async {
-    setState(() {
-      _unreadCountFuture = context.read<ApiService>().getUnreadNotificationCount();
-    });
-  }
+class _HomeDashboard extends StatelessWidget {
+  const _HomeDashboard();
+
+  static const surfaceColor = Color(0xFFF8FAFC);
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 420),
-      switchInCurve: Curves.easeOutCubic,
-      switchOutCurve: Curves.easeInCubic,
-      child: _agentMode
-          ? AgentModePage(
-              key: const ValueKey('agent-mode'),
-              onExit: () => _setAgentMode(false),
-            )
-          : KeyedSubtree(
-              key: const ValueKey('dashboard'),
-              child: _buildDashboard(context),
-            ),
-    );
-  }
-
-  Widget _buildDashboard(BuildContext context) {
     final scale = MediaQuery.sizeOf(context).width / appShellDesignWidth;
-    final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
 
-    return AppShellScaffold(
-      destination: AppShellDestination.home,
-      onTabSelected: (tab) => AppShellNavigation.onTabSelected(context, tab),
-      loadUnreadCount: () =>
-          context.read<ApiService>().getUnreadNotificationCount(),
-      showAiFab: true,
-      onAiTap: () => _setAgentMode(true),
-      body: SafeArea(
+    return SafeArea(
             bottom: false,
             child: SingleChildScrollView(
               padding: EdgeInsets.fromLTRB(
                 21 * scale,
                 16 * scale,
                 21 * scale,
-                120 * scale + bottomInset,
+                88 * scale,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -128,6 +158,7 @@ class _HomeState extends State<Home> {
                         UserAvatar(
                           size: 50 * scale.clamp(0.9, 1.05),
                           onLightBackground: true,
+                          showBorder: false,
                         ),
                         Expanded(
                           child: Center(
@@ -153,25 +184,9 @@ class _HomeState extends State<Home> {
                             ),
                           ),
                         ),
-                        FutureBuilder<int>(
-                          future: _unreadCountFuture,
-                          builder: (context, snap) {
-                            final unread = snap.data ?? 0;
-                            return _NotificationBell(
-                              scale: scale,
-                              unreadCount: unread,
-                              onTap: () async {
-                                await Navigator.push<void>(
-                                  context,
-                                  MaterialPageRoute<void>(
-                                    builder: (_) =>
-                                        const NotificationsInboxPage(),
-                                  ),
-                                );
-                                await _refreshNotifications();
-                              },
-                            );
-                          },
+                        _MessagesButton(
+                          scale: scale,
+                          onTap: () => AppShellNavigation.openMessages(context),
                         ),
                       ],
                     ),
@@ -199,22 +214,20 @@ class _HomeState extends State<Home> {
                               fontWeight: FontWeight.w500,
                             ),
                           ),
-                          SizedBox(height: 10 * scale),
-                          Text(
-                            'Here\u2019s what\u2019s happening in your\nbusiness today..',
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.poppins(
-                              color: Colors.black,
-                              fontSize: 18,
-                              fontWeight: FontWeight.w500,
-                              height: 1.4,
-                            ),
-                          ),
                         ],
                       );
                     },
                   ),
                   SizedBox(height: 16 * scale),
+                  Text(
+                    'Latests',
+                    style: GoogleFonts.poppins(
+                      color: Colors.black,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  SizedBox(height: 12 * scale),
                   HomeNeedsFeed(scale: scale),
                   SizedBox(height: 11 * scale),
                   Text(
@@ -305,7 +318,6 @@ class _HomeState extends State<Home> {
                 ],
               ),
             ),
-          ),
     );
   }
 }
@@ -330,14 +342,23 @@ class _HomeToolCard extends StatelessWidget {
   });
 
   void _open(BuildContext context) {
-    final Widget page = switch (route) {
-      _HomeToolRoute.inbox => const ManageChats(),
-      _HomeToolRoute.messaging => const ManageEmails(),
-      _HomeToolRoute.marketing => const ManageMarketing(),
-      _HomeToolRoute.customers => const ManageCustomers(),
-      _HomeToolRoute.products => const ManageProducts(),
-      _HomeToolRoute.orders => const ManageOrders(),
-    };
+    switch (route) {
+      case _HomeToolRoute.inbox:
+        AppShellNavigation.openMessages(context);
+      case _HomeToolRoute.customers:
+        AppShellNavigation.onTabSelected(context, AppNavTab.people);
+      case _HomeToolRoute.products:
+        AppShellNavigation.onTabSelected(context, AppNavTab.shop);
+      case _HomeToolRoute.messaging:
+        _push(context, const ManageEmails());
+      case _HomeToolRoute.marketing:
+        _push(context, const ManageMarketing());
+      case _HomeToolRoute.orders:
+        _push(context, const ManageOrders());
+    }
+  }
+
+  void _push(BuildContext context, Widget page) {
     Navigator.push<void>(
       context,
       MaterialPageRoute<void>(builder: (_) => page),
@@ -349,11 +370,15 @@ class _HomeToolCard extends StatelessWidget {
     final scale = MediaQuery.sizeOf(context).width / appShellDesignWidth;
 
     return Material(
-      color: _HomeState._surfaceColor,
+      color: _HomeDashboard.surfaceColor,
       borderRadius: BorderRadius.circular(20 * scale),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: () => _open(context),
+        splashFactory: NoSplash.splashFactory,
+        splashColor: Colors.transparent,
+        highlightColor: Colors.transparent,
+        hoverColor: Colors.transparent,
         borderRadius: BorderRadius.circular(20 * scale),
         child: Padding(
           padding: EdgeInsets.all(20 * scale),
@@ -412,50 +437,37 @@ class _HomeToolCard extends StatelessWidget {
   }
 }
 
-class _NotificationBell extends StatelessWidget {
+class _MessagesButton extends StatelessWidget {
   final double scale;
-  final int unreadCount;
   final VoidCallback onTap;
 
-  const _NotificationBell({
+  const _MessagesButton({
     required this.scale,
-    required this.unreadCount,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    final size = 50 * scale.clamp(0.9, 1.05);
     return Material(
-      color: _HomeState._surfaceColor,
+      color: _HomeDashboard.surfaceColor,
       shape: const CircleBorder(),
       child: InkWell(
         onTap: onTap,
+        splashFactory: NoSplash.splashFactory,
+        splashColor: Colors.transparent,
+        highlightColor: Colors.transparent,
+        hoverColor: Colors.transparent,
         customBorder: const CircleBorder(),
         child: SizedBox(
-          width: 50 * scale.clamp(0.9, 1.05),
-          height: 50 * scale.clamp(0.9, 1.05),
-          child: Stack(
-            clipBehavior: Clip.none,
-            alignment: Alignment.center,
-            children: [
-              FigmaSvgIcon(
-                FigmaIcons.notificationBing,
-                size: 24 * scale.clamp(0.9, 1.05),
-              ),
-              if (unreadCount > 0)
-                Positioned(
-                  right: 10 * scale,
-                  top: 10 * scale,
-                  child: Container(
-                    width: 8 * scale,
-                    height: 8 * scale,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFEF4444),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-            ],
+          width: size,
+          height: size,
+          child: Center(
+            child: Iconify(
+              Ph.chat_circle,
+              size: 24 * scale.clamp(0.9, 1.05),
+              color: const Color(0xFF0A0A0A),
+            ),
           ),
         ),
       ),

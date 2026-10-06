@@ -4,7 +4,7 @@ class LogorSign extends StatelessWidget {
   const LogorSign({super.key});
 
   void _openSignin(BuildContext context) {
-    Navigator.of(context).push(
+    Navigator.of(context).pushAndRemoveUntil(
       PageTransition(
         type: PageTransitionType.rightToLeftWithFade,
         childCurrent: const Signin(),
@@ -12,6 +12,7 @@ class LogorSign extends StatelessWidget {
         reverseDuration: const Duration(milliseconds: 300),
         child: const Signin(),
       ),
+      (route) => false,
     );
   }
 

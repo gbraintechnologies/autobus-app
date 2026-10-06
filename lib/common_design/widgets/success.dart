@@ -65,7 +65,7 @@ class _SuccessState extends State<Success> {
                       context.read<SuccessBloc>().add(ClearSuccessEvent());
 
                       if (nextScreen == 'login') {
-                        Navigator.of(context).pushAndRemoveUntil(
+                        Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
                           MaterialPageRoute(
                             builder: (context) =>
                                 Signin(initialIdentifier: userEmail),

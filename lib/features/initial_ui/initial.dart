@@ -1,6 +1,4 @@
 import 'package:autobus/barrel.dart';
-import 'package:autobus/features/onboarding/onboarding_page.dart';
-import 'package:autobus/features/onboarding/onboarding_storage.dart';
 
 class SplashWrapper extends StatefulWidget {
   const SplashWrapper({super.key});
@@ -11,9 +9,7 @@ class SplashWrapper extends StatefulWidget {
 
 class _SplashWrapperState extends State<SplashWrapper> {
   bool _navigated = false;
-  bool? _hasSeenSplash;
-  bool _forceMarketingSplash = false;
-  Timer? _splashTimer;
+  bool _showSplash = false;
   Timer? _authStallTimer;
   Timer? _failsafeTimer;
 
@@ -22,53 +18,43 @@ class _SplashWrapperState extends State<SplashWrapper> {
     super.initState();
     print('=== SPLASH WRAPPER INIT ===');
     _startAuthStallTimer();
-    _loadSplashPref();
     _failsafeTimer = Timer(const Duration(seconds: 4), _onFailsafe);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _handleAuthResolved(context.read<AuthBloc>().state);
+    });
   }
 
   void _startAuthStallTimer() {
     _authStallTimer?.cancel();
     _authStallTimer = Timer(const Duration(seconds: 12), () {
       if (_navigated || !mounted) return;
-      print('=== AUTH STALL TIMEOUT - PROCEEDING ===');
-      _goToAuth();
+      final state = context.read<AuthBloc>().state;
+      if (_isLoggedIn(state)) {
+        print('=== AUTH STALL TIMEOUT - PROCEEDING ===');
+        _goToAuth();
+        return;
+      }
+      _revealSplash();
     });
   }
 
-  Future<void> _loadSplashPref() async {
-    try {
-      final seen = await OnboardingStorage()
-          .hasSeenSplash()
-          .timeout(const Duration(seconds: 2), onTimeout: () => false);
-      if (!mounted) return;
-      setState(() => _hasSeenSplash = seen);
-      _handleAuthResolved(context.read<AuthBloc>().state);
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => _hasSeenSplash = false);
-      _handleAuthResolved(context.read<AuthBloc>().state);
-    }
+  void _revealSplash() {
+    if (_navigated || !mounted || _showSplash) return;
+    setState(() => _showSplash = true);
   }
 
   void _goToAuth() {
     if (_navigated || !mounted) return;
     _navigated = true;
-    _splashTimer?.cancel();
     _authStallTimer?.cancel();
     _failsafeTimer?.cancel();
     print('=== NAVIGATING TO AUTH WRAPPER ===');
-    if (_hasSeenSplash == false) {
-      unawaited(OnboardingStorage().markSplashSeen());
-    }
-    Navigator.pushReplacement(
+    Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(builder: (context) => const AuthWrapper()),
+      (route) => false,
     );
-  }
-
-  void _scheduleSplashTimeout() {
-    _splashTimer?.cancel();
-    _splashTimer = Timer(const Duration(seconds: 3), _goToAuth);
   }
 
   bool _isLoggedIn(AuthState state) =>
@@ -87,11 +73,7 @@ class _SplashWrapperState extends State<SplashWrapper> {
     }
 
     if (_isLoggedOut(state)) {
-      if (_hasSeenSplash == true) {
-        _goToAuth();
-      } else if (_hasSeenSplash == false) {
-        _scheduleSplashTimeout();
-      }
+      _revealSplash();
     }
   }
 
@@ -102,17 +84,11 @@ class _SplashWrapperState extends State<SplashWrapper> {
       _goToAuth();
       return;
     }
-    if (_hasSeenSplash == false) {
-      setState(() => _forceMarketingSplash = true);
-      _scheduleSplashTimeout();
-      return;
-    }
-    _goToAuth();
+    _revealSplash();
   }
 
   @override
   void dispose() {
-    _splashTimer?.cancel();
     _authStallTimer?.cancel();
     _failsafeTimer?.cancel();
     super.dispose();
@@ -121,27 +97,17 @@ class _SplashWrapperState extends State<SplashWrapper> {
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<AuthBloc, AuthState>(
-      listener: (context, state) {
-        if (_hasSeenSplash == null) return;
-        _handleAuthResolved(state);
-      },
+      listener: (context, state) => _handleAuthResolved(state),
       builder: (context, state) {
         if (_isLoggedIn(state)) {
-          return const Scaffold(
-            body: Center(child: AutobusLoadingIndicator()),
-          );
+          return const Scaffold(body: Center(child: AutobusLoadingIndicator()));
         }
 
-        final showOnboarding =
-            _forceMarketingSplash ||
-            ((_hasSeenSplash == false) && _isLoggedOut(state));
-        if (showOnboarding) {
+        if (_showSplash || _isLoggedOut(state)) {
           return OnboardingPage(onFinished: _goToAuth);
         }
 
-        return const Scaffold(
-          body: Center(child: AutobusLoadingIndicator()),
-        );
+        return const Scaffold(body: Center(child: AutobusLoadingIndicator()));
       },
     );
   }

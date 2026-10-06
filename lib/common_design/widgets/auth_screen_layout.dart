@@ -15,6 +15,12 @@ class AuthScreenTokens {
   static const emptyBorderColor = Color(0xFFDFDFDF);
   static const otpFillColor = Color(0xFFFAFAFA);
 
+  /// Digit boxes from the auth PIN / code frame (51×78, 7px gap, radius 30).
+  static const digitBoxWidth = 51.0;
+  static const digitBoxHeight = 78.0;
+  static const digitBoxGap = 7.0;
+  static const digitBoxRadius = 30.0;
+
   static double scaleOf(BuildContext context) =>
       MediaQuery.sizeOf(context).width / designWidth;
 
@@ -286,9 +292,9 @@ class _AuthOtpInputState extends State<AuthOtpInput> {
 
   @override
   Widget build(BuildContext context) {
-    final boxWidth = 51 * widget.scale;
-    final boxHeight = 78 * widget.scale;
-    final gap = 8 * widget.scale;
+    final boxWidth = AuthScreenTokens.digitBoxWidth * widget.scale;
+    final boxHeight = AuthScreenTokens.digitBoxHeight * widget.scale;
+    final gap = AuthScreenTokens.digitBoxGap * widget.scale;
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -297,10 +303,11 @@ class _AuthOtpInputState extends State<AuthOtpInput> {
         final borderColor = filled
             ? AuthScreenTokens.accentColor
             : AuthScreenTokens.emptyBorderColor;
-        final borderWidth = filled ? 1.5 : 1.0;
         final boxBorder = OutlineInputBorder(
-          borderRadius: BorderRadius.circular(30 * widget.scale),
-          borderSide: BorderSide(color: borderColor, width: borderWidth),
+          borderRadius: BorderRadius.circular(
+            AuthScreenTokens.digitBoxRadius * widget.scale,
+          ),
+          borderSide: BorderSide(color: borderColor, width: 1),
         );
 
         return Padding(
@@ -313,11 +320,12 @@ class _AuthOtpInputState extends State<AuthOtpInput> {
               focusNode: _focusNodes[index],
               enabled: widget.enabled,
               textAlign: TextAlign.center,
+              textAlignVertical: TextAlignVertical.center,
               keyboardType: TextInputType.number,
               maxLength: 1,
               style: GoogleFonts.poppins(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
+                fontSize: 18,
+                fontWeight: FontWeight.w500,
                 color: Colors.black,
                 height: 1.0,
               ),

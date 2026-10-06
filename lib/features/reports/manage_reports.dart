@@ -1,7 +1,6 @@
 import 'package:autobus/barrel.dart';
 import 'package:autobus/common_design/widgets/app_bottom_nav.dart';
 import 'package:autobus/common_design/widgets/app_screen_header.dart';
-import 'package:autobus/common_design/widgets/app_shell_navigation.dart';
 import 'package:autobus/features/reports/report_details.dart';
 import 'package:autobus/features/reports/report_period.dart';
 import 'package:autobus/features/reports/reports_snapshot.dart';
@@ -166,15 +165,10 @@ class _ManageReportsState extends State<ManageReports> {
   @override
   Widget build(BuildContext context) {
     final scale = MediaQuery.sizeOf(context).width / appShellDesignWidth;
-    final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
     final snap = _snapshot;
 
-    return AppShellScaffold(
-      destination: AppShellDestination.analytics,
-      showAiFab: false,
-      onTabSelected: (tab) => AppShellNavigation.onTabSelected(context, tab),
-      onCenterNavTap: () => AppShellNavigation.openIntelligence(context),
-      onAiTap: () => AppShellNavigation.openChatbot(context),
+    return Scaffold(
+      backgroundColor: const Color(0xFFF3F3F7),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -231,7 +225,7 @@ class _ManageReportsState extends State<ManageReports> {
                         17 * scale,
                         12 * scale,
                         17 * scale,
-                        120 * scale + bottomInset,
+                        32 * scale,
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,

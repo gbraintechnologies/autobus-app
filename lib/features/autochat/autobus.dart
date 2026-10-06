@@ -81,7 +81,7 @@ class _AutoBusState extends State<AutoBus> {
                 backgroundColor: Colors.red,
               ),
             );
-            Navigator.of(context).pushAndRemoveUntil(
+            Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
               MaterialPageRoute(builder: (_) => const LoggedOutGate()),
               (route) => false,
             );
@@ -92,7 +92,7 @@ class _AutoBusState extends State<AutoBus> {
                 backgroundColor: Colors.orange,
               ),
             );
-            Navigator.of(context).pushAndRemoveUntil(
+            Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
               MaterialPageRoute(builder: (_) => const LoggedOutGate()),
               (route) => false,
             );

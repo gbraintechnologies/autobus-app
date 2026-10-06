@@ -73,6 +73,7 @@ class FigmaImages {
   FigmaImages._();
 
   static const onboardingHero = 'assets/img/figma/onboarding_hero.png';
+  static const onboardingBackdrop = 'assets/img/figma/onboarding_backdrop.jpg';
   static const splashLogo = 'assets/img/figma/splash_logo.png';
   static const homeBanner = 'assets/img/figma/home_banner.png';
   static const mtnLogo = 'assets/img/figma/mtn_logo.png';

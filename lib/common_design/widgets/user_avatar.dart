@@ -10,12 +10,16 @@ class UserAvatar extends StatelessWidget {
   /// Otherwise initials are white.
   final bool onLightBackground;
 
+  /// Dark ring around the photo. Off for the home header avatar.
+  final bool showBorder;
+
   const UserAvatar({
     this.size = 48,
     this.avatarUrl,
     this.initials,
     this.onTap,
     this.onLightBackground = false,
+    this.showBorder = true,
     super.key,
   });
 
@@ -55,25 +59,28 @@ class UserAvatar extends StatelessWidget {
           fontSize: fontSize,
         );
 
+        final ring = showBorder ? 1.0 : 0.0;
         final content = Container(
           width: size,
           height: size,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            border: Border.all(color: CustColors.mainCol, width: 1),
+            border: showBorder
+                ? Border.all(color: CustColors.mainCol, width: ring)
+                : null,
           ),
           alignment: Alignment.center,
           child: url != null
               ? CircleAvatar(
-                  radius: (size / 2) - 1,
+                  radius: (size / 2) - ring,
                   backgroundColor: Colors.transparent,
                   backgroundImage: NetworkImage(url),
                 )
               : ClipOval(
                   child: Image.asset(
                     'assets/img/avatar_3d.jpg',
-                    width: size - 2,
-                    height: size - 2,
+                    width: size - (ring * 2),
+                    height: size - (ring * 2),
                     fit: BoxFit.cover,
                     errorBuilder: (_, __, ___) => Center(
                       child: Text(chars, style: textStyle),

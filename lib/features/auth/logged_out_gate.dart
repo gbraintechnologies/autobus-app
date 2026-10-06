@@ -1,7 +1,8 @@
 import 'package:autobus/barrel.dart';
 
 /// After session loss, skip the welcome/login form when this device already
-/// has a remembered account. Explicit sign-out clears that and shows LogorSign.
+/// has a remembered account. Explicit sign-out clears that and shows sign-in.
+/// The marketing splash is not on this path, so it cannot be opened again.
 class LoggedOutGate extends StatefulWidget {
   const LoggedOutGate({super.key});
 
@@ -55,6 +56,6 @@ class _LoggedOutGateState extends State<LoggedOutGate> {
         },
       );
     }
-    return const LogorSign();
+    return const Signin();
   }
 }

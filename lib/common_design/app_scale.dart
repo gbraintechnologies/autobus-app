@@ -25,9 +25,13 @@ class AppScale {
     return os.clamp(0.90, 1.20);
   }
 
+  /// Extra reduction applied on top of screen and OS scale so type reads smaller.
+  static const appTypeScale = 0.85;
+
   /// Combined scaler to install at the [MaterialApp] root.
   static TextScaler textScalerOf(BuildContext context) {
-    final combined = (layoutOf(context) * osFactorOf(context)).clamp(0.80, 1.25);
+    final combined = (layoutOf(context) * osFactorOf(context) * appTypeScale)
+        .clamp(0.70, 1.05);
     return TextScaler.linear(combined);
   }
 }

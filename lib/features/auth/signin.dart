@@ -38,23 +38,14 @@ class _SigninState extends State<Signin> {
   void _onBack() {
     if (Navigator.of(context).canPop()) {
       Navigator.of(context).pop();
-      return;
     }
-    Navigator.of(context).push(
-      PageTransition(
-        type: PageTransitionType.leftToRightWithFade,
-        child: const LogorSign(),
-      ),
-    );
   }
 
   void _submitLogin() {
     final email = _emailController.text.trim();
     if (email.isEmpty || _pin.length != 4) return;
 
-    context.read<AuthBloc>().add(
-      LoginEvent(identifier: email, password: _pin),
-    );
+    context.read<AuthBloc>().add(LoginEvent(identifier: email, password: _pin));
   }
 
   @override
@@ -92,7 +83,10 @@ class _SigninState extends State<Signin> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                AuthBackButton(onTap: _onBack),
+                if (Navigator.of(context).canPop())
+                  AuthBackButton(onTap: _onBack)
+                else
+                  const SizedBox(height: 40),
                 SizedBox(height: 12 * scale),
                 AuthScreenHeader(
                   scale: scale,
@@ -139,7 +133,7 @@ class _SigninState extends State<Signin> {
                       'Forgot password?',
                       style: GoogleFonts.poppins(
                         color: AuthScreenTokens.labelColor,
-                            fontSize: 13,
+                        fontSize: 13,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
