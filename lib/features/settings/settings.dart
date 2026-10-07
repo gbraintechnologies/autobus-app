@@ -2,6 +2,7 @@ import 'package:autobus/barrel.dart';
 import 'package:autobus/common_design/light_screen_theme.dart';
 import 'package:autobus/common_design/widgets/app_bottom_nav.dart';
 import 'package:autobus/common_design/widgets/light_screen_scaffold.dart';
+import 'package:autobus/features/settings/referral_page.dart';
 import 'package:autobus/icons/figma_icons.dart';
 import 'package:autobus/icons/home_figma_icons.dart';
 
@@ -194,6 +195,63 @@ class _SettingsPageState extends State<SettingsPage> {
                               ),
                               Text(
                                 _creditsSubtitle(),
+                                style: GoogleFonts.poppins(
+                                  color: _rowText,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        FigmaSvgIcon(
+                          FigmaIcons.chevronDown,
+                          size: 30 * scale,
+                          color: const Color(0xFF4C4C4C),
+                          chevronRight: true,
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 20 * scale),
+                  _SettingsCard(
+                    scale: scale,
+                    color: const Color(0xFFF3E8FF),
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const ReferralPage()),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 40 * scale,
+                          height: 40 * scale,
+                          decoration: const BoxDecoration(
+                            color: LightScreenTheme.accent,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.card_giftcard_rounded,
+                            size: 20 * scale,
+                            color: Colors.white,
+                          ),
+                        ),
+                        SizedBox(width: 12 * scale),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Refer & Earn',
+                                style: GoogleFonts.poppins(
+                                  color: Colors.black,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              Text(
+                                'Invite businesses to Autobus and get rewarded',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                                 style: GoogleFonts.poppins(
                                   color: _rowText,
                                   fontSize: 11,

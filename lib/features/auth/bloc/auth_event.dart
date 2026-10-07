@@ -24,6 +24,7 @@ class SignupEvent extends AuthEvent {
   final String password;
   final String company;
   final String ghanaCard;
+  final String referralCode;
 
   const SignupEvent({
     required this.email,
@@ -32,6 +33,7 @@ class SignupEvent extends AuthEvent {
     required this.phone,
     required this.company,
     required this.ghanaCard,
+    this.referralCode = '',
   });
 
   @override
@@ -42,6 +44,7 @@ class SignupEvent extends AuthEvent {
     password,
     company,
     ghanaCard,
+    referralCode,
   ];
 }
 

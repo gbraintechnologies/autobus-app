@@ -208,6 +208,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           'password': event.password,
           'company': event.company,
           'ghana_card': event.ghanaCard,
+          if (event.referralCode.isNotEmpty)
+            'referral_code': event.referralCode,
         }),
       );
 

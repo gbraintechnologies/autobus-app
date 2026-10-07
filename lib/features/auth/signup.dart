@@ -4,13 +4,18 @@ import 'package:autobus/common_design/widgets/auth_screen_layout.dart';
 import 'package:flutter/services.dart';
 
 class Signup extends StatefulWidget {
-  const Signup({super.key});
+  const Signup({super.key, this.initialReferralCode});
+
+  final String? initialReferralCode;
 
   @override
   State<Signup> createState() => _SignupState();
 }
 
 class _SignupState extends State<Signup> {
+  late final _referralController = TextEditingController(
+    text: widget.initialReferralCode ?? '',
+  );
   final _emailController = TextEditingController();
   final _usernameController = TextEditingController();
   final _phoneController = TextEditingController();
@@ -30,6 +35,7 @@ class _SignupState extends State<Signup> {
 
   @override
   void dispose() {
+    _referralController.dispose();
     _emailController.dispose();
     _usernameController.dispose();
     _phoneController.dispose();
@@ -59,6 +65,7 @@ class _SignupState extends State<Signup> {
         password: _pin,
         company: _companyController.text.trim(),
         ghanaCard: _ghanaCardValue,
+        referralCode: _referralController.text.trim().toUpperCase(),
       ),
     );
   }
@@ -239,6 +246,21 @@ class _SignupState extends State<Signup> {
                   PinDigitInput(
                     enabled: !isLoading,
                     onChanged: (v) => _pin = v,
+                  ),
+                  SizedBox(height: 16 * scale),
+                  AuthFieldLabel(
+                    scale: scale,
+                    label: 'Referral code (optional)',
+                  ),
+                  SizedBox(height: 8 * scale),
+                  AuthField(
+                    width: fieldWidth,
+                    height: fieldHeight,
+                    scale: scale,
+                    icon: Icons.card_giftcard_outlined,
+                    controller: _referralController,
+                    enabled: !isLoading,
+                    hintText: 'Enter code if someone invited you',
                   ),
                   SizedBox(height: 28 * scale),
                   AuthPrimaryButton(
