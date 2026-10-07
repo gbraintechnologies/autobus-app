@@ -101,23 +101,12 @@ class OutletCatalog {
     OutletOption(
       label: 'Facebook Page',
       icon: FontAwesomeIcons.facebookF,
-      iconAsset: FigmaIcons.facebook,
       iconColor: Color(0xFF3D5A98),
       tileColor: Color(0xFF3D5A98),
       linkSubtitle: 'Link a Facebook Page',
       postizIdentifiers: {'facebook'},
       connectSlug: 'facebook',
       helperText: 'Connect a Facebook Page for Digital Marketing posts.',
-    ),
-    OutletOption(
-      label: 'LinkedIn',
-      icon: FontAwesomeIcons.linkedinIn,
-      iconAsset: FigmaIcons.linkedin,
-      iconColor: Color(0xFF0076B2),
-      tileColor: Color(0xFF0076B2),
-      linkSubtitle: 'Link linkedin',
-      postizIdentifiers: {'linkedin'},
-      connectSlug: 'linkedin',
     ),
     OutletOption(
       label: 'WhatsApp Status',
