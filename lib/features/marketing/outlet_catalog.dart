@@ -108,15 +108,6 @@ class OutletCatalog {
       connectSlug: 'facebook',
       helperText: 'Connect a Facebook Page for Digital Marketing posts.',
     ),
-    OutletOption(
-      label: 'WhatsApp Status',
-      icon: FontAwesomeIcons.whatsapp,
-      iconColor: Color(0xFF25D366),
-      tileColor: Color(0xFF25D366),
-      linkSubtitle: 'Link whatsapp',
-      postizIdentifiers: {'whatsapp'},
-      connectSlug: 'whatsapp',
-    ),
   ];
 
   static ({List<LinkedOutlet> linked, List<OutletOption> unlinked}) partition(

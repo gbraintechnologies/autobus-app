@@ -73,6 +73,17 @@ class _MarketingChatPageState extends State<_MarketingChatPage> {
   final List<_GenerationReference> _references = [];
   static const int _maxReferences = 3;
 
+  final SpeechToText _speech = SpeechToText();
+  bool _listening = false;
+  bool _speechReady = false;
+
+  static const _composerMuted = Color(0xFF94A3B8);
+  static const _sendGradient = LinearGradient(
+    begin: Alignment.centerLeft,
+    end: Alignment.centerRight,
+    colors: [Color(0xFF6366F1), Color(0xFFA855F7)],
+  );
+
   DigitalMarketingCampaign get _campaign => widget.campaign;
 
   bool get _canGoNext =>
@@ -91,10 +102,112 @@ class _MarketingChatPageState extends State<_MarketingChatPage> {
 
   @override
   void dispose() {
+    _speech.stop();
     _input.dispose();
     _scroll.dispose();
     _focus.dispose();
     super.dispose();
+  }
+
+  Future<void> _toggleListening() async {
+    if (_sending) return;
+    if (_listening) {
+      await _speech.stop();
+      if (mounted) setState(() => _listening = false);
+      return;
+    }
+
+    if (!_speechReady) {
+      _speechReady = await _speech.initialize(
+        onError: (_) {
+          if (mounted) setState(() => _listening = false);
+        },
+        onStatus: (status) {
+          if (status == 'done' || status == 'notListening') {
+            if (mounted) setState(() => _listening = false);
+          }
+        },
+      );
+    }
+    if (!_speechReady) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Microphone is not available on this device.'),
+        ),
+      );
+      return;
+    }
+
+    setState(() => _listening = true);
+    await _speech.listen(
+      onResult: (result) {
+        _input.text = result.recognizedWords;
+        _input.selection = TextSelection.collapsed(offset: _input.text.length);
+      },
+      listenOptions: SpeechListenOptions(
+        listenFor: const Duration(seconds: 30),
+        pauseFor: const Duration(seconds: 4),
+        partialResults: true,
+      ),
+    );
+  }
+
+  Future<void> _showAttachOptions() async {
+    if (_sending) return;
+    final choice = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      backgroundColor: Colors.white,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(
+                Icons.add_photo_alternate_outlined,
+                color: LightScreenTheme.accent,
+              ),
+              title: Text(
+                'Add image or video to campaign',
+                style: GoogleFonts.poppins(
+                  fontSize: LightScreenTheme.typeBody,
+                  color: Colors.black,
+                ),
+              ),
+              onTap: () => Navigator.pop(sheetContext, 'media'),
+            ),
+            ListTile(
+              leading: const Icon(
+                Icons.auto_awesome_outlined,
+                color: LightScreenTheme.accent,
+              ),
+              title: Text(
+                'Use as reference for the AI',
+                style: GoogleFonts.poppins(
+                  fontSize: LightScreenTheme.typeBody,
+                  color: Colors.black,
+                ),
+              ),
+              subtitle: Text(
+                'Up to 3 references. Each uses extra credits.',
+                style: GoogleFonts.poppins(
+                  fontSize: LightScreenTheme.typeCaption,
+                  color: LightScreenTheme.muted,
+                ),
+              ),
+              onTap: () => Navigator.pop(sheetContext, 'reference'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (!mounted || choice == null) return;
+    if (choice == 'media') {
+      await _attachMedia();
+    } else {
+      await _attachReference();
+    }
   }
 
   String _newMsgId() =>
@@ -727,6 +840,8 @@ class _MarketingChatPageState extends State<_MarketingChatPage> {
     final canSend = !widget.readOnly && _input.text.trim().isNotEmpty && !_sending;
     return _MarketingScaffold(
       contentHorizontalPadding: 0,
+      backgroundColor: LightScreenTheme.background,
+      contentTopGap: 24,
       headerTrailing: widget.readOnly
           ? const UserAvatar(onLightBackground: true)
           : _ChatNextButton(
@@ -740,9 +855,9 @@ class _MarketingChatPageState extends State<_MarketingChatPage> {
             child: Text(
               widget.readOnly ? 'Campaign conversation' : 'Create with Autobus',
               style: GoogleFonts.poppins(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
+                fontSize: LightScreenTheme.typeTitle,
+                fontWeight: FontWeight.w400,
+                color: LightScreenTheme.accent,
               ),
             ),
           ),
@@ -761,10 +876,9 @@ class _MarketingChatPageState extends State<_MarketingChatPage> {
                     },
                   ),
           ),
-          if (!widget.readOnly) ...[
-            _composer(canSend: canSend),
-            const SizedBox(height: 8),
-          ] else
+          if (!widget.readOnly)
+            _composer(canSend: canSend)
+          else
             const SizedBox(height: 12),
         ],
       ),
@@ -776,16 +890,16 @@ class _MarketingChatPageState extends State<_MarketingChatPage> {
       builder: (context, constraints) {
         return SingleChildScrollView(
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
           child: ConstrainedBox(
             constraints: BoxConstraints(minHeight: constraints.maxHeight),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  Icons.auto_awesome,
-                  size: 40,
-                  color: _kPurple.withValues(alpha: 0.85),
+                const FigmaSvgIcon(
+                  FigmaIcons.ai,
+                  size: 35,
+                  color: LightScreenTheme.accent,
                 ),
                 const SizedBox(height: 16),
                 Text(
@@ -794,35 +908,42 @@ class _MarketingChatPageState extends State<_MarketingChatPage> {
                       : 'What would you like to create?',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.poppins(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                    color: _kPrimary,
+                    fontSize: LightScreenTheme.typeHeadline,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 10),
                 Text(
                   widget.readOnly
                       ? 'Generated images, videos, and captions will show here when they are part of the saved conversation.'
-                      : 'Describe an image, video, or caption. Attach up to 3 references if you want the AI to follow them. Each reference uses extra credits.',
+                      : 'Describe an image, video or caption. Send a follow-up to refine it.',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.poppins(
-                    fontSize: 13,
-                    color: Colors.black45,
-                    height: 1.4,
+                    fontSize: LightScreenTheme.typeBody,
+                    color: Colors.black,
+                    height: 1.5,
                   ),
                 ),
                 if (!widget.readOnly) ...[
-                  const SizedBox(height: 22),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    alignment: WrapAlignment.center,
-                    children: [
-                      _suggestionChip('Product photo for Instagram'),
-                      _suggestionChip('15-second promo video'),
-                      _suggestionChip('Caption for a weekend sale'),
-                    ],
+                  const SizedBox(height: 26),
+                  Text(
+                    'Suggestions',
+                    style: GoogleFonts.poppins(
+                      fontSize: LightScreenTheme.typeBody,
+                      color: Colors.black,
+                    ),
                   ),
+                  const SizedBox(height: 14),
+                  _suggestionChip(
+                    'Product photo for instagram that catches the eye',
+                  ),
+                  const SizedBox(height: 10),
+                  _suggestionChip(
+                    '15 seconds promo video of product A and B for tiktok',
+                  ),
+                  const SizedBox(height: 10),
+                  _suggestionChip('Caption for a weekend sale'),
                 ],
               ],
             ),
@@ -833,21 +954,37 @@ class _MarketingChatPageState extends State<_MarketingChatPage> {
   }
 
   Widget _suggestionChip(String label) {
-    return ActionChip(
-      label: Text(
-        label,
-        style: GoogleFonts.poppins(fontSize: 12, color: _kHeaderPurple),
+    return Material(
+      color: Colors.transparent,
+      shape: const StadiumBorder(
+        side: BorderSide(color: LightScreenTheme.border),
       ),
-      backgroundColor: const Color(0xFFF7F5FB),
-      side: const BorderSide(color: Color(0xFFE8E0F0)),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      onPressed: () {
-        setState(() {
-          _input.text = label;
-          _input.selection = TextSelection.collapsed(offset: _input.text.length);
-        });
-        _focus.requestFocus();
-      },
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () {
+          setState(() {
+            _input.text = label;
+            _input.selection =
+                TextSelection.collapsed(offset: _input.text.length);
+          });
+          _focus.requestFocus();
+        },
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minWidth: double.infinity),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+            child: Text(
+              label,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.poppins(
+                fontSize: LightScreenTheme.typeCaption,
+                color: _composerMuted,
+                height: 1.4,
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -1098,83 +1235,108 @@ class _MarketingChatPageState extends State<_MarketingChatPage> {
   }
 
   Widget _composer({required bool canSend}) {
+    final scale = MediaQuery.sizeOf(context).width / appShellDesignWidth;
+    final iconSize = 24 * scale.clamp(0.9, 1.05);
     return Container(
-      margin: const EdgeInsets.fromLTRB(14, 0, 14, 0),
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFE8E0F0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 12,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      color: Colors.white,
+      padding: EdgeInsets.fromLTRB(12 * scale, 0, 12 * scale, 12 * scale),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _referenceChip(),
-          TextField(
-            controller: _input,
-            focusNode: _focus,
-            minLines: 1,
-            maxLines: 4,
-            keyboardType: TextInputType.multiline,
-            textInputAction: TextInputAction.newline,
-            onTapOutside: dismissAppKeyboard,
-            style: GoogleFonts.poppins(fontSize: 14, height: 1.4),
-            decoration: InputDecoration(
-              hintText: 'Describe an image, video, or caption…',
-              hintStyle: GoogleFonts.poppins(fontSize: 14, color: Colors.black38),
-              border: InputBorder.none,
-              isDense: true,
-              contentPadding: EdgeInsets.zero,
-            ),
+          const Divider(
+            height: 1,
+            thickness: 0.5,
+            color: LightScreenTheme.border,
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 12 * scale),
+          _referenceChip(),
           Row(
             children: [
-              Tooltip(
-                message: 'Add image or video to campaign',
-                child: GestureDetector(
-                  onTap: _sending ? null : _attachMedia,
-                  child: Icon(
-                    Icons.add_rounded,
-                    color: _sending ? Colors.black26 : _kHeaderPurple,
-                    size: 26,
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: _sending ? null : _showAttachOptions,
+                  customBorder: const CircleBorder(),
+                  child: Padding(
+                    padding: EdgeInsets.all(4 * scale),
+                    child: HomeSfIcon(
+                      icon: HomeFigmaIcons.addCircle,
+                      color: _composerMuted,
+                      size: iconSize,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
               ),
-              const SizedBox(width: 10),
-              Tooltip(
-                message: 'Use as generation reference',
-                child: GestureDetector(
-                  onTap: _sending ? null : _attachReference,
-                  child: Icon(
-                    Icons.add_photo_alternate_outlined,
-                    color: _sending ? Colors.black26 : _kHeaderPurple,
-                    size: 22,
+              SizedBox(width: 12 * scale),
+              Expanded(
+                child: TextField(
+                  controller: _input,
+                  focusNode: _focus,
+                  minLines: 1,
+                  maxLines: 4,
+                  keyboardType: TextInputType.multiline,
+                  textInputAction: TextInputAction.newline,
+                  onTapOutside: dismissAppKeyboard,
+                  style: GoogleFonts.poppins(
+                    color: const Color(0xFF475569),
+                    fontSize: 14,
+                  ),
+                  decoration: InputDecoration(
+                    hintText:
+                        _listening ? 'Listening…' : 'Type your message...',
+                    hintStyle: GoogleFonts.poppins(
+                      color: _composerMuted,
+                      fontSize: 14,
+                    ),
+                    border: InputBorder.none,
+                    isDense: true,
+                    contentPadding: EdgeInsets.symmetric(vertical: 8 * scale),
                   ),
                 ),
               ),
-              const Spacer(),
-              GestureDetector(
-                onTap: canSend ? _send : null,
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 160),
-                  width: 34,
-                  height: 34,
-                  decoration: BoxDecoration(
-                    color: canSend ? _kHeaderPurple : Colors.black12,
-                    shape: BoxShape.circle,
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: _sending ? null : _toggleListening,
+                  customBorder: const CircleBorder(),
+                  child: Padding(
+                    padding: EdgeInsets.all(4 * scale),
+                    child: HomeSfIcon(
+                      icon: HomeFigmaIcons.microphone,
+                      color: _listening
+                          ? LightScreenTheme.accent
+                          : _composerMuted,
+                      size: iconSize,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
-                  child: Icon(
-                    Icons.arrow_upward_rounded,
-                    color: canSend ? Colors.white : Colors.black38,
-                    size: 18,
+                ),
+              ),
+              SizedBox(width: 8 * scale),
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: canSend ? _send : null,
+                  customBorder: const CircleBorder(),
+                  child: Opacity(
+                    opacity: canSend ? 1 : 0.45,
+                    child: Container(
+                      width: 40 * scale,
+                      height: 40 * scale,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: _sendGradient,
+                      ),
+                      alignment: Alignment.center,
+                      child: HomeSfIcon(
+                        icon: HomeFigmaIcons.sendMail,
+                        color: Colors.white,
+                        size: 18 * scale.clamp(0.9, 1.05),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -1200,34 +1362,20 @@ class _ChatNextButton extends StatelessWidget {
         duration: const Duration(milliseconds: 180),
         opacity: enabled ? 1 : 0.38,
         child: Container(
-          height: 40,
-          padding: const EdgeInsets.symmetric(horizontal: 14),
+          height: 34,
+          padding: const EdgeInsets.symmetric(horizontal: 18),
+          alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: enabled ? _kHeaderPurple : Colors.grey.shade300,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: enabled ? _kHeaderBorder : Colors.transparent,
-              width: 0.5,
-            ),
+            color: enabled ? LightScreenTheme.button : const Color(0xFFD9D9D9),
+            borderRadius: BorderRadius.circular(20),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Next',
-                style: GoogleFonts.poppins(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: enabled ? Colors.white : Colors.white70,
-                ),
-              ),
-              const SizedBox(width: 4),
-              Icon(
-                Icons.arrow_forward_rounded,
-                size: 16,
-                color: enabled ? Colors.white : Colors.white70,
-              ),
-            ],
+          child: Text(
+            'Next',
+            style: GoogleFonts.poppins(
+              fontSize: LightScreenTheme.typeLabel,
+              fontWeight: FontWeight.w500,
+              color: Colors.white,
+            ),
           ),
         ),
       ),

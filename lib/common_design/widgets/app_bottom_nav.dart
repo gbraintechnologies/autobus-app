@@ -15,7 +15,6 @@ const _pillBottomGap = 10.0;
 const _fabClearance = 14.0;
 
 const _activeColor = CustColors.logodeep;
-const _activeBubble = Color(0xFFE8D2F2);
 const _iconInk = CustColors.mainCol;
 const _badgeRed = CustColors.accentRed;
 
@@ -149,20 +148,6 @@ class _NavSlot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bubble = 36 * scale.clamp(0.9, 1.08);
-    final mark = active
-        ? Container(
-            width: bubble,
-            height: bubble,
-            decoration: const BoxDecoration(
-              color: _activeBubble,
-              shape: BoxShape.circle,
-            ),
-            alignment: Alignment.center,
-            child: icon,
-          )
-        : icon;
-
     return Expanded(
       child: Semantics(
         button: true,
@@ -179,7 +164,7 @@ class _NavSlot extends StatelessWidget {
             child: _BadgeAnchor(
               count: badgeCount,
               scale: scale,
-              child: mark,
+              child: icon,
             ),
           ),
         ),

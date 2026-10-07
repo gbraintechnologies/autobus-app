@@ -313,6 +313,28 @@ class _HomeDashboard extends StatelessWidget {
                         ),
                         route: _HomeToolRoute.orders,
                       ),
+                      _HomeToolCard(
+                        title: 'Intelligence',
+                        subtitle: 'Train your AI',
+                        iconAsset: FigmaIcons.aiIntelligence,
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [Color(0xFFC084FC), Color(0xFF7F03B9)],
+                        ),
+                        route: _HomeToolRoute.intelligence,
+                      ),
+                      _HomeToolCard(
+                        title: 'Analytics',
+                        subtitle: 'Sales and reports',
+                        iconAsset: FigmaIcons.navAnalytics,
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [Color(0xFF34D399), Color(0xFF059669)],
+                        ),
+                        route: _HomeToolRoute.analytics,
+                      ),
                     ],
                   ),
                 ],
@@ -322,7 +344,16 @@ class _HomeDashboard extends StatelessWidget {
   }
 }
 
-enum _HomeToolRoute { inbox, messaging, marketing, customers, products, orders }
+enum _HomeToolRoute {
+  inbox,
+  messaging,
+  marketing,
+  customers,
+  products,
+  orders,
+  intelligence,
+  analytics,
+}
 
 class _HomeToolCard extends StatelessWidget {
   final String title;
@@ -355,6 +386,10 @@ class _HomeToolCard extends StatelessWidget {
         _push(context, const ManageMarketing());
       case _HomeToolRoute.orders:
         _push(context, const ManageOrders());
+      case _HomeToolRoute.intelligence:
+        AppShellNavigation.openIntelligence(context);
+      case _HomeToolRoute.analytics:
+        AppShellNavigation.goAnalytics(context);
     }
   }
 

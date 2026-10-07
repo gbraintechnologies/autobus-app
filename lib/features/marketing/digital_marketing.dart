@@ -3,6 +3,11 @@ import 'dart:typed_data';
 
 import 'package:autobus/barrel.dart';
 import 'package:autobus/common_design/device_media_picker.dart';
+import 'package:autobus/common_design/light_screen_theme.dart';
+import 'package:autobus/common_design/widgets/app_bottom_nav.dart';
+import 'package:autobus/common_design/widgets/app_screen_header.dart';
+import 'package:autobus/icons/figma_icons.dart';
+import 'package:autobus/icons/home_figma_icons.dart';
 import 'package:autobus/features/marketing/marketing_media_download.dart';
 import 'package:autobus/features/marketing/platform_post_details.dart';
 import 'package:autobus/features/marketing/tiktok_creator_info.dart';
@@ -14,6 +19,7 @@ import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:speech_to_text/speech_to_text.dart';
 import 'package:video_player/video_player.dart';
 
 part 'digital_marketing_chat.dart';
@@ -22,9 +28,7 @@ part 'digital_marketing_tiktok_consent.dart';
 part 'digital_marketing_finalize.dart';
 part 'digital_marketing_publish_status.dart';
 
-const _kPrimary = Color(0xFF1A1A2E);
 const _kHeaderPurple = Color(0xFF2A1447);
-const _kHeaderBorder = Color(0xFFA92FEB);
 const _kNextButtonPurple = Color(0xFF2A1447);
 const _kPurple = Color(0xFF6C63FF);
 const _kSelectGreen = Color(0xFF22C55E);
@@ -555,74 +559,41 @@ class _MarketingScaffold extends StatelessWidget {
   final Widget child;
   final double contentHorizontalPadding;
   final Widget? headerTrailing;
+  final Color backgroundColor;
+  final double contentTopGap;
 
   const _MarketingScaffold({
     required this.child,
     this.contentHorizontalPadding = 18,
     this.headerTrailing,
+    this.backgroundColor = Colors.white,
+    this.contentTopGap = 16,
   });
 
   @override
   Widget build(BuildContext context) {
+    final scale = MediaQuery.sizeOf(context).width / appShellDesignWidth;
     return GestureDetector(
       behavior: HitTestBehavior.translucent,
       onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: backgroundColor,
         resizeToAvoidBottomInset: true,
-        body: SafeArea(
-          child: Column(
-            children: [
-              const SizedBox(height: 24),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: SizedBox(
-                  height: 54,
-                  child: Row(
-                    children: [
-                      GestureDetector(
-                        onTap: () => Navigator.pop(context),
-                        child: Container(
-                          width: 54,
-                          height: 54,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: _kHeaderPurple,
-                            border: Border.all(
-                              color: _kHeaderBorder,
-                              width: 0.5,
-                            ),
-                          ),
-                          child: const Icon(
-                            Icons.arrow_back_ios_new,
-                            color: Colors.white,
-                            size: 18,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'Digital Marketing',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.poppins(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w400,
-                            color: _kHeaderPurple,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      headerTrailing ??
-                          const UserAvatar(onLightBackground: true),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Expanded(
+        body: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            AppScreenHeader(
+              scale: scale,
+              title: 'Digital Marketing',
+              titleFontSize: LightScreenTheme.headerTitleSize,
+              leading: AppScreenBackButton(scale: scale),
+              trailing:
+                  headerTrailing ?? const UserAvatar(onLightBackground: true),
+            ),
+            SizedBox(height: contentTopGap),
+            Expanded(
+              child: SafeArea(
+                top: false,
                 child: Padding(
                   padding: EdgeInsets.symmetric(
                     horizontal: contentHorizontalPadding,
@@ -630,8 +601,8 @@ class _MarketingScaffold extends StatelessWidget {
                   child: child,
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
