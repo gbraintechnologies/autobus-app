@@ -1308,7 +1308,7 @@ class _MarketingChatPageState extends State<_MarketingChatPage> {
                       color: _listening
                           ? LightScreenTheme.accent
                           : _composerMuted,
-                      size: iconSize,
+                      size: iconSize * 0.8,
                       fontWeight: FontWeight.w500,
                     ),
                   ),

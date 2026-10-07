@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:autobus/barrel.dart';
 import 'package:autobus/common_design/device_media_picker.dart';
+import 'package:autobus/common_design/light_screen_theme.dart';
+import 'package:autobus/icons/home_figma_icons.dart';
 import 'package:autobus/features/agent/agent_bloc.dart';
 import 'package:autobus/features/agent/agent_event.dart';
 import 'package:autobus/features/agent/agent_repository.dart';
@@ -40,9 +42,17 @@ class _AgentModeView extends StatefulWidget {
 }
 
 class _AgentModeViewState extends State<_AgentModeView> {
-  static const _purple = Color(0xFFA855F7);
-  static const _deep = Color(0xFF2A1447);
-  static const _panel = Color(0xFF1A1028);
+  static const _purple = LightScreenTheme.accent;
+  static const _text = Color(0xFF475569);
+  static const _muted = Color(0xFF94A3B8);
+  static const _divider = Color(0xFFE2E8F0);
+  static const _placeholder = Color(0xFFF1F5F9);
+  static const _tint = Color(0xFFF3E8FF);
+  static const _gradient = LinearGradient(
+    begin: Alignment.centerLeft,
+    end: Alignment.centerRight,
+    colors: [Color(0xFF6366F1), Color(0xFFA855F7)],
+  );
 
   final _input = TextEditingController();
   final _scroll = ScrollController();
@@ -261,15 +271,18 @@ class _AgentModeViewState extends State<_AgentModeView> {
   Future<void> _openAttachSheet() async {
     final choice = await showModalBottomSheet<String>(
       context: context,
-      backgroundColor: const Color(0xFF160A2C),
+      backgroundColor: Colors.white,
       showDragHandle: true,
       builder: (context) {
         Widget tile(IconData icon, String label, String value) {
           return ListTile(
-            leading: Icon(icon, color: Colors.white70),
+            leading: Icon(icon, color: _purple),
             title: Text(
               label,
-              style: GoogleFonts.poppins(color: Colors.white),
+              style: GoogleFonts.poppins(
+                color: LightScreenTheme.title,
+                fontSize: LightScreenTheme.typeBody,
+              ),
             ),
             onTap: () => Navigator.pop(context, value),
           );
@@ -280,9 +293,17 @@ class _AgentModeViewState extends State<_AgentModeView> {
             mainAxisSize: MainAxisSize.min,
             children: [
               tile(Icons.photo_camera_outlined, 'Take photo', 'photo_camera'),
-              tile(Icons.photo_library_outlined, 'Photo from gallery', 'photo_gallery'),
+              tile(
+                Icons.photo_library_outlined,
+                'Photo from gallery',
+                'photo_gallery',
+              ),
               tile(Icons.videocam_outlined, 'Record video', 'video_camera'),
-              tile(Icons.video_library_outlined, 'Video from gallery', 'video_gallery'),
+              tile(
+                Icons.video_library_outlined,
+                'Video from gallery',
+                'video_gallery',
+              ),
               tile(Icons.attach_file, 'Document', 'file'),
             ],
           ),
@@ -366,7 +387,8 @@ class _AgentModeViewState extends State<_AgentModeView> {
       final picked = result.files.first;
       final path = picked.path;
       if (path == null || path.isEmpty) return;
-      final video = productFileLooksLikeVideo(picked.name) ||
+      final video =
+          productFileLooksLikeVideo(picked.name) ||
           productFileLooksLikeVideo(path);
       setState(() {
         _staged.add(
@@ -394,11 +416,12 @@ class _AgentModeViewState extends State<_AgentModeView> {
       child: GestureDetector(
         onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
         behavior: HitTestBehavior.translucent,
-        child: Scaffold(
-          backgroundColor: Colors.black,
-          body: DecoratedBox(
-            decoration: ManageScreenStyle.homeDashboardBodyDecoration,
-            child: SafeArea(
+        child: AnnotatedRegion<SystemUiOverlayStyle>(
+          value: AppSystemUi.light,
+          child: Scaffold(
+            backgroundColor: LightScreenTheme.background,
+            body: SafeArea(
+              top: false,
               child: Column(
                 children: [
                   _header(),
@@ -431,8 +454,14 @@ class _AgentModeViewState extends State<_AgentModeView> {
   }
 
   Widget _header() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+    return Container(
+      color: Colors.white,
+      padding: EdgeInsets.fromLTRB(
+        16,
+        MediaQuery.paddingOf(context).top + 8,
+        16,
+        8,
+      ),
       child: SizedBox(
         height: 54,
         child: Stack(
@@ -450,8 +479,8 @@ class _AgentModeViewState extends State<_AgentModeView> {
               child: Text(
                 'Agentic mode',
                 style: GoogleFonts.poppins(
-                  color: Colors.white,
-                  fontSize: 13,
+                  color: LightScreenTheme.title,
+                  fontSize: LightScreenTheme.headerTitleSize,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -474,17 +503,17 @@ class _AgentModeViewState extends State<_AgentModeView> {
         padding: const EdgeInsets.symmetric(horizontal: 12),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFF3F1163)),
+          border: Border.all(color: _divider),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: Colors.white70, size: 16),
+            Icon(icon, color: _purple, size: 16),
             const SizedBox(width: 6),
             Text(
               label,
               style: GoogleFonts.poppins(
-                color: Colors.white,
+                color: LightScreenTheme.title,
                 fontSize: 12,
                 fontWeight: FontWeight.w400,
               ),
@@ -514,10 +543,7 @@ class _AgentModeViewState extends State<_AgentModeView> {
                 const SizedBox(width: 10),
                 Text(
                   _listening ? 'Listening…' : 'Working… this can take a minute',
-                  style: GoogleFonts.poppins(
-                    color: Colors.white54,
-                    fontSize: 13,
-                  ),
+                  style: GoogleFonts.poppins(color: _muted, fontSize: 13),
                 ),
               ],
             ),
@@ -558,37 +584,34 @@ class _AgentModeViewState extends State<_AgentModeView> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
-                color: isUser ? _panel : _deep,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(isUser ? 16 : 4),
-                  topRight: Radius.circular(isUser ? 4 : 16),
-                  bottomLeft: const Radius.circular(16),
-                  bottomRight: const Radius.circular(16),
-                ),
-                border: Border.all(
-                  color: const Color(0xFF3F1163).withValues(alpha: 0.7),
-                ),
+                color: isUser ? null : Colors.white,
+                gradient: isUser ? _gradient : null,
+                borderRadius: BorderRadius.circular(16),
+                border: bubble.failed
+                    ? Border.all(color: Colors.redAccent)
+                    : isUser
+                    ? null
+                    : Border.all(color: _divider),
               ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (bubble.attachments.isNotEmpty) ...[
-                        _mediaPreviews(bubble.attachments),
-                        if (bubble.text.trim().isNotEmpty) const SizedBox(height: 10),
-                      ],
-                      if (bubble.text.trim().isNotEmpty)
-                        Text(
-                          stripAiMarkdown(bubble.text),
-                          style: GoogleFonts.poppins(
-                            color: Colors.white.withValues(
-                              alpha: bubble.failed ? 0.75 : 1,
-                            ),
-                            fontSize: 14,
-                            height: 1.35,
-                          ),
-                        ),
-                    ],
-                  ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (bubble.attachments.isNotEmpty) ...[
+                    _mediaPreviews(bubble.attachments),
+                    if (bubble.text.trim().isNotEmpty)
+                      const SizedBox(height: 10),
+                  ],
+                  if (bubble.text.trim().isNotEmpty)
+                    Text(
+                      stripAiMarkdown(bubble.text),
+                      style: GoogleFonts.poppins(
+                        color: isUser ? Colors.white : _text,
+                        fontSize: 14,
+                        height: 1.4,
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
         ],
@@ -611,9 +634,9 @@ class _AgentModeViewState extends State<_AgentModeView> {
               child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: _panel,
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: const Color(0xFF3F1163)),
+                  border: Border.all(color: _divider),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -621,8 +644,8 @@ class _AgentModeViewState extends State<_AgentModeView> {
                     Text(
                       spec.title,
                       style: GoogleFonts.poppins(
-                        color: Colors.white,
-                        fontSize: 15,
+                        color: LightScreenTheme.title,
+                        fontSize: LightScreenTheme.typeTitle,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -630,7 +653,7 @@ class _AgentModeViewState extends State<_AgentModeView> {
                     Text(
                       spec.summary,
                       style: GoogleFonts.poppins(
-                        color: Colors.white70,
+                        color: _text,
                         fontSize: 13,
                         height: 1.35,
                       ),
@@ -676,7 +699,7 @@ class _AgentModeViewState extends State<_AgentModeView> {
                         child: Text(
                           'Decision sent',
                           style: GoogleFonts.poppins(
-                            color: Colors.white38,
+                            color: _muted,
                             fontSize: 12,
                           ),
                         ),
@@ -710,9 +733,9 @@ class _AgentModeViewState extends State<_AgentModeView> {
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: _panel,
+              color: Colors.white,
               borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: _purple.withValues(alpha: 0.45)),
+              border: Border.all(color: _purple.withValues(alpha: 0.35)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -720,7 +743,7 @@ class _AgentModeViewState extends State<_AgentModeView> {
                 Text(
                   spec.prompt,
                   style: GoogleFonts.poppins(
-                    color: Colors.white,
+                    color: _text,
                     fontSize: 14,
                     height: 1.35,
                   ),
@@ -733,23 +756,22 @@ class _AgentModeViewState extends State<_AgentModeView> {
                     children: [
                       for (final choice in spec.choices)
                         GestureDetector(
-                          onTap: () => _send(
-                            choiceText: choice.label,
-                            askId: spec.id,
-                          ),
+                          onTap: () =>
+                              _send(choiceText: choice.label, askId: spec.id),
                           child: Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 12,
                               vertical: 8,
                             ),
                             decoration: BoxDecoration(
+                              color: _tint,
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(color: _purple),
                             ),
                             child: Text(
                               choice.label,
                               style: GoogleFonts.poppins(
-                                color: Colors.white,
+                                color: _purple,
                                 fontSize: 12,
                               ),
                             ),
@@ -758,7 +780,9 @@ class _AgentModeViewState extends State<_AgentModeView> {
                     ],
                   ),
                 ],
-                if (!bubble.resolved && spec.kind != 'text' && spec.kind != 'choice') ...[
+                if (!bubble.resolved &&
+                    spec.kind != 'text' &&
+                    spec.kind != 'choice') ...[
                   const SizedBox(height: 12),
                   _cardButton(
                     label: kindLabel,
@@ -771,10 +795,7 @@ class _AgentModeViewState extends State<_AgentModeView> {
                     padding: const EdgeInsets.only(top: 10),
                     child: Text(
                       'Received',
-                      style: GoogleFonts.poppins(
-                        color: Colors.white38,
-                        fontSize: 12,
-                      ),
+                      style: GoogleFonts.poppins(color: _muted, fontSize: 12),
                     ),
                   ),
               ],
@@ -796,14 +817,14 @@ class _AgentModeViewState extends State<_AgentModeView> {
         height: 42,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: filled ? _purple : Colors.transparent,
+          color: filled ? LightScreenTheme.button : Colors.white,
           borderRadius: BorderRadius.circular(12),
-          border: filled ? null : Border.all(color: const Color(0xFF3F1163)),
+          border: filled ? null : Border.all(color: _divider),
         ),
         child: Text(
           label,
           style: GoogleFonts.poppins(
-            color: Colors.white,
+            color: filled ? Colors.white : LightScreenTheme.body,
             fontSize: 13,
             fontWeight: FontWeight.w500,
           ),
@@ -816,12 +837,14 @@ class _AgentModeViewState extends State<_AgentModeView> {
     return Container(
       width: 34,
       height: 34,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: _deep,
-        border: Border.all(color: _purple.withValues(alpha: 0.6)),
+      decoration: const BoxDecoration(shape: BoxShape.circle, color: _purple),
+      alignment: Alignment.center,
+      child: const HomeSfIcon(
+        icon: HomeFigmaIcons.ai,
+        color: Colors.white,
+        size: 16,
+        fontWeight: FontWeight.w500,
       ),
-      child: const Icon(Icons.auto_awesome, color: _purple, size: 16),
     );
   }
 
@@ -850,19 +873,19 @@ class _AgentModeViewState extends State<_AgentModeView> {
                       loadingBuilder: (context, child, progress) {
                         if (progress == null) return child;
                         return const ColoredBox(
-                          color: Color(0xFF2A1447),
+                          color: _placeholder,
                           child: Center(
                             child: AutobusLoadingIndicator(size: 28),
                           ),
                         );
                       },
                       errorBuilder: (_, __, ___) => ColoredBox(
-                        color: const Color(0xFF2A1447),
+                        color: _placeholder,
                         child: Center(
                           child: Text(
                             'Could not load image',
                             style: GoogleFonts.poppins(
-                              color: Colors.white54,
+                              color: _muted,
                               fontSize: 12,
                             ),
                           ),
@@ -886,12 +909,22 @@ class _AgentModeViewState extends State<_AgentModeView> {
             constraints: const BoxConstraints(maxWidth: 220),
             child: DecoratedBox(
               decoration: BoxDecoration(
-                color: _panel.withValues(alpha: 0.94),
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: _purple.withValues(alpha: 0.55)),
+                border: Border.all(color: _purple.withValues(alpha: 0.4)),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x14000000),
+                    blurRadius: 12,
+                    offset: Offset(0, 4),
+                  ),
+                ],
               ),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 child: Text(
                   _partialSpeech.trim().isEmpty
                       ? 'Listening… release to send'
@@ -899,10 +932,7 @@ class _AgentModeViewState extends State<_AgentModeView> {
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.right,
-                  style: GoogleFonts.poppins(
-                    color: Colors.white70,
-                    fontSize: 12,
-                  ),
+                  style: GoogleFonts.poppins(color: _text, fontSize: 12),
                 ),
               ),
             ),
@@ -926,18 +956,19 @@ class _AgentModeViewState extends State<_AgentModeView> {
           duration: const Duration(milliseconds: 160),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 160),
-            width: 58,
-            height: 58,
+            width: 54,
+            height: 54,
+            alignment: Alignment.center,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: const LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [Color(0xFF7C3AED), Color(0xFFA855F7)],
+                colors: [Color(0xFF6366F1), Color(0xFFA855F7)],
               ),
               border: Border.all(
-                color: _listening ? Colors.white : Colors.white24,
-                width: _listening ? 2 : 1,
+                color: Colors.white,
+                width: _listening ? 3 : 2,
               ),
               boxShadow: [
                 BoxShadow(
@@ -947,10 +978,11 @@ class _AgentModeViewState extends State<_AgentModeView> {
                 ),
               ],
             ),
-            child: Icon(
-              _listening ? Icons.mic : Icons.mic_none,
+            child: const HomeSfIcon(
+              icon: HomeFigmaIcons.microphone,
               color: Colors.white,
-              size: 26,
+              size: 20,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ),
@@ -961,127 +993,137 @@ class _AgentModeViewState extends State<_AgentModeView> {
   Widget _inputBar() {
     final canSend =
         (_input.text.trim().isNotEmpty || _staged.isNotEmpty) && !_uploading;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-        decoration: BoxDecoration(
-          color: _panel,
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(
-            color: _listening ? _purple : const Color(0xFF3F1163),
-          ),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (_staged.isNotEmpty) ...[
-              SizedBox(
-                height: 36,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: _staged.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 8),
-                  itemBuilder: (context, index) {
-                    final item = _staged[index];
-                    return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
-                      decoration: BoxDecoration(
-                        color: _deep,
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            item.kind == 'video'
-                                ? Icons.videocam_outlined
-                                : item.kind == 'file'
-                                ? Icons.insert_drive_file_outlined
-                                : Icons.image_outlined,
-                            color: Colors.white70,
-                            size: 14,
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Divider(height: 1, thickness: 0.5, color: _divider),
+          const SizedBox(height: 10),
+          if (_staged.isNotEmpty) ...[
+            SizedBox(
+              height: 36,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: _staged.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                itemBuilder: (context, index) {
+                  final item = _staged[index];
+                  return Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    decoration: BoxDecoration(
+                      color: _tint,
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          item.kind == 'video'
+                              ? Icons.videocam_outlined
+                              : item.kind == 'file'
+                              ? Icons.insert_drive_file_outlined
+                              : Icons.image_outlined,
+                          color: _purple,
+                          size: 14,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          item.name ?? item.kind,
+                          style: GoogleFonts.poppins(
+                            color: _text,
+                            fontSize: 11,
                           ),
-                          const SizedBox(width: 6),
-                          Text(
-                            item.name ?? item.kind,
-                            style: GoogleFonts.poppins(
-                              color: Colors.white,
-                              fontSize: 11,
-                            ),
+                        ),
+                        GestureDetector(
+                          onTap: () => setState(() => _staged.removeAt(index)),
+                          child: const Padding(
+                            padding: EdgeInsets.only(left: 6),
+                            child: Icon(Icons.close, color: _muted, size: 14),
                           ),
-                          GestureDetector(
-                            onTap: () => setState(() => _staged.removeAt(index)),
-                            child: const Padding(
-                              padding: EdgeInsets.only(left: 6),
-                              child: Icon(
-                                Icons.close,
-                                color: Colors.white54,
-                                size: 14,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(height: 8),
-            ],
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxHeight: 120),
-              child: TextField(
-                controller: _input,
-                cursorColor: _purple,
-                minLines: 1,
-                maxLines: null,
-                keyboardType: TextInputType.multiline,
-                textInputAction: TextInputAction.newline,
-                onTapOutside: dismissAppKeyboard,
-                style: GoogleFonts.poppins(
-                  color: Colors.white,
-                  fontSize: 14,
-                ),
-                decoration: InputDecoration(
-                  hintText: _listening
-                      ? 'Listening…'
-                      : 'Tell Autobus what to do…',
-                  hintStyle: GoogleFonts.poppins(
-                    color: Colors.white38,
-                    fontSize: 14,
-                  ),
-                  border: InputBorder.none,
-                  isDense: true,
-                  contentPadding: EdgeInsets.zero,
-                ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
               ),
             ),
             const SizedBox(height: 8),
-            Row(
-              children: [
-                IconButton(
-                  visualDensity: VisualDensity.compact,
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                  onPressed: _uploading ? null : _openAttachSheet,
-                  icon: const Icon(Icons.add_rounded, color: _purple, size: 26),
-                ),
-                const Spacer(),
-                GestureDetector(
-                  onTap: canSend ? () { _send(); } : null,
-                  child: Icon(
-                    Icons.send_rounded,
-                    color: canSend
-                        ? _purple
-                        : Colors.white.withValues(alpha: 0.28),
-                    size: 22,
+          ],
+          Row(
+            children: [
+              InkWell(
+                onTap: _uploading ? null : _openAttachSheet,
+                customBorder: const CircleBorder(),
+                child: const Padding(
+                  padding: EdgeInsets.all(4),
+                  child: HomeSfIcon(
+                    icon: HomeFigmaIcons.add,
+                    color: _muted,
+                    size: 24,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
-              ],
-            ),
-          ],
-        ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 120),
+                  child: TextField(
+                    controller: _input,
+                    cursorColor: _purple,
+                    minLines: 1,
+                    maxLines: null,
+                    keyboardType: TextInputType.multiline,
+                    textInputAction: TextInputAction.newline,
+                    onTapOutside: dismissAppKeyboard,
+                    style: GoogleFonts.poppins(color: _text, fontSize: 14),
+                    decoration: InputDecoration(
+                      hintText: _listening
+                          ? 'Listening…'
+                          : 'Tell Autobus what to do…',
+                      hintStyle: GoogleFonts.poppins(
+                        color: _muted,
+                        fontSize: 14,
+                      ),
+                      border: InputBorder.none,
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              InkWell(
+                onTap: canSend
+                    ? () {
+                        _send();
+                      }
+                    : null,
+                customBorder: const CircleBorder(),
+                child: Opacity(
+                  opacity: canSend ? 1 : 0.45,
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: _gradient,
+                    ),
+                    alignment: Alignment.center,
+                    child: const HomeSfIcon(
+                      icon: HomeFigmaIcons.sendMail,
+                      color: Colors.white,
+                      size: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -1134,13 +1176,16 @@ class _AgentInlineVideoState extends State<_AgentInlineVideo> {
   Widget build(BuildContext context) {
     if (_failed) {
       return ColoredBox(
-        color: const Color(0xFF2A1447),
+        color: const Color(0xFFF1F5F9),
         child: SizedBox(
           height: 180,
           child: Center(
             child: Text(
               'Could not load video',
-              style: GoogleFonts.poppins(color: Colors.white54, fontSize: 12),
+              style: GoogleFonts.poppins(
+                color: const Color(0xFF94A3B8),
+                fontSize: 12,
+              ),
             ),
           ),
         ),
@@ -1149,7 +1194,7 @@ class _AgentInlineVideoState extends State<_AgentInlineVideo> {
     final controller = _controller;
     if (controller == null || !controller.value.isInitialized) {
       return const ColoredBox(
-        color: Color(0xFF2A1447),
+        color: Color(0xFFF1F5F9),
         child: SizedBox(
           height: 180,
           child: Center(child: AutobusLoadingIndicator(size: 28)),

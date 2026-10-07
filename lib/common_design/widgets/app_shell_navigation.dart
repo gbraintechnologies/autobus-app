@@ -8,6 +8,7 @@ import 'package:autobus/features/notifications/notifications_inbox.dart';
 import 'package:autobus/features/products/manage_products.dart';
 import 'package:autobus/features/reports/manage_reports.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 
 /// Shared bottom-nav actions. Screens opened from here are pushed on
 /// [shellKey] so the bar stays in place above them.
@@ -176,6 +177,16 @@ class _ShellObserver extends NavigatorObserver {
   }
 
   void _sync(Route<dynamic>? route) {
+    final phase = SchedulerBinding.instance.schedulerPhase;
+    if (phase == SchedulerPhase.persistentCallbacks ||
+        phase == SchedulerPhase.midFrameMicrotasks) {
+      SchedulerBinding.instance.addPostFrameCallback((_) => _apply(route));
+      return;
+    }
+    _apply(route);
+  }
+
+  void _apply(Route<dynamic>? route) {
     final name = route?.settings.name;
     final atHome = route == null || route.isFirst;
     AppShellNavigation.homeVisible.value = atHome;

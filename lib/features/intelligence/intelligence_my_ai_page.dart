@@ -653,7 +653,7 @@ class _MyAiInputBar extends StatelessWidget {
                       color: listening
                           ? const Color(0xFF7F03B9)
                           : _timestampColor,
-                      size: 24 * scale.clamp(0.9, 1.05),
+                      size: 19 * scale.clamp(0.9, 1.05),
                       fontWeight: FontWeight.w500,
                     ),
                   ),

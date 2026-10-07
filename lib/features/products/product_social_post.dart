@@ -1,3 +1,4 @@
+import 'package:autobus/common_design/light_screen_theme.dart';
 import 'package:autobus/features/home/services/api_service.dart';
 import 'package:autobus/features/marketing/models/postiz_integration.dart';
 import 'package:autobus/features/marketing/outlet_catalog.dart';
@@ -198,9 +199,9 @@ class ProductSocialChannelPicker extends StatelessWidget {
       children: [
         Text(
           'Post to social channels',
-          style: GoogleFonts.outfit(
-            color: Colors.white.withValues(alpha: 0.9),
-            fontSize: 14,
+          style: GoogleFonts.poppins(
+            color: LightScreenTheme.title,
+            fontSize: LightScreenTheme.typeBody,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -209,9 +210,9 @@ class ProductSocialChannelPicker extends StatelessWidget {
           integrations.isEmpty
               ? 'Link Instagram, YouTube, or TikTok in Marketing to post this product when you create it.'
               : 'Optional. Select any linked channel to publish this product after you create it.',
-          style: GoogleFonts.outfit(
-            color: Colors.white.withValues(alpha: 0.5),
-            fontSize: 12,
+          style: GoogleFonts.poppins(
+            color: LightScreenTheme.muted,
+            fontSize: LightScreenTheme.typeCaption,
             height: 1.4,
           ),
         ),
@@ -272,14 +273,10 @@ class _ChannelChip extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.fromLTRB(10, 8, 12, 8),
             decoration: BoxDecoration(
-              color: selected
-                  ? color.withValues(alpha: 0.18)
-                  : Colors.white.withValues(alpha: 0.06),
+              color: selected ? color.withValues(alpha: 0.12) : Colors.white,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: selected
-                    ? color
-                    : const Color(0xFF3F1163).withValues(alpha: 0.85),
+                color: selected ? color : LightScreenTheme.border,
               ),
             ),
             child: Row(
@@ -292,9 +289,9 @@ class _ChannelChip extends StatelessWidget {
                 const SizedBox(width: 6),
                 Text(
                   needsVideo ? '$label (needs video)' : label,
-                  style: GoogleFonts.outfit(
-                    color: Colors.white.withValues(alpha: 0.9),
-                    fontSize: 12,
+                  style: GoogleFonts.poppins(
+                    color: LightScreenTheme.body,
+                    fontSize: LightScreenTheme.typeLabel,
                     fontWeight: FontWeight.w500,
                   ),
                 ),

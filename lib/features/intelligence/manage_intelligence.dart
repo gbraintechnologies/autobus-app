@@ -6,7 +6,6 @@ import 'package:autobus/common_design/widgets/app_bottom_nav.dart';
 import 'package:autobus/common_design/widgets/app_screen_header.dart';
 import 'package:autobus/common_design/widgets/credits_pill.dart';
 import 'package:autobus/features/intelligence/intelligence_files_page.dart';
-import 'package:autobus/features/intelligence/intelligence_intro_modal.dart';
 import 'package:autobus/features/intelligence/intelligence_my_ai_page.dart';
 import 'package:autobus/features/intelligence/intelligence_websites_page.dart';
 import 'package:autobus/icons/figma_icons.dart';
@@ -136,10 +135,7 @@ class _ManageIntelligenceState extends State<ManageIntelligence> {
             scale: scale,
             title: 'Manage Intelligence',
             titleFontSize: 16,
-            leading: IntelligenceInfoButton(
-              scale: scale,
-              onTap: () => IntelligenceIntroModal.show(context),
-            ),
+            leading: AppScreenBackButton(scale: scale),
             trailing: CreditsPill(
               scale: scale,
               creditCategory: CreditCategory.llm,
