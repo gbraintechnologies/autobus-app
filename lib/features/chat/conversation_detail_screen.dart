@@ -1,8 +1,8 @@
 import 'package:autobus/barrel.dart';
 import 'package:autobus/common_design/light_screen_theme.dart';
 import 'package:autobus/common_design/widgets/app_bottom_nav.dart';
+import 'package:autobus/common_design/widgets/app_chat.dart';
 import 'package:autobus/common_design/widgets/light_screen_scaffold.dart';
-import 'package:autobus/icons/home_figma_icons.dart';
 
 /// How the conversation screen was opened (controls which actions appear).
 enum ConversationScreenMode {
@@ -40,15 +40,6 @@ class _PendingMessage {
 }
 
 class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
-  static const _muted = Color(0xFF94A3B8);
-  static const _bubbleText = Color(0xFF475569);
-  static const _divider = Color(0xFFE2E8F0);
-  static const _gradient = LinearGradient(
-    begin: Alignment.centerLeft,
-    end: Alignment.centerRight,
-    colors: [Color(0xFF6366F1), Color(0xFFA855F7)],
-  );
-
   final _messageCtrl = TextEditingController();
   final _scrollCtrl = ScrollController();
 
@@ -65,6 +56,9 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
   @override
   void initState() {
     super.initState();
+    _messageCtrl.addListener(() {
+      if (mounted) setState(() {});
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) => _load());
   }
 
@@ -115,10 +109,12 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
       setState(() => _setDetail(detail));
 
       final active = detail['intervention_active'];
-      final isActive =
-          active is bool ? active : active?.toString().toLowerCase() == 'true';
-      final lifecycle =
-          (detail['conversation_lifecycle'] ?? '').toString().toLowerCase();
+      final isActive = active is bool
+          ? active
+          : active?.toString().toLowerCase() == 'true';
+      final lifecycle = (detail['conversation_lifecycle'] ?? '')
+          .toString()
+          .toLowerCase();
       if (!isActive || lifecycle == 'completed') {
         _stopLivePolling();
       } else if (nextLen > prevLen) {
@@ -153,8 +149,9 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
       _scrollToBottom();
       if (widget.mode == ConversationScreenMode.liveChat) {
         final active = detail['intervention_active'];
-        final isActive =
-            active is bool ? active : active?.toString().toLowerCase() == 'true';
+        final isActive = active is bool
+            ? active
+            : active?.toString().toLowerCase() == 'true';
         if (isActive && _livePollTimer == null) {
           _startLivePolling();
         }
@@ -203,7 +200,9 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
   }
 
   bool get _isCompleted {
-    final v = (_detail?['conversation_lifecycle'] ?? '').toString().toLowerCase();
+    final v = (_detail?['conversation_lifecycle'] ?? '')
+        .toString()
+        .toLowerCase();
     return v == 'completed';
   }
 
@@ -440,79 +439,11 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
   }
 
   Widget _buildComposer() {
-    final scale = MediaQuery.sizeOf(context).width / appShellDesignWidth;
-    final iconScale = scale.clamp(0.9, 1.05);
-    final canSend = _messageCtrl.text.trim().isNotEmpty && !_sending;
-    final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
-
-    return Container(
-      color: Colors.white,
-      padding: EdgeInsets.fromLTRB(
-        12 * scale,
-        0,
-        12 * scale,
-        12 * scale + bottomInset,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Divider(height: 1, thickness: 0.5, color: _divider),
-          SizedBox(height: 12 * scale),
-          Row(
-            children: [
-              SizedBox(width: 8 * scale),
-              Expanded(
-                child: TextField(
-                  controller: _messageCtrl,
-                  minLines: 1,
-                  maxLines: 4,
-                  keyboardType: TextInputType.multiline,
-                  textInputAction: TextInputAction.newline,
-                  cursorColor: LightScreenTheme.accent,
-                  onChanged: (_) => setState(() {}),
-                  onTapOutside: dismissAppKeyboard,
-                  style: GoogleFonts.poppins(color: _bubbleText, fontSize: 14),
-                  decoration: InputDecoration(
-                    hintText: 'Reply as agent...',
-                    hintStyle: GoogleFonts.poppins(color: _muted, fontSize: 14),
-                    border: InputBorder.none,
-                    isDense: true,
-                    contentPadding: EdgeInsets.symmetric(vertical: 8 * scale),
-                  ),
-                ),
-              ),
-              SizedBox(width: 8 * scale),
-              Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: canSend ? _sendMessage : null,
-                  customBorder: const CircleBorder(),
-                  child: Opacity(
-                    opacity: canSend ? 1 : 0.45,
-                    child: Container(
-                      width: 40 * scale,
-                      height: 40 * scale,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: _gradient,
-                      ),
-                      alignment: Alignment.center,
-                      child: _sending
-                          ? const AutobusLoadingIndicator(size: 18)
-                          : HomeSfIcon(
-                              icon: HomeFigmaIcons.sendMail,
-                              color: Colors.white,
-                              size: 18 * iconScale,
-                              fontWeight: FontWeight.w600,
-                            ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+    return AppChatComposer(
+      controller: _messageCtrl,
+      canSend: _messageCtrl.text.trim().isNotEmpty && !_sending,
+      onSend: _sendMessage,
+      hintText: 'Reply as agent...',
     );
   }
 
@@ -570,7 +501,12 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
     return ListView.builder(
       controller: _scrollCtrl,
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-      padding: EdgeInsets.fromLTRB(16 * scale, 16 * scale, 16 * scale, 24 * scale),
+      padding: EdgeInsets.fromLTRB(
+        16 * scale,
+        16 * scale,
+        16 * scale,
+        24 * scale,
+      ),
       itemCount: itemCount,
       itemBuilder: (context, index) {
         if (index >= history.length) {
@@ -622,108 +558,15 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
     bool failed = false,
   }) {
     final isCustomer = role == 'user';
-    final isAgent = role == 'human';
-    final avatarSize = 32 * scale;
-
-    final bubble = Container(
-      constraints: BoxConstraints(maxWidth: 290 * scale),
-      padding: EdgeInsets.symmetric(horizontal: 16 * scale, vertical: 10 * scale),
-      decoration: BoxDecoration(
-        color: isCustomer
-            ? Colors.white
-            : isAgent
-            ? LightScreenTheme.button
-            : null,
-        gradient: !isCustomer && !isAgent ? _gradient : null,
-        borderRadius: BorderRadius.circular(16 * scale),
-        border: failed
-            ? Border.all(color: Colors.redAccent)
-            : isCustomer
-            ? Border.all(color: _divider)
-            : null,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (!isCustomer)
-            Padding(
-              padding: EdgeInsets.only(bottom: 2 * scale),
-              child: Text(
-                isAgent ? 'You · Agent' : 'Autobus AI',
-                style: GoogleFonts.poppins(
-                  color: Colors.white.withValues(alpha: 0.75),
-                  fontSize: LightScreenTheme.typeMicro,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          Text(
-            isCustomer ? text : stripAiMarkdown(text),
-            style: GoogleFonts.poppins(
-              color: isCustomer ? _bubbleText : Colors.white,
-              fontSize: 14,
-              height: 1.4,
-            ),
-          ),
-        ],
-      ),
-    );
-
-    final column = Column(
-      crossAxisAlignment:
-          isCustomer ? CrossAxisAlignment.start : CrossAxisAlignment.end,
-      children: [
-        bubble,
-        if (footer != null) ...[
-          SizedBox(height: 4 * scale),
-          Text(
-            footer,
-            style: GoogleFonts.poppins(
-              color: failed ? Colors.redAccent : _muted,
-              fontSize: LightScreenTheme.typeCaption,
-            ),
-          ),
-        ],
-      ],
-    );
-
-    final avatar = Container(
-      width: avatarSize,
-      height: avatarSize,
-      decoration: BoxDecoration(
-        color: isCustomer
-            ? const Color(0xFFE2E8F0)
-            : isAgent
-            ? LightScreenTheme.button
-            : LightScreenTheme.accent,
-        shape: BoxShape.circle,
-      ),
-      alignment: Alignment.center,
-      child: isCustomer
-          ? Icon(Icons.person_rounded, size: 18 * scale, color: _bubbleText)
-          : isAgent
-          ? Icon(Icons.support_agent_rounded, size: 18 * scale, color: Colors.white)
-          : HomeSfIcon(
-              icon: HomeFigmaIcons.ai,
-              color: Colors.white,
-              size: 16 * scale.clamp(0.9, 1.05),
-              fontWeight: FontWeight.w500,
-            ),
-    );
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: isCustomer
-          ? [
-              avatar,
-              SizedBox(width: 10 * scale),
-              Expanded(child: column),
-            ]
-          : [
-              Expanded(child: column),
-              SizedBox(width: 10 * scale),
-              avatar,
-            ],
+    return AppChatBubble(
+      fromUser: isCustomer,
+      alignRight: !isCustomer,
+      label: isCustomer
+          ? null
+          : (role == 'human' ? 'You · Agent' : 'Autobus AI'),
+      text: isCustomer ? text : stripAiMarkdown(text),
+      footer: footer,
+      failed: failed,
     );
   }
 }

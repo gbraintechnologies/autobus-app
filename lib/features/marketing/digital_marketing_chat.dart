@@ -78,11 +78,6 @@ class _MarketingChatPageState extends State<_MarketingChatPage> {
   bool _speechReady = false;
 
   static const _composerMuted = Color(0xFF94A3B8);
-  static const _sendGradient = LinearGradient(
-    begin: Alignment.centerLeft,
-    end: Alignment.centerRight,
-    colors: [Color(0xFF6366F1), Color(0xFFA855F7)],
-  );
 
   DigitalMarketingCampaign get _campaign => widget.campaign;
 
@@ -990,88 +985,55 @@ class _MarketingChatPageState extends State<_MarketingChatPage> {
 
   Widget _messageBubble(MarketingChatMessage msg) {
     if (msg.isUser) {
-      return Align(
-        alignment: Alignment.centerRight,
-        child: Container(
-          margin: const EdgeInsets.only(bottom: 12, left: 48),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          decoration: BoxDecoration(
-            color: _kHeaderPurple,
-            borderRadius: BorderRadius.circular(18),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              if (_hasReferencePreview(msg)) ...[
-                _userReferenceThumb(msg),
-                const SizedBox(height: 8),
-              ],
-              Text(
-                msg.text,
-                style: GoogleFonts.poppins(
-                  fontSize: 14,
-                  color: Colors.white,
-                  height: 1.4,
-                ),
-              ),
-            ],
-          ),
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 16),
+        child: AppChatBubble(
+          fromUser: true,
+          text: msg.text,
+          child: _hasReferencePreview(msg) ? _userReferenceThumb(msg) : null,
         ),
       );
     }
 
     final content = _contentFor(msg);
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12, right: 36),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: const Color(0xFFE8E0F0)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (msg.isGenerating)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 8),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    AutobusLoadingIndicator(size: 22),
-                    SizedBox(width: 10),
-                    Text('Creating…'),
-                  ],
-                ),
-              )
-            else if (msg.error != null)
-              Text(
-                msg.error!,
-                style: GoogleFonts.poppins(
-                  fontSize: 13,
-                  color: CustColors.accentRed,
-                ),
-              )
-            else ...[
-              if (content != null) _contentPreview(content),
-              if (msg.text.trim().isNotEmpty &&
-                  (content == null ||
-                      content.type != MarketingContentType.text)) ...[
-                if (content != null) const SizedBox(height: 8),
-                Text(
-                  msg.text,
-                  style: GoogleFonts.poppins(
-                    fontSize: 13,
-                    color: Colors.black87,
-                    height: 1.4,
-                  ),
-                ),
-              ],
-            ],
+    final white = GoogleFonts.poppins(
+      fontSize: LightScreenTheme.typeBody,
+      color: Colors.white,
+      height: 1.45,
+    );
+    Widget body;
+    if (msg.isGenerating) {
+      body = Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const AutobusLoadingIndicator(size: 20),
+          const SizedBox(width: 10),
+          Text('Creating…', style: white),
+        ],
+      );
+    } else if (msg.error != null) {
+      body = Text(msg.error!, style: white);
+    } else {
+      final showText = msg.text.trim().isNotEmpty &&
+          (content == null || content.type != MarketingContentType.text);
+      body = Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (content != null) _contentPreview(content),
+          if (showText) ...[
+            if (content != null) const SizedBox(height: 8),
+            Text(msg.text, style: white),
           ],
-        ),
+        ],
+      );
+    }
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: AppChatBubble(
+        fromUser: false,
+        failed: msg.error != null,
+        child: body,
       ),
     );
   }
@@ -1081,8 +1043,8 @@ class _MarketingChatPageState extends State<_MarketingChatPage> {
       return Text(
         content.displayText,
         style: GoogleFonts.poppins(
-          fontSize: 14,
-          color: Colors.black87,
+          fontSize: LightScreenTheme.typeBody,
+          color: Colors.white,
           height: 1.45,
         ),
       );
@@ -1235,115 +1197,16 @@ class _MarketingChatPageState extends State<_MarketingChatPage> {
   }
 
   Widget _composer({required bool canSend}) {
-    final scale = MediaQuery.sizeOf(context).width / appShellDesignWidth;
-    final iconSize = 24 * scale.clamp(0.9, 1.05);
-    return Container(
-      color: Colors.white,
-      padding: EdgeInsets.fromLTRB(12 * scale, 0, 12 * scale, 12 * scale),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const Divider(
-            height: 1,
-            thickness: 0.5,
-            color: LightScreenTheme.border,
-          ),
-          SizedBox(height: 12 * scale),
-          _referenceChip(),
-          Row(
-            children: [
-              Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: _sending ? null : _showAttachOptions,
-                  customBorder: const CircleBorder(),
-                  child: Padding(
-                    padding: EdgeInsets.all(4 * scale),
-                    child: HomeSfIcon(
-                      icon: HomeFigmaIcons.addCircle,
-                      color: _composerMuted,
-                      size: iconSize,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ),
-              SizedBox(width: 12 * scale),
-              Expanded(
-                child: TextField(
-                  controller: _input,
-                  focusNode: _focus,
-                  minLines: 1,
-                  maxLines: 4,
-                  keyboardType: TextInputType.multiline,
-                  textInputAction: TextInputAction.newline,
-                  onTapOutside: dismissAppKeyboard,
-                  style: GoogleFonts.poppins(
-                    color: const Color(0xFF475569),
-                    fontSize: 14,
-                  ),
-                  decoration: InputDecoration(
-                    hintText:
-                        _listening ? 'Listening…' : 'Type your message...',
-                    hintStyle: GoogleFonts.poppins(
-                      color: _composerMuted,
-                      fontSize: 14,
-                    ),
-                    border: InputBorder.none,
-                    isDense: true,
-                    contentPadding: EdgeInsets.symmetric(vertical: 8 * scale),
-                  ),
-                ),
-              ),
-              Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: _sending ? null : _toggleListening,
-                  customBorder: const CircleBorder(),
-                  child: Padding(
-                    padding: EdgeInsets.all(4 * scale),
-                    child: HomeSfIcon(
-                      icon: HomeFigmaIcons.microphone,
-                      color: _listening
-                          ? LightScreenTheme.accent
-                          : _composerMuted,
-                      size: iconSize * 0.8,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ),
-              SizedBox(width: 8 * scale),
-              Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: canSend ? _send : null,
-                  customBorder: const CircleBorder(),
-                  child: Opacity(
-                    opacity: canSend ? 1 : 0.45,
-                    child: Container(
-                      width: 40 * scale,
-                      height: 40 * scale,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: _sendGradient,
-                      ),
-                      alignment: Alignment.center,
-                      child: HomeSfIcon(
-                        icon: HomeFigmaIcons.sendMail,
-                        color: Colors.white,
-                        size: 18 * scale.clamp(0.9, 1.05),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+    return AppChatComposer(
+      controller: _input,
+      focusNode: _focus,
+      canSend: canSend,
+      busy: _sending,
+      listening: _listening,
+      onSend: _send,
+      onAttach: _showAttachOptions,
+      onMic: _toggleListening,
+      header: _referenceChip(),
     );
   }
 }

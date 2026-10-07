@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:autobus/barrel.dart';
 import 'package:autobus/common_design/device_media_picker.dart';
 import 'package:autobus/common_design/light_screen_theme.dart';
-import 'package:autobus/icons/home_figma_icons.dart';
+import 'package:autobus/common_design/widgets/app_chat.dart';
 import 'package:autobus/features/agent/agent_bloc.dart';
 import 'package:autobus/features/agent/agent_event.dart';
 import 'package:autobus/features/agent/agent_repository.dart';
@@ -48,11 +48,6 @@ class _AgentModeViewState extends State<_AgentModeView> {
   static const _divider = Color(0xFFE2E8F0);
   static const _placeholder = Color(0xFFF1F5F9);
   static const _tint = Color(0xFFF3E8FF);
-  static const _gradient = LinearGradient(
-    begin: Alignment.centerLeft,
-    end: Alignment.centerRight,
-    colors: [Color(0xFF6366F1), Color(0xFFA855F7)],
-  );
 
   final _input = TextEditingController();
   final _scroll = ScrollController();
@@ -62,7 +57,6 @@ class _AgentModeViewState extends State<_AgentModeView> {
   bool _listening = false;
   bool _holdingMic = false;
   bool _uploading = false;
-  String _partialSpeech = '';
   final List<AgentAttachment> _staged = [];
 
   @override
@@ -124,10 +118,7 @@ class _AgentModeViewState extends State<_AgentModeView> {
     }
     _holdingMic = true;
     HapticFeedback.mediumImpact();
-    setState(() {
-      _listening = true;
-      _partialSpeech = '';
-    });
+    setState(() => _listening = true);
     try {
       await _speech.listen(
         listenOptions: SpeechListenOptions(
@@ -141,7 +132,6 @@ class _AgentModeViewState extends State<_AgentModeView> {
           if (!mounted) return;
           if (!_holdingMic && !_listening) return;
           setState(() {
-            _partialSpeech = result.recognizedWords;
             if (result.recognizedWords.trim().isNotEmpty) {
               _input.text = result.recognizedWords;
               _input.selection = TextSelection.collapsed(
@@ -181,6 +171,7 @@ class _AgentModeViewState extends State<_AgentModeView> {
     final pendingAsk = bloc.state.pendingAsk;
     final resolvedAskId = askId ?? pendingAsk?.id;
 
+    _holdingMic = false;
     await _speech.stop();
     setState(() => _listening = false);
 
@@ -207,10 +198,7 @@ class _AgentModeViewState extends State<_AgentModeView> {
       ),
     );
     _input.clear();
-    setState(() {
-      _staged.clear();
-      _partialSpeech = '';
-    });
+    setState(() => _staged.clear());
   }
 
   Future<List<AgentAttachment>> _uploadStaged(
@@ -428,19 +416,7 @@ class _AgentModeViewState extends State<_AgentModeView> {
                   Expanded(
                     child: BlocConsumer<AgentBloc, AgentViewState>(
                       listener: (context, state) => _scrollToEnd(),
-                      builder: (context, state) {
-                        return Stack(
-                          children: [
-                            _messageList(state),
-                            if (_listening) _listeningOverlay(),
-                            Positioned(
-                              right: 16,
-                              bottom: 16,
-                              child: _holdMicButton(),
-                            ),
-                          ],
-                        );
-                      },
+                      builder: (context, state) => _messageList(state),
                     ),
                   ),
                   _inputBar(),
@@ -530,27 +506,30 @@ class _AgentModeViewState extends State<_AgentModeView> {
     }
     return ListView.builder(
       controller: _scroll,
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 88),
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       itemCount: state.bubbles.length + (state.working ? 1 : 0),
       itemBuilder: (context, index) {
         if (index >= state.bubbles.length) {
           return Padding(
-            padding: const EdgeInsets.only(top: 8, bottom: 12),
+            padding: const EdgeInsets.only(top: 4, bottom: 16),
             child: Row(
               children: [
-                _botAvatar(),
+                const AutobusLoadingIndicator(size: 18),
                 const SizedBox(width: 10),
                 Text(
-                  _listening ? 'Listening…' : 'Working… this can take a minute',
-                  style: GoogleFonts.poppins(color: _muted, fontSize: 13),
+                  'Working… this can take a minute',
+                  style: GoogleFonts.poppins(
+                    color: _muted,
+                    fontSize: LightScreenTheme.typeLabel,
+                  ),
                 ),
               ],
             ),
           );
         }
         return Padding(
-          padding: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.only(bottom: 16),
           child: _bubble(state.bubbles[index]),
         );
       },
@@ -571,51 +550,13 @@ class _AgentModeViewState extends State<_AgentModeView> {
   }
 
   Widget _textRow(AgentBubble bubble, {required bool isUser}) {
-    final maxWidth = MediaQuery.sizeOf(context).width * 0.74;
-    return Align(
-      alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          if (!isUser) ...[_botAvatar(), const SizedBox(width: 8)],
-          ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: maxWidth),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              decoration: BoxDecoration(
-                color: isUser ? null : Colors.white,
-                gradient: isUser ? _gradient : null,
-                borderRadius: BorderRadius.circular(16),
-                border: bubble.failed
-                    ? Border.all(color: Colors.redAccent)
-                    : isUser
-                    ? null
-                    : Border.all(color: _divider),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (bubble.attachments.isNotEmpty) ...[
-                    _mediaPreviews(bubble.attachments),
-                    if (bubble.text.trim().isNotEmpty)
-                      const SizedBox(height: 10),
-                  ],
-                  if (bubble.text.trim().isNotEmpty)
-                    Text(
-                      stripAiMarkdown(bubble.text),
-                      style: GoogleFonts.poppins(
-                        color: isUser ? Colors.white : _text,
-                        fontSize: 14,
-                        height: 1.4,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
+    return AppChatBubble(
+      fromUser: isUser,
+      failed: bubble.failed,
+      text: isUser ? bubble.text : stripAiMarkdown(bubble.text),
+      child: bubble.attachments.isNotEmpty
+          ? _mediaPreviews(bubble.attachments)
+          : null,
     );
   }
 
@@ -628,8 +569,6 @@ class _AgentModeViewState extends State<_AgentModeView> {
         Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            _botAvatar(),
-            const SizedBox(width: 8),
             Expanded(
               child: Container(
                 padding: const EdgeInsets.all(16),
@@ -727,8 +666,6 @@ class _AgentModeViewState extends State<_AgentModeView> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        _botAvatar(),
-        const SizedBox(width: 8),
         Expanded(
           child: Container(
             padding: const EdgeInsets.all(16),
@@ -833,21 +770,6 @@ class _AgentModeViewState extends State<_AgentModeView> {
     );
   }
 
-  Widget _botAvatar() {
-    return Container(
-      width: 34,
-      height: 34,
-      decoration: const BoxDecoration(shape: BoxShape.circle, color: _purple),
-      alignment: Alignment.center,
-      child: const HomeSfIcon(
-        icon: HomeFigmaIcons.ai,
-        color: Colors.white,
-        size: 16,
-        fontWeight: FontWeight.w500,
-      ),
-    );
-  }
-
   Widget _mediaPreviews(List<AgentAttachment> items) {
     final media = items
         .where(
@@ -899,92 +821,59 @@ class _AgentModeViewState extends State<_AgentModeView> {
     );
   }
 
-  Widget _listeningOverlay() {
-    return IgnorePointer(
-      child: Align(
-        alignment: Alignment.bottomRight,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 88, 88),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 220),
-            child: DecoratedBox(
+  Future<void> _toggleMic() async {
+    if (_holdingMic) {
+      await _finishHoldRecord(send: false);
+    } else {
+      await _startHoldRecord();
+    }
+  }
+
+  Widget _stagedChips() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: SizedBox(
+        height: 36,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          itemCount: _staged.length,
+          separatorBuilder: (_, __) => const SizedBox(width: 8),
+          itemBuilder: (context, index) {
+            final item = _staged[index];
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: _tint,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: _purple.withValues(alpha: 0.4)),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Color(0x14000000),
-                    blurRadius: 12,
-                    offset: Offset(0, 4),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    item.kind == 'video'
+                        ? Icons.videocam_outlined
+                        : item.kind == 'file'
+                        ? Icons.insert_drive_file_outlined
+                        : Icons.image_outlined,
+                    color: _purple,
+                    size: 14,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    item.name ?? item.kind,
+                    style: GoogleFonts.poppins(color: _text, fontSize: 11),
+                  ),
+                  GestureDetector(
+                    onTap: () => setState(() => _staged.removeAt(index)),
+                    child: const Padding(
+                      padding: EdgeInsets.only(left: 6),
+                      child: Icon(Icons.close, color: _muted, size: 14),
+                    ),
                   ),
                 ],
               ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-                child: Text(
-                  _partialSpeech.trim().isEmpty
-                      ? 'Listening… release to send'
-                      : _partialSpeech,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.right,
-                  style: GoogleFonts.poppins(color: _text, fontSize: 12),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _holdMicButton() {
-    return Semantics(
-      button: true,
-      label: 'Hold to talk',
-      child: Listener(
-        behavior: HitTestBehavior.opaque,
-        onPointerDown: (_) => _startHoldRecord(),
-        onPointerUp: (_) => _finishHoldRecord(send: true),
-        onPointerCancel: (_) => _finishHoldRecord(send: true),
-        child: AnimatedScale(
-          scale: _listening ? 1.08 : 1,
-          duration: const Duration(milliseconds: 160),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 160),
-            width: 54,
-            height: 54,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFF6366F1), Color(0xFFA855F7)],
-              ),
-              border: Border.all(
-                color: Colors.white,
-                width: _listening ? 3 : 2,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: _purple.withValues(alpha: _listening ? 0.55 : 0.28),
-                  blurRadius: _listening ? 22 : 14,
-                  offset: const Offset(0, 6),
-                ),
-              ],
-            ),
-            child: const HomeSfIcon(
-              icon: HomeFigmaIcons.microphone,
-              color: Colors.white,
-              size: 20,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
+            );
+          },
         ),
       ),
     );
@@ -993,138 +882,16 @@ class _AgentModeViewState extends State<_AgentModeView> {
   Widget _inputBar() {
     final canSend =
         (_input.text.trim().isNotEmpty || _staged.isNotEmpty) && !_uploading;
-    return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Divider(height: 1, thickness: 0.5, color: _divider),
-          const SizedBox(height: 10),
-          if (_staged.isNotEmpty) ...[
-            SizedBox(
-              height: 36,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: _staged.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 8),
-                itemBuilder: (context, index) {
-                  final item = _staged[index];
-                  return Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    decoration: BoxDecoration(
-                      color: _tint,
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          item.kind == 'video'
-                              ? Icons.videocam_outlined
-                              : item.kind == 'file'
-                              ? Icons.insert_drive_file_outlined
-                              : Icons.image_outlined,
-                          color: _purple,
-                          size: 14,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          item.name ?? item.kind,
-                          style: GoogleFonts.poppins(
-                            color: _text,
-                            fontSize: 11,
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: () => setState(() => _staged.removeAt(index)),
-                          child: const Padding(
-                            padding: EdgeInsets.only(left: 6),
-                            child: Icon(Icons.close, color: _muted, size: 14),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: 8),
-          ],
-          Row(
-            children: [
-              InkWell(
-                onTap: _uploading ? null : _openAttachSheet,
-                customBorder: const CircleBorder(),
-                child: const Padding(
-                  padding: EdgeInsets.all(4),
-                  child: HomeSfIcon(
-                    icon: HomeFigmaIcons.add,
-                    color: _muted,
-                    size: 24,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxHeight: 120),
-                  child: TextField(
-                    controller: _input,
-                    cursorColor: _purple,
-                    minLines: 1,
-                    maxLines: null,
-                    keyboardType: TextInputType.multiline,
-                    textInputAction: TextInputAction.newline,
-                    onTapOutside: dismissAppKeyboard,
-                    style: GoogleFonts.poppins(color: _text, fontSize: 14),
-                    decoration: InputDecoration(
-                      hintText: _listening
-                          ? 'Listening…'
-                          : 'Tell Autobus what to do…',
-                      hintStyle: GoogleFonts.poppins(
-                        color: _muted,
-                        fontSize: 14,
-                      ),
-                      border: InputBorder.none,
-                      isDense: true,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 8),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              InkWell(
-                onTap: canSend
-                    ? () {
-                        _send();
-                      }
-                    : null,
-                customBorder: const CircleBorder(),
-                child: Opacity(
-                  opacity: canSend ? 1 : 0.45,
-                  child: Container(
-                    width: 40,
-                    height: 40,
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: _gradient,
-                    ),
-                    alignment: Alignment.center,
-                    child: const HomeSfIcon(
-                      icon: HomeFigmaIcons.sendMail,
-                      color: Colors.white,
-                      size: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+    return AppChatComposer(
+      controller: _input,
+      canSend: canSend,
+      onSend: () => _send(),
+      onAttach: _openAttachSheet,
+      onMic: _toggleMic,
+      listening: _listening,
+      busy: _uploading,
+      hintText: 'Tell Autobus what to do...',
+      header: _staged.isEmpty ? null : _stagedChips(),
     );
   }
 }

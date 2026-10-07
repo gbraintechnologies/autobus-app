@@ -1,5 +1,6 @@
 import 'package:autobus/barrel.dart';
 import 'package:autobus/common_design/widgets/app_bottom_nav.dart';
+import 'package:autobus/common_design/widgets/app_chat.dart';
 import 'package:autobus/common_design/widgets/app_screen_header.dart';
 import 'package:autobus/common_design/widgets/credits_pill.dart';
 import 'package:autobus/features/autochat/chat_bloc.dart';
@@ -12,7 +13,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'dart:io';
 
-/// My AI chat — Figma INTELLIGENCE frame 3237:2750.
+/// My AI chat — Figma INTELLIGENCE frame 3399:4841.
 class IntelligenceMyAiPage extends StatelessWidget {
   const IntelligenceMyAiPage({super.key});
 
@@ -298,14 +299,12 @@ class _IntelligenceMyAiChatBodyState extends State<_IntelligenceMyAiChatBody> {
                       20 * scale,
                       20 * scale,
                     ),
-                    children: [
-                      _MyAiMessageRow(
-                        scale: scale,
-                        isUser: false,
+                    children: const [
+                      AppChatBubble(
+                        fromUser: false,
                         text:
                             'Unable to start the conversation. Please try again.',
-                        timestamp: 'Just now',
-                        user: widget.user,
+                        footer: 'Just now',
                       ),
                     ],
                   );
@@ -330,16 +329,19 @@ class _IntelligenceMyAiChatBodyState extends State<_IntelligenceMyAiChatBody> {
                   itemCount: messages.length,
                   itemBuilder: (context, index) {
                     final message = messages[index];
+                    final pending = message.status == MessageStatus.pending;
+                    final failed = message.status == MessageStatus.failed;
                     return Padding(
                       padding: EdgeInsets.only(bottom: 20 * scale),
-                      child: _MyAiMessageRow(
-                        scale: scale,
-                        isUser: message.sender == Sender.user,
+                      child: AppChatBubble(
+                        fromUser: message.sender == Sender.user,
                         text: message.text,
-                        timestamp: _formatTimestamp(message.timestamp),
-                        user: widget.user,
-                        pending: message.status == MessageStatus.pending,
-                        failed: message.status == MessageStatus.failed,
+                        failed: failed,
+                        footer: pending
+                            ? 'Sending…'
+                            : failed
+                            ? "Couldn't send"
+                            : _formatTimestamp(message.timestamp),
                       ),
                     );
                   },
@@ -347,11 +349,10 @@ class _IntelligenceMyAiChatBodyState extends State<_IntelligenceMyAiChatBody> {
               },
             ),
           ),
-          _MyAiInputBar(
-            scale: scale,
+          AppChatComposer(
             controller: _controller,
-            canSend: _controller.text.trim().isNotEmpty,
-            attaching: _attaching,
+            canSend: _controller.text.trim().isNotEmpty && !_attaching,
+            busy: _attaching,
             listening: _listening,
             onSend: _sendMessage,
             onAttach: _showAttachSheet,
@@ -391,303 +392,6 @@ class _MyAiBackButton extends StatelessWidget {
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _MyAiMessageRow extends StatelessWidget {
-  final double scale;
-  final bool isUser;
-  final String text;
-  final String timestamp;
-  final Map<String, dynamic> user;
-  final bool pending;
-  final bool failed;
-
-  const _MyAiMessageRow({
-    required this.scale,
-    required this.isUser,
-    required this.text,
-    required this.timestamp,
-    required this.user,
-    this.pending = false,
-    this.failed = false,
-  });
-
-  static const _surfaceColor = Color(0xFFF8FAFC);
-  static const _timestampColor = Color(0xFF94A3B8);
-  static const _bubbleTextColor = Color(0xFF475569);
-  static const _accentColor = Color(0xFF7F03B9);
-
-  static const _userGradient = LinearGradient(
-    begin: Alignment.centerLeft,
-    end: Alignment.centerRight,
-    colors: [
-      Color(0xFF6366F1),
-      Color(0xFFA855F7),
-    ],
-  );
-
-  @override
-  Widget build(BuildContext context) {
-    final avatarSize = 40 * scale;
-    final bubble = Container(
-      constraints: BoxConstraints(maxWidth: 310 * scale),
-      padding: EdgeInsets.symmetric(
-        horizontal: 20 * scale,
-        vertical: 12 * scale,
-      ),
-      decoration: BoxDecoration(
-        color: isUser ? null : _surfaceColor,
-        gradient: isUser ? _userGradient : null,
-        borderRadius: BorderRadius.circular(16 * scale),
-      ),
-      child: Text(
-        text,
-        style: GoogleFonts.poppins(
-          color: isUser ? Colors.white : _bubbleTextColor,
-          fontSize: 14,
-          fontWeight: FontWeight.w400,
-          height: 1.4,
-        ),
-      ),
-    );
-
-    final timestampWidget = Text(
-      pending ? 'Sending…' : failed ? "Couldn't send" : timestamp,
-      style: GoogleFonts.poppins(
-        color: _timestampColor,
-        fontSize: 12,
-        fontWeight: FontWeight.w400,
-      ),
-    );
-
-    if (isUser) {
-      return Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                bubble,
-                SizedBox(height: 4 * scale),
-                timestampWidget,
-              ],
-            ),
-          ),
-          SizedBox(width: 12 * scale),
-          UserAvatar(
-            size: avatarSize,
-            avatarUrl: _avatarUrl(user),
-            initials: _initials(user),
-            onLightBackground: true,
-          ),
-        ],
-      );
-    }
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        Container(
-          width: avatarSize,
-          height: avatarSize,
-          decoration: const BoxDecoration(
-            color: _accentColor,
-            shape: BoxShape.circle,
-          ),
-          alignment: Alignment.center,
-          child: HomeSfIcon(
-            icon: HomeFigmaIcons.ai,
-            color: Colors.white,
-            size: 20 * scale.clamp(0.9, 1.05),
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        SizedBox(width: 12 * scale),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              bubble,
-              SizedBox(height: 4 * scale),
-              timestampWidget,
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  String? _avatarUrl(Map<String, dynamic> user) {
-    final url = (user['avatar'] ??
-            user['avatar_url'] ??
-            user['photo'] ??
-            user['photo_url'])
-        ?.toString();
-    if (url == null || url.trim().isEmpty) return null;
-    return url;
-  }
-
-  String _initials(Map<String, dynamic> user) {
-    final name = (user['fullname'] ?? user['email'] ?? 'User').toString();
-    return name.trim().isNotEmpty ? name.trim()[0].toUpperCase() : 'U';
-  }
-}
-
-class _MyAiInputBar extends StatelessWidget {
-  final double scale;
-  final TextEditingController controller;
-  final bool canSend;
-  final bool attaching;
-  final bool listening;
-  final VoidCallback onSend;
-  final VoidCallback onAttach;
-  final VoidCallback onMic;
-
-  const _MyAiInputBar({
-    required this.scale,
-    required this.controller,
-    required this.canSend,
-    required this.attaching,
-    required this.listening,
-    required this.onSend,
-    required this.onAttach,
-    required this.onMic,
-  });
-
-  static const _timestampColor = Color(0xFF94A3B8);
-  static const _dividerColor = Color(0xFFE2E8F0);
-
-  static const _sendGradient = LinearGradient(
-    begin: Alignment.centerLeft,
-    end: Alignment.centerRight,
-    colors: [
-      Color(0xFF6366F1),
-      Color(0xFFA855F7),
-    ],
-  );
-
-  @override
-  Widget build(BuildContext context) {
-    final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
-
-    return Container(
-      color: Colors.white,
-      padding: EdgeInsets.fromLTRB(
-        12 * scale,
-        0,
-        12 * scale,
-        12 * scale + bottomInset,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Divider(height: 1, thickness: 0.5, color: _dividerColor),
-          SizedBox(height: 12 * scale),
-          Row(
-            children: [
-              Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: attaching ? null : onAttach,
-                  customBorder: const CircleBorder(),
-                  child: Padding(
-                    padding: EdgeInsets.all(4 * scale),
-                    child: attaching
-                        ? SizedBox(
-                            width: 24 * scale.clamp(0.9, 1.05),
-                            height: 24 * scale.clamp(0.9, 1.05),
-                            child: const CircularProgressIndicator(
-                              strokeWidth: 2,
-                            ),
-                          )
-                        : HomeSfIcon(
-                      icon: HomeFigmaIcons.add,
-                      color: _timestampColor,
-                      size: 24 * scale.clamp(0.9, 1.05),
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ),
-              SizedBox(width: 12 * scale),
-              Expanded(
-                child: TextField(
-                  controller: controller,
-                  minLines: 1,
-                  maxLines: 4,
-                  textInputAction: TextInputAction.send,
-                  onSubmitted: canSend ? (_) => onSend() : null,
-                  style: GoogleFonts.poppins(
-                    color: const Color(0xFF475569),
-                    fontSize: 14,
-                  ),
-                  decoration: InputDecoration(
-                    hintText: listening
-                        ? 'Listening…'
-                        : attaching
-                        ? 'Uploading…'
-                        : 'Type your message...',
-                    hintStyle: GoogleFonts.poppins(
-                      color: _timestampColor,
-                      fontSize: 14,
-                    ),
-                    border: InputBorder.none,
-                    isDense: true,
-                    contentPadding: EdgeInsets.symmetric(vertical: 8 * scale),
-                  ),
-                ),
-              ),
-              Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: attaching ? null : onMic,
-                  customBorder: const CircleBorder(),
-                  child: Padding(
-                    padding: EdgeInsets.all(4 * scale),
-                    child: HomeSfIcon(
-                      icon: HomeFigmaIcons.microphone,
-                      color: listening
-                          ? const Color(0xFF7F03B9)
-                          : _timestampColor,
-                      size: 19 * scale.clamp(0.9, 1.05),
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ),
-              SizedBox(width: 8 * scale),
-              Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: canSend && !attaching ? onSend : null,
-                  customBorder: const CircleBorder(),
-                  child: Opacity(
-                    opacity: canSend ? 1 : 0.45,
-                    child: Container(
-                      width: 40 * scale,
-                      height: 40 * scale,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: _sendGradient,
-                      ),
-                      alignment: Alignment.center,
-                      child: HomeSfIcon(
-                        icon: HomeFigmaIcons.sendMail,
-                        color: Colors.white,
-                        size: 18 * scale.clamp(0.9, 1.05),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
       ),
     );
   }
