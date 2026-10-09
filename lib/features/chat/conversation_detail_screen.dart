@@ -72,7 +72,6 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
 
   void _startLivePolling() {
     _stopLivePolling();
-    if (widget.mode != ConversationScreenMode.liveChat) return;
     _livePollTimer = Timer.periodic(const Duration(seconds: 3), (_) {
       unawaited(_pollLiveSession());
     });
@@ -90,7 +89,7 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
 
   Future<void> _pollLiveSession() async {
     if (!mounted || _loading || _sending || _polling || _actionBusy) return;
-    if (widget.mode != ConversationScreenMode.liveChat) return;
+    if (_isCompleted) return;
     final sid = _resolvedSessionId;
     if (sid == null) return;
 
@@ -108,14 +107,10 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
 
       setState(() => _setDetail(detail));
 
-      final active = detail['intervention_active'];
-      final isActive = active is bool
-          ? active
-          : active?.toString().toLowerCase() == 'true';
       final lifecycle = (detail['conversation_lifecycle'] ?? '')
           .toString()
           .toLowerCase();
-      if (!isActive || lifecycle == 'completed') {
+      if (lifecycle == 'completed') {
         _stopLivePolling();
       } else if (nextLen > prevLen) {
         _scrollToBottom();
@@ -147,14 +142,11 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
         _loading = false;
       });
       _scrollToBottom();
-      if (widget.mode == ConversationScreenMode.liveChat) {
-        final active = detail['intervention_active'];
-        final isActive = active is bool
-            ? active
-            : active?.toString().toLowerCase() == 'true';
-        if (isActive && _livePollTimer == null) {
-          _startLivePolling();
-        }
+      final lifecycle = (detail['conversation_lifecycle'] ?? '')
+          .toString()
+          .toLowerCase();
+      if (lifecycle != 'completed' && _livePollTimer == null) {
+        _startLivePolling();
       }
     } catch (e) {
       if (!mounted) return;
@@ -206,10 +198,7 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
     return v == 'completed';
   }
 
-  bool get _showComposer =>
-      widget.mode == ConversationScreenMode.liveChat &&
-      _interventionActive &&
-      !_isCompleted;
+  bool get _showComposer => _interventionActive && !_isCompleted;
 
   String get _headerTitle {
     final detail = _detail;
@@ -297,6 +286,75 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
     }
   }
 
+  Future<void> _intervene() async {
+    final sid = _resolvedSessionId;
+    if (sid == null || _interventionActive || _isCompleted) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          'Intervene in this chat?',
+          style: GoogleFonts.poppins(
+            color: LightScreenTheme.title,
+            fontSize: LightScreenTheme.typeTitle,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        content: Text(
+          'The assistant will stop replying. You can answer the customer until you mark this chat completed.',
+          style: GoogleFonts.poppins(
+            color: LightScreenTheme.muted,
+            fontSize: LightScreenTheme.typeBody,
+            height: 1.4,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(
+              'Cancel',
+              style: GoogleFonts.poppins(color: LightScreenTheme.muted),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(
+              'Intervene',
+              style: GoogleFonts.poppins(
+                color: LightScreenTheme.accent,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _actionBusy = true);
+    try {
+      final api = context.read<ApiService>();
+      final updated = await api.activateConversationIntervention(sid);
+      if (!mounted) return;
+      setState(() {
+        _setDetail(updated);
+        _actionBusy = false;
+      });
+      _startLivePolling();
+      showAppSnackBar(
+        context,
+        'You are intervening. The assistant will not reply.',
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _actionBusy = false);
+      showAppSnackBar(context, userFacingError(e, action: 'intervening'));
+    }
+  }
+
   Future<void> _sendMessage() async {
     final text = _messageCtrl.text.trim();
     if (text.isEmpty || _sending) return;
@@ -354,8 +412,20 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
         body: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (!_loading && _loadError == null) _buildControls(),
-            Expanded(child: _buildBody()),
+            if (!_loading && _loadError == null) _buildStatus(),
+            Expanded(
+              child: Stack(
+                children: [
+                  _buildBody(),
+                  if (!_isCompleted)
+                    Positioned(
+                      right: 16,
+                      bottom: 16,
+                      child: _buildFloatingActions(),
+                    ),
+                ],
+              ),
+            ),
             if (_showComposer) _buildComposer(),
           ],
         ),
@@ -363,79 +433,126 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
     );
   }
 
-  Widget _buildControls() {
+  String get _cycleHint {
+    if (_isCompleted) {
+      return 'Completed. The next customer message starts a new assistant chat.';
+    }
+    if (_interventionActive) {
+      return 'Intervening. The assistant will not reply until this chat is completed.';
+    }
+    return 'Open. The assistant is replying and can complete this chat on its own.';
+  }
+
+  Widget _buildStatus() {
     final scale = MediaQuery.sizeOf(context).width / appShellDesignWidth;
-    if (_showComposer) {
-      return Padding(
-        padding: EdgeInsets.fromLTRB(20 * scale, 12 * scale, 20 * scale, 0),
-        child: Row(
-          children: [
-            Container(
-              width: 8,
-              height: 8,
-              decoration: const BoxDecoration(
-                color: Color(0xFF22C55E),
-                shape: BoxShape.circle,
+    return Padding(
+      padding: EdgeInsets.fromLTRB(20 * scale, 12 * scale, 20 * scale, 0),
+      child: Row(
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: _isCompleted
+                  ? LightScreenTheme.muted
+                  : _interventionActive
+                      ? LightScreenTheme.warning
+                      : const Color(0xFF22C55E),
+              shape: BoxShape.circle,
+            ),
+          ),
+          SizedBox(width: 8 * scale),
+          Expanded(
+            child: Text(
+              _cycleHint,
+              style: GoogleFonts.poppins(
+                color: LightScreenTheme.muted,
+                fontSize: LightScreenTheme.typeCaption,
+                height: 1.3,
               ),
             ),
-            SizedBox(width: 8 * scale),
-            Expanded(
-              child: Text(
-                "You're chatting live",
-                style: GoogleFonts.poppins(
-                  color: LightScreenTheme.body,
-                  fontSize: LightScreenTheme.typeLabel,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-            SizedBox(
-              height: 34 * scale,
-              child: OutlinedButton.icon(
-                onPressed: _actionBusy ? null : _completeConversation,
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: LightScreenTheme.accent,
-                  side: const BorderSide(color: LightScreenTheme.accent),
-                  padding: EdgeInsets.symmetric(horizontal: 12 * scale),
-                  shape: const StadiumBorder(),
-                ),
-                icon: _actionBusy
-                    ? const AutobusLoadingIndicator(size: 14)
-                    : const Icon(Icons.check_circle_outline, size: 16),
-                label: Text(
-                  'Mark as completed',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFloatingActions() {
+    final scale = MediaQuery.sizeOf(context).width / appShellDesignWidth;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        _floatingAction(
+          scale,
+          label: _interventionActive ? 'Intervening' : 'Intervene',
+          icon: Icons.support_agent_rounded,
+          filled: _interventionActive,
+          fillColor: LightScreenTheme.accent,
+          onTap: (_actionBusy || _interventionActive) ? null : _intervene,
+        ),
+        SizedBox(height: 10 * scale),
+        _floatingAction(
+          scale,
+          label: 'Completed',
+          icon: Icons.check_rounded,
+          filled: true,
+          fillColor: LightScreenTheme.button,
+          onTap: _actionBusy ? null : _completeConversation,
+        ),
+      ],
+    );
+  }
+
+  Widget _floatingAction(
+    double scale, {
+    required String label,
+    required IconData icon,
+    required bool filled,
+    required Color fillColor,
+    required VoidCallback? onTap,
+  }) {
+    final foreground = filled ? Colors.white : LightScreenTheme.button;
+    final background = filled ? fillColor : Colors.white;
+    return Opacity(
+      opacity: onTap == null && !_interventionActive ? 0.55 : 1,
+      child: Material(
+        color: background,
+        elevation: 6,
+        shadowColor: const Color(0x402D0C51),
+        shape: const StadiumBorder(),
+        child: InkWell(
+          onTap: onTap,
+          customBorder: const StadiumBorder(),
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(12 * scale, 8 * scale, 8 * scale, 8 * scale),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  label,
                   style: GoogleFonts.poppins(
+                    color: foreground,
                     fontSize: LightScreenTheme.typeLabel,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-              ),
+                SizedBox(width: 8 * scale),
+                Container(
+                  width: 36 * scale,
+                  height: 36 * scale,
+                  decoration: BoxDecoration(
+                    color: filled ? Colors.white.withValues(alpha: 0.16) : LightScreenTheme.field,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(icon, size: 18 * scale, color: foreground),
+                ),
+              ],
             ),
-          ],
-        ),
-      );
-    }
-
-    if (_isCompleted) {
-      return Container(
-        margin: EdgeInsets.fromLTRB(20 * scale, 12 * scale, 20 * scale, 0),
-        padding: EdgeInsets.all(12 * scale),
-        decoration: BoxDecoration(
-          color: LightScreenTheme.surface,
-          borderRadius: BorderRadius.circular(12 * scale),
-        ),
-        child: Text(
-          'This conversation is completed. A new customer message will start a fresh assistant chat.',
-          style: GoogleFonts.poppins(
-            color: LightScreenTheme.muted,
-            fontSize: LightScreenTheme.typeCaption,
-            height: 1.4,
           ),
         ),
-      );
-    }
-
-    return const SizedBox.shrink();
+      ),
+    );
   }
 
   Widget _buildComposer() {
@@ -505,7 +622,7 @@ class _ConversationDetailScreenState extends State<ConversationDetailScreen> {
         16 * scale,
         16 * scale,
         16 * scale,
-        24 * scale,
+        (_isCompleted ? 24 : 120) * scale,
       ),
       itemCount: itemCount,
       itemBuilder: (context, index) {

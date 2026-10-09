@@ -2716,6 +2716,29 @@ class ApiService {
     _fail(response, 'sending message');
   }
 
+  /// POST /api/v1/conversations/session/{sessionId}/activate-intervention
+  /// Owner takeover. The assistant stays silent until the session is completed.
+  Future<Map<String, dynamic>> activateConversationIntervention(
+    int sessionId,
+  ) async {
+    final uri = Uri.parse(
+      '$baseUrl/conversations/session/$sessionId/activate-intervention',
+    );
+    final response = await httpClient.post(uri);
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      final conv = data is Map ? data['conversation'] : null;
+      if (conv is Map<String, dynamic>) return conv;
+      if (conv is Map) return Map<String, dynamic>.from(conv);
+      if (data is Map<String, dynamic>) return data;
+      if (data is Map) return Map<String, dynamic>.from(data);
+    }
+    if (response.statusCode == 401) {
+      throw Exception('Session expired');
+    }
+    _fail(response, 'intervening in conversation');
+  }
+
   /// POST /api/v1/conversations/session/{sessionId}/complete
   Future<Map<String, dynamic>> completeConversationSession(
     int sessionId,
